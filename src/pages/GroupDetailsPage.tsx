@@ -26,6 +26,7 @@ import { usePendingRequests, useRespondToRequest } from '@/hooks/useGroupRequest
 import { useAuth } from '@/hooks/useAuth';
 import { PostCard } from '@/components/studyGroups/PostCard';
 import { CreatePostForm } from '@/components/studyGroups/CreatePostForm';
+import { GroupSettingsButton } from '@/components/studyGroups/GroupSettingsButton';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
 import { GroupMembersColumn } from '@/components/studyGroups/GroupMembersColumn';
@@ -298,20 +299,23 @@ export const GroupDetailsPage: React.FC = () => {
                   <div className="w-full space-y-2">
                     {isMember && (
                       <>
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={handleLeave}
-                          disabled={isLeaving}
-                        >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          {isLeaving ? 'Saindo...' : 'Sair do Grupo'}
-                        </Button>
-                        {isAdmin && (
-                          <Button variant="outline" className="w-full">
-                            <Settings className="h-4 w-4 mr-2" />
-                            Configurações
+                        {group.created_by !== user?.id && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleLeave}
+                            disabled={isLeaving}
+                          >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            {isLeaving ? 'Saindo...' : 'Sair do Grupo'}
                           </Button>
+                        )}
+                        {isAdmin && (
+                          <GroupSettingsButton group={group} onGroupUpdated={() => {
+                            refetchGroup();
+                            refetchMembers();
+                            refetchPosts();
+                          }} />
                         )}
                       </>
                     )}

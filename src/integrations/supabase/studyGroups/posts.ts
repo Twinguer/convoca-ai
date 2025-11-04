@@ -121,11 +121,23 @@ export const studyGroupPostsService = {
           p_parent_comment_id: parentCommentId || null,
         });
 
-      if (error) throw error;
-      return data?.comment || null;
-    } catch (error) {
+      if (error) {
+        console.error('Error in add_post_comment RPC:', error);
+        throw error;
+      }
+
+      // A função retorna { success: true, comment: {...}, comments_count: N }
+      if (data && (data as any).success) {
+        console.log('Comment added successfully:', (data as any).comment);
+        return (data as any).comment || null;
+      } else {
+        const errorMsg = (data as any)?.error || 'Erro desconhecido ao adicionar comentário';
+        console.error('Error from add_post_comment:', errorMsg);
+        throw new Error(errorMsg);
+      }
+    } catch (error: any) {
       console.error('Error adding comment:', error);
-      return null;
+      throw error;
     }
   },
 

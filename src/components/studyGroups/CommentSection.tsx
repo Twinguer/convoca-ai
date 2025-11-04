@@ -50,12 +50,20 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
     setIsSubmitting(true);
     try {
-      await addComment.mutateAsync({
+      const result = await addComment.mutateAsync({
         groupId,
         postId,
         content: commentText.trim(),
       });
+      
+      console.log('Comentário adicionado:', result);
+      
       setCommentText('');
+      
+      // Invalidar queries para forçar atualização
+      queryClient.invalidateQueries({ queryKey: ['group-feed', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['study-group', groupId] });
+      
       if (onCommentAdded) {
         onCommentAdded();
       }
