@@ -95,12 +95,20 @@ serve(async (req) => {
     // Calcular score de forma segura
     let totalScore = 0;
     const subjectScores: Record<string, number> = {};
+    const blockScores: Record<string, number> = {};
     const examType = concurso.exam_type || 'Múltipla Escolha';
     
-    // Extrair penalidade da estrutura disciplines (JSONB)
+    // Extrair penalidade e mínimos da estrutura disciplines (JSONB)
     let wrongAnswerPenalty = 0;
+    let minimumTotalScore = 0;
+    let minimumTotalScoreCotas = 0;
+    const blocks: any[] = [];
+    
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines)) {
       wrongAnswerPenalty = Number(concurso.disciplines.wrong_answer_penalty) || 0;
+      minimumTotalScore = Number(concurso.disciplines.minimum_total_score) || 0;
+      minimumTotalScoreCotas = Number(concurso.disciplines.minimum_total_score_cotas) || 0;
+      blocks = concurso.disciplines.blocks || [];
     }
 
     console.log(`[calculate-ranking-score] Calculating score for ${Object.keys(answers).length} answers`);
@@ -149,6 +157,19 @@ serve(async (req) => {
       if (sectionType) {
         subjectScores[sectionType] = (subjectScores[sectionType] || 0) + questionScore;
       }
+
+      // Acumular por bloco
+      for (const block of blocks) {
+        const blockId = block.blockId;
+        const blockDisciplines = block.disciplines || [];
+        
+        for (const discipline of blockDisciplines) {
+          if (discipline.id === sectionType) {
+            blockScores[blockId] = (blockScores[blockId] || 0) + questionScore;
+            break;
+          }
+        }
+      }
     }
 
     // Adicionar pontuações subjetivas
@@ -162,15 +183,72 @@ serve(async (req) => {
 
     console.log(`[calculate-ranking-score] Total score calculated: ${totalScore}`);
 
-    // Preparar consolidated_data simplificado
+    // Verificar mínimos
+    const isCotas = reservationType !== 'Ampla Concorrência';
+    const applicableMinimum = isCotas ? minimumTotalScoreCotas : minimumTotalScore;
+    const belowMinimum = totalScore < applicableMinimum;
+    
+    const belowDisciplineMinimums: string[] = [];
+    const belowBlockMinimums: string[] = [];
+    const eliminationReasons: string[] = [];
+
+    // Verificar mínimos por disciplina
+    for (const block of blocks) {
+      const blockDisciplines = block.disciplines || [];
+      
+      for (const discipline of blockDisciplines) {
+        const disciplineId = discipline.id;
+        const disciplineScore = subjectScores[disciplineId] || 0;
+        const minScore = isCotas ? (discipline.minimum_score_cotas || 0) : (discipline.minimum_score || 0);
+        
+        if (minScore > 0 && disciplineScore < minScore) {
+          belowDisciplineMinimums.push(disciplineId);
+          eliminationReasons.push(`Abaixo do mínimo em ${discipline.name}: ${disciplineScore.toFixed(2)} < ${minScore}`);
+        }
+      }
+    }
+
+    // Verificar mínimos por bloco
+    for (const block of blocks) {
+      const blockId = block.blockId;
+      const blockScore = blockScores[blockId] || 0;
+      const minScore = isCotas ? (block.blockMinimumCotas || 0) : (block.blockMinimumScore || 0);
+      
+      if (minScore > 0 && blockScore < minScore) {
+        belowBlockMinimums.push(blockId);
+        eliminationReasons.push(`Abaixo do mínimo no bloco ${block.blockName}: ${blockScore.toFixed(2)} < ${minScore}`);
+      }
+    }
+
+    // Verificar mínimo global
+    if (belowMinimum) {
+      eliminationReasons.push(`Abaixo do mínimo global: ${totalScore.toFixed(2)} < ${applicableMinimum}`);
+    }
+
+    // Determinar status
+    let status = 'approved';
+    if (belowMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0) {
+      status = 'eliminated';
+    }
+
+    console.log(`[calculate-ranking-score] Status: ${status}, BelowMinimum: ${belowMinimum}`);
+
+    // Preparar consolidated_data completo
     const consolidatedData = {
       answers,
       subject_scores: subjectScores,
+      block_scores: blockScores,
       subjective_scores: subjectiveScores || {},
+      below_minimum: belowMinimum,
+      status,
+      elimination_reasons: eliminationReasons,
+      belowDisciplineMinimums,
+      belowBlockMinimums,
       metadata: {
         last_updated: new Date().toISOString(),
         booklet_id: bookletId,
         calculation_source: 'edge_function',
+        minimum_total_score: applicableMinimum,
       },
     };
 
