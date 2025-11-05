@@ -108,6 +108,10 @@ export interface StudyCycleV2 {
   edital_link?: string;
   curso_link?: string;
   video_link?: string;
+  trilha_semanal_pdf_url?: string;
+  subjetiva_pdf_url?: string;
+  trilha_semanal_label?: string;
+  subjetiva_label?: string;
   is_active: boolean;
   schedule_data: {
     metadata: {

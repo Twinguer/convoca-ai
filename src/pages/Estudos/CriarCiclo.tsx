@@ -42,7 +42,14 @@ interface Block {
   name: string;
   disciplines: Discipline[];
 }
-const CriarCiclo = () => {
+
+interface CriarCicloProps {
+  coachMode?: boolean;
+  targetStudentId?: string;
+  onSuccess?: () => void;
+}
+
+const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps = {}) => {
   const { user } = useAuth();
   const { createCycle } = useStudyCyclesV2();
   const { isPro, isLoading: isLoadingSubscription } = useSubscription();
@@ -158,7 +165,9 @@ const CriarCiclo = () => {
     return diffDays;
   };
   const handleSubmit = async () => {
-    if (!user || !cycleName || !organ || !position || !examDate) {
+    const userId = coachMode ? targetStudentId : user?.id;
+    
+    if (!userId || !cycleName || !organ || !position || !examDate) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -189,12 +198,22 @@ const CriarCiclo = () => {
         edital_link: '',
         curso_link: '',
         video_link: '',
-        blocks: simplifiedBlocks // Enviar blocos no formato correto
+        blocks: simplifiedBlocks,
+        userId: userId // Passar userId do aluno quando for coach
       });
 
       if (newCycle) {
         console.log('✅ Ciclo criado com sucesso:', newCycle);
-        navigate('/estudos');
+        toast.success('Ciclo de estudos criado com sucesso!');
+        
+        // Usar callback ou navegação padrão
+        if (onSuccess) {
+          onSuccess();
+        } else if (coachMode) {
+          navigate(`/coach/student/${targetStudentId}`);
+        } else {
+          navigate('/estudos');
+        }
       }
     } catch (error) {
       console.error('Error creating study cycle:', error);
@@ -233,11 +252,22 @@ const CriarCiclo = () => {
   return <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Criar Ciclo de Estudos</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            {coachMode ? 'Criar Ciclo para Aluno' : 'Criar Ciclo de Estudos'}
+          </h1>
           <p className="text-muted-foreground">Organize seus estudos em blocos e disciplinas</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/estudos')}>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (coachMode && targetStudentId) {
+                navigate(`/coach/student/${targetStudentId}`);
+              } else {
+                navigate('/estudos');
+              }
+            }}
+          >
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>

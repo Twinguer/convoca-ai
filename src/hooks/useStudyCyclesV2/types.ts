@@ -45,6 +45,8 @@ export interface StudyCycleV2 {
   edital_link?: string;
   curso_link?: string;
   video_link?: string;
+  trilha_semanal_pdf_url?: string;
+  subjetiva_pdf_url?: string;
   is_active: boolean;
   schedule_data: {
     weekly_schedule: WeeklySchedule[];
@@ -62,6 +64,8 @@ export interface CreateCycleInput {
   edital_link?: string;
   curso_link?: string;
   video_link?: string;
+  trilha_semanal_pdf_url?: string;
+  subjetiva_pdf_url?: string;
 }
 
 export interface AddSessionInput {

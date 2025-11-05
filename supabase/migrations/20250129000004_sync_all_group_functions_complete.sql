@@ -387,3 +387,4 @@ GRANT EXECUTE ON FUNCTION public.respond_to_join_request(UUID, UUID, UUID, BOOLE
 GRANT EXECUTE ON FUNCTION public.invite_user_to_group(UUID, UUID, UUID) TO authenticated;
 
 
+

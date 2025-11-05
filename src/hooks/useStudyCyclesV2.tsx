@@ -87,12 +87,16 @@ export const useStudyCyclesV2 = () => {
         name: string;
       }>;
     }>;
+    userId?: string; // ✅ NOVO: userId opcional para permitir criação por coach
   }) => {
-    if (!user) return null;
+    // Determinar qual userId usar: o passado ou o do usuário autenticado
+    const targetUserId = cycleData.userId || user?.id;
+    
+    if (!targetUserId || !user) return null;
 
     try {
-      // Verificar se já existem 2 ciclos ativos
-      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      // Verificar se já existem 2 ciclos ativos (usar targetUserId)
+      const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
       const activeCycles = userStudyData?.study_cycles.filter(cycle => cycle.is_active) || [];
       
       if (activeCycles.length >= 2) {
@@ -113,10 +117,14 @@ export const useStudyCyclesV2 = () => {
       );
 
 
-      const success = await UserStudyService.addCycle(user.id, newCycleData);
+      // ✅ Usar targetUserId em vez de user.id
+      const success = await UserStudyService.addCycle(targetUserId, newCycleData);
       
       if (success) {
-        await fetchCycles(); // Recarregar ciclos
+        // Só recarregar se for o próprio usuário
+        if (!cycleData.userId) {
+          await fetchCycles();
+        }
         toast.success('Ciclo criado com sucesso!');
         return newCycleData;
       } else {
@@ -134,12 +142,14 @@ export const useStudyCyclesV2 = () => {
   const addScheduleSession = async (
     cycleId: string,
     dayOfWeek: number,
-    sessionData: Omit<StudySchedule, 'id' | 'cycle_id' | 'day_of_week' | 'total_stats' | 'created_at' | 'updated_at'>
+    sessionData: Omit<StudySchedule, 'id' | 'cycle_id' | 'day_of_week' | 'total_stats' | 'created_at' | 'updated_at'>,
+    targetUserId?: string // ✅ NOVO: userId opcional para permitir criação por coach
   ) => {
-    if (!user) return false;
+    const userId = targetUserId || user?.id;
+    if (!userId || !user) return false;
 
     try {
-      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      const userStudyData = await UserStudyService.getUserStudyData(userId);
       if (!userStudyData) return false;
 
       // ✅ Criar nova sessão com cycle_id
@@ -182,13 +192,17 @@ export const useStudyCyclesV2 = () => {
         return cycle;
       });
 
-      const success = await UserStudyService.upsertUserStudyData(user.id, {
+      // ✅ Usar userId em vez de user.id
+      const success = await UserStudyService.upsertUserStudyData(userId, {
         study_schedule: updatedSchedule,
         study_cycles: updatedCycles
       });
 
       if (success) {
-        await fetchCycles();
+        // Só recarregar se for o próprio usuário
+        if (!targetUserId) {
+          await fetchCycles();
+        }
         toast.success('Sessão adicionada ao cronograma!');
         return true;
       } else {

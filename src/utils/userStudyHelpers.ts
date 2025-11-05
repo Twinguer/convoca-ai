@@ -362,7 +362,9 @@ export function createStudyCycleV2(
       id: string;
       name: string;
     }>;
-  }>
+  }>,
+  trilhaSemanalPdfUrl?: string,
+  subjetivaPdfUrl?: string
 ): Omit<StudyCycleV2, 'id' | 'created_at' | 'updated_at'> {
   // Debug: Verificar blocos recebidos
 
@@ -384,6 +386,8 @@ export function createStudyCycleV2(
     edital_link: editalLink,
     curso_link: cursoLink,
     video_link: videoLink,
+    trilha_semanal_pdf_url: trilhaSemanalPdfUrl,
+    subjetiva_pdf_url: subjetivaPdfUrl,
     is_active: true,
     schedule_data: {
       weekly_schedule: [],

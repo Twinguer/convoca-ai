@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2 } from 'lucide-react';
+import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, generateId } from '@/lib/utils';
@@ -24,6 +24,7 @@ import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
 import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
+import { supabase } from '@/integrations/supabase/client';
 interface StudySession {
   id: string;
   day: number; // 0-6 (Sunday to Saturday)
@@ -34,8 +35,16 @@ interface StudySession {
   cycleId: string;
   sessionLink?: string;
 }
+// Interface para props do modo coach
+interface CronogramaProps {
+  coachMode?: boolean;
+  targetStudentId?: string;
+  targetCycleId?: string;
+  onSuccess?: () => void;
+}
+
 // Usar StudyCycleV2 do types
-const Cronograma = () => {
+const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: CronogramaProps = {}) => {
   const {
     user
   } = useAuth();
@@ -122,10 +131,19 @@ const Cronograma = () => {
     loading: sessionDataLoading,
     error: sessionDataError,
     refreshData
-  } = useOptimizedSessionData();
+  } = useOptimizedSessionData({
+    targetUserId: coachMode ? targetStudentId : undefined
+  });
 
   // Armazenar userStudy completo para acessar study_sessions
   const [userStudy, setUserStudy] = useState<any>(null);
+
+  // Estados para upload de PDF
+  const [uploadingPDF, setUploadingPDF] = useState<string | null>(null);
+
+  // Estados para edição de labels
+  const [editingLabel, setEditingLabel] = useState<'trilha_semanal' | 'subjetiva' | null>(null);
+  const [labelValue, setLabelValue] = useState<string>('');
 
   // Timer helper functions
   const formatTime = (mins: number, secs: number) => {
@@ -153,11 +171,28 @@ const Cronograma = () => {
   };
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   useEffect(() => {
-    if (user) {
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    if (targetUserId) {
       fetchCycles();
       fetchSessions();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, targetStudentId, coachMode]);
+
+  // Inicializar selectedCycle automaticamente
+  useEffect(() => {
+    // Se targetCycleId foi fornecido, usar ele
+    if (targetCycleId && cycles.length > 0) {
+      const cycleExists = cycles.find(c => c.id === targetCycleId);
+      if (cycleExists && selectedCycle !== targetCycleId) {
+        setSelectedCycle(targetCycleId);
+      }
+    }
+    // Se não há ciclo selecionado e há ciclos disponíveis, selecionar o primeiro
+    else if (!selectedCycle && cycles.length > 0) {
+      setSelectedCycle(cycles[0].id);
+    }
+  }, [cycles, targetCycleId, selectedCycle]);
 
   // Update clock every 5 seconds - otimizado para melhor performance
   useEffect(() => {
@@ -167,8 +202,11 @@ const Cronograma = () => {
     return () => clearInterval(timer);
   }, []);
   const fetchCycles = async () => {
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    if (!targetUserId) return;
+    
     try {
-      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
       if (userStudyData) {
         setUserStudy(userStudyData); // Armazenar dados completos incluindo study_sessions
         const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
@@ -179,8 +217,11 @@ const Cronograma = () => {
     }
   };
   const fetchSessions = async () => {
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    if (!targetUserId) return;
+    
     try {
-      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
       if (!userStudyData) {
         setUserStudy(null);
         setSessions([]);
@@ -195,9 +236,18 @@ const Cronograma = () => {
           // Verificar se o ciclo está ativo
           const cycle = userStudyData.study_cycles.find(c => c.id === session.cycle_id);
           if (cycle && cycle.is_active) {
+            // IMPORTANTE: day_of_week está no formato ISO (1=segunda, 7=domingo)
+            // Precisamos converter para formato JavaScript (0=domingo, 6=sábado)
+            let dayOfWeek = session.day_of_week;
+            
+            // Se for formato ISO (1-7), converter para JavaScript (0-6)
+            if (dayOfWeek >= 1 && dayOfWeek <= 7) {
+              dayOfWeek = dayOfWeek === 7 ? 0 : dayOfWeek; // Domingo: 7 -> 0
+            }
+            
             allSessions.push({
               id: session.id,
-              day: session.day_of_week,
+              day: dayOfWeek,
               startTime: session.start_time,
               endTime: session.end_time,
               disciplineName: session.discipline_name || 'Disciplina',
@@ -307,6 +357,8 @@ const Cronograma = () => {
     // Usar valores customizados se selecionados
     const finalBlock = selectedBlock === '__custom__' ? customBlock : selectedBlock;
     const finalDiscipline = selectedDiscipline === '__custom__' ? customDiscipline : selectedDiscipline;
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    
     if (!selectedCycle || !finalBlock || !finalDiscipline) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
@@ -317,7 +369,6 @@ const Cronograma = () => {
       toast.error('O horário de fim deve ser posterior ao horário de início');
       return;
     }
-    
     try {
       // Adicionar sessão ao cronograma usando o hook useStudyCyclesV2
       const success = await addScheduleSession(selectedCycle, selectedDay, {
@@ -326,7 +377,7 @@ const Cronograma = () => {
         discipline_name: finalDiscipline,
         block_name: finalBlock,
         session_link: sessionLink
-      });
+      }, targetUserId);
       if (success) {
         // Recarregar ciclos para atualizar a lista de blocos e disciplinas
         await fetchCycles();
@@ -343,6 +394,7 @@ const Cronograma = () => {
         setEndTime('09:00');
         setSessionLink('');
         setShowAddModal(false);
+        toast.success('Sessão adicionada ao cronograma!');
       } else {
         toast.error('Erro ao adicionar sessão');
       }
@@ -353,8 +405,14 @@ const Cronograma = () => {
   };
   const removeSession = async (sessionId: string) => {
     try {
+      const targetUserId = coachMode ? targetStudentId : user?.id;
+      if (!targetUserId) {
+        toast.error('Erro ao identificar usuário');
+        return;
+      }
+      
       // Remove session from schedule
-      const success = await UserStudyService.removeScheduleSession(user?.id, sessionId);
+      const success = await UserStudyService.removeScheduleSession(targetUserId, sessionId);
       if (success) {
         // Recarregar sessões do banco
         await fetchSessions();
@@ -364,6 +422,203 @@ const Cronograma = () => {
       }
     } catch (error) {
       toast.error('Erro ao remover sessão');
+    }
+  };
+
+  // Funções para upload/download de PDFs
+  const handlePDFUpload = (type: 'trilha_semanal' | 'subjetiva') => {
+    if (!selectedCycle) {
+      toast.error('Nenhum ciclo selecionado');
+      return;
+    }
+    if (uploadingPDF === type) {
+      return; // Já está fazendo upload
+    }
+    const inputId = type === 'trilha_semanal' ? 'trilha-semanal-upload' : 'subjetiva-upload';
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+      // Resetar o valor para permitir selecionar o mesmo arquivo novamente se necessário
+      input.value = '';
+      // Garantir que o input não está desabilitado antes de clicar
+      if (input.disabled) {
+        console.warn(`Input ${inputId} está desabilitado`);
+        toast.error('Não é possível fazer upload no momento');
+        return;
+      }
+      input.click();
+    } else {
+      console.error(`Input ${inputId} não encontrado`);
+      toast.error('Erro ao abrir seletor de arquivos');
+    }
+  };
+
+  const handlePDFFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: 'trilha_semanal' | 'subjetiva'
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedCycle) {
+      event.target.value = '';
+      return;
+    }
+
+    // Validação de tipo (MIME type ou extensão)
+    const isPDF = file.type === 'application/pdf' || 
+                  file.name.toLowerCase().endsWith('.pdf');
+    if (!isPDF) {
+      toast.error('Apenas arquivos PDF são permitidos');
+      event.target.value = '';
+      return;
+    }
+
+    // Validação de tamanho (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Arquivo muito grande. Máximo: 10MB');
+      event.target.value = '';
+      return;
+    }
+
+    setUploadingPDF(type);
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    
+    if (!targetUserId) {
+      toast.error('Erro ao identificar usuário');
+      setUploadingPDF(null);
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const cycle = cycles.find(c => c.id === selectedCycle);
+      if (!cycle) {
+        toast.error('Ciclo não encontrado');
+        setUploadingPDF(null);
+        event.target.value = '';
+        return;
+      }
+
+      const fileExt = 'pdf';
+      const fileName = `cycle-${selectedCycle}-${type}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `study-documents/${targetUserId}/${fileName}`;
+
+      // Upload para storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('profiles') // Usando bucket profiles (pode criar 'study-documents' depois)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
+
+      // Atualizar ciclo com nova URL
+      const updateField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
+      await UserStudyService.updateCycle(targetUserId, selectedCycle, {
+        [updateField]: publicUrl
+      });
+
+      // Recarregar ciclos
+      await fetchCycles();
+      toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} enviada com sucesso!`);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(`Erro ao fazer upload: ${error.message || 'Tente novamente'}`);
+    } finally {
+      setUploadingPDF(null);
+      event.target.value = '';
+    }
+  };
+
+  const handlePDFRemove = async (type: 'trilha_semanal' | 'subjetiva') => {
+    if (!selectedCycle) {
+      toast.error('Nenhum ciclo selecionado');
+      return;
+    }
+    
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    if (!targetUserId) {
+      toast.error('Erro ao identificar usuário');
+      return;
+    }
+
+    const updateField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
+    
+    try {
+      await UserStudyService.updateCycle(targetUserId, selectedCycle, {
+        [updateField]: null
+      });
+      
+      await fetchCycles();
+      toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} removida`);
+    } catch (error) {
+      console.error('Error removing PDF:', error);
+      toast.error('Erro ao remover PDF');
+    }
+  };
+
+  // Funções para edição de labels
+  const startEditingLabel = (type: 'trilha_semanal' | 'subjetiva') => {
+    const cycle = cycles.find(c => c.id === selectedCycle);
+    if (!cycle) return;
+    
+    const currentLabel = type === 'trilha_semanal' 
+      ? (cycle.trilha_semanal_label || 'Trilha Semanal')
+      : (cycle.subjetiva_label || 'Subjetiva');
+    
+    setEditingLabel(type);
+    setLabelValue(currentLabel);
+  };
+
+  const cancelEditingLabel = () => {
+    setEditingLabel(null);
+    setLabelValue('');
+  };
+
+  const saveLabel = async (type: 'trilha_semanal' | 'subjetiva') => {
+    if (!selectedCycle) {
+      toast.error('Nenhum ciclo selecionado');
+      return;
+    }
+
+    const trimmedValue = labelValue.trim();
+    if (trimmedValue.length === 0) {
+      toast.error('O nome não pode estar vazio');
+      return;
+    }
+
+    if (trimmedValue.length > 20) {
+      toast.error('O nome deve ter no máximo 20 caracteres');
+      return;
+    }
+    
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    if (!targetUserId) {
+      toast.error('Erro ao identificar usuário');
+      return;
+    }
+
+    const updateField = type === 'trilha_semanal' ? 'trilha_semanal_label' : 'subjetiva_label';
+    
+    try {
+      await UserStudyService.updateCycle(targetUserId, selectedCycle, {
+        [updateField]: trimmedValue
+      });
+      
+      await fetchCycles();
+      setEditingLabel(null);
+      setLabelValue('');
+      toast.success('Nome atualizado');
+    } catch (error) {
+      console.error('Error saving label:', error);
+      toast.error('Erro ao salvar nome');
     }
   };
   const getSessionsForDay = (day: number) => {
@@ -387,75 +642,53 @@ const Cronograma = () => {
 
   // Função para verificar se um dia tem sessões estudadas
   const getSessionsForDate = (date: Date) => {
-    // Usar apenas a data local sem manipulação de timezone
-    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    // ✅ Formato correto: YYYY-MM-DD usando locale canadense (evita problemas de timezone)
+    const dateString = date.toLocaleDateString('en-CA');
     const allSessions: any[] = [];
 
-    // Verificar se temos dados de estudo
-    if (!userStudy?.study_sessions || !Array.isArray(userStudy.study_sessions)) {
-      return [];
-    }
-
-    // Buscar todas as study_sessions que correspondem à data
-    userStudy.study_sessions.forEach((completedSession: any) => {
-      if (completedSession.date === dateString) {
-        // Primeiro: procurar a sessão no novo study_schedule
-        let cycleInfo: any = null;
-        let scheduleSession: any = null;
-        const newScheduleSession = userStudy?.study_schedule?.find((s: any) => s.id === completedSession.schedule_session_id);
-        if (newScheduleSession) {
-          scheduleSession = newScheduleSession;
-          const cycle = (userStudy.study_cycles || []).find((c: any) => c.id === newScheduleSession.cycle_id);
-          if (cycle) {
-            cycleInfo = {
+    // Buscar APENAS sessões completadas (study_sessions)
+    if (userStudy?.study_sessions && Array.isArray(userStudy.study_sessions)) {
+      userStudy.study_sessions.forEach((completedSession: any) => {
+        if (completedSession.date === dateString) {
+          // ✅ BUSCAR CICLO usando cycle_id OU primeiro ciclo ativo
+          let cycle = null;
+          if (completedSession.cycle_id) {
+            cycle = userStudy.study_cycles?.find((c: any) => c.id === completedSession.cycle_id);
+          }
+          // Fallback: usar primeiro ciclo ativo se não encontrar pelo ID
+          if (!cycle && userStudy.study_cycles) {
+            cycle = userStudy.study_cycles.find((c: any) => c.is_active);
+          }
+          
+          // ✅ ADICIONAR SESSÃO mesmo sem ciclo
+          allSessions.push({
+            cycle: cycle ? {
               name: cycle.cycle_name,
               organ: cycle.organ,
               position: cycle.position
-            };
-          }
-        }
-
-        // Fallback: procurar no weekly_schedule legado se não encontrado no novo
-        if (!scheduleSession) {
-          cycles.forEach(cycle => {
-            if (cycle.schedule_data?.weekly_schedule) {
-              cycle.schedule_data.weekly_schedule.forEach((daySchedule: any) => {
-                daySchedule.sessions.forEach((session: any) => {
-                  if (session.id === completedSession.schedule_session_id) {
-                    cycleInfo = {
-                      name: cycle.cycle_name,
-                      organ: cycle.organ,
-                      position: cycle.position
-                    };
-                    scheduleSession = session;
-                  }
-                });
-              });
-            }
-          });
-        }
-
-        // Se encontrou o ciclo correspondente, adicionar à lista
-        if (cycleInfo && scheduleSession) {
-          allSessions.push({
-            cycle: cycleInfo,
+            } : {
+              name: 'Ciclo não encontrado',
+              organ: '',
+              position: ''
+            },
             session: {
-              discipline: completedSession.discipline_name || scheduleSession.discipline_name,
-              topic: scheduleSession.block_name,
-              startTime: scheduleSession.start_time,
-              endTime: scheduleSession.end_time,
-              duration: completedSession.duration_minutes,
-              questions: completedSession.questions,
-              correct: completedSession.correct_answers,
-              notes: completedSession.notes,
-              link: scheduleSession.session_link,
-              studyType: completedSession.study_type,
-              courseName: completedSession.course_name
+              discipline: completedSession.discipline_name || 'Sem disciplina',
+              topic: completedSession.block_name || 'Sem tópico',
+              startTime: completedSession.start_time || '08:00',
+              endTime: completedSession.end_time || '09:00',
+              duration: completedSession.duration_minutes || 0,
+              questions: completedSession.questions || 0,
+              correct: completedSession.correct_answers || 0,
+              notes: completedSession.notes || '',
+              link: completedSession.session_link || '',
+              studyType: completedSession.study_type || 'manual',
+              courseName: completedSession.course_name || ''
             }
           });
         }
-      }
-    });
+      });
+    }
+    
     return allSessions;
   };
 
@@ -499,16 +732,16 @@ const Cronograma = () => {
         return;
       }
 
+      // Determinar o userId correto (targetStudentId em coach mode, user.id em modo normal)
+      const targetUserId = coachMode ? targetStudentId : user?.id;
+
       // Usar recordCompletedSession do hook para registrar via RPC
       const success = await recordCompletedSession(cycleId, dayOfWeek, sessionId, {
         duration_minutes: stats.duration,
         questions: stats.questions,
         correct_answers: stats.correctAnswers,
-        notes: stats.notes || '',
-        course_name: stats.courseName || '',
-        session_link: stats.sessionLink || '',
-        study_type: stats.studyType || 'manual'
-      });
+        notes: stats.notes || ''
+      }, targetUserId); // ✅ Passar targetUserId
       if (success) {
         // Recarregar ciclos para atualizar total_stats
         await refetchCycles();
@@ -590,7 +823,6 @@ const Cronograma = () => {
       // Recarregar dados para sincronizar
       await refreshData(); // Recarregar dados do cronograma
       await fetchCycles(); // Recarregar ciclos para atualizar calendário
-      await fetchSessions(); // Recarregar sessões para atualizar userStudy
 
       // Limpar campos
       setStudyDuration(0);
@@ -600,6 +832,7 @@ const Cronograma = () => {
       setCourseName('');
       setCourseProgress('');
       setSessionLink('');
+      toast.success('Sessão de estudo salva com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar sessão de estudo');
     }
@@ -632,7 +865,7 @@ const Cronograma = () => {
           <CardContent>
             <div className="text-center space-y-2">
               <div className="text-6xl font-bold">
-                {format(currentTime, 'HH:mm')}
+                {format(currentTime, 'HH:mm:ss')}
               </div>
               <div className="text-sm text-muted-foreground">
                 {format(currentTime, 'EEEE, dd/MM/yyyy', {
@@ -716,10 +949,10 @@ const Cronograma = () => {
             </CardTitle>
             
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
+                <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, 'dd/MM/yyyy', {
                   locale: ptBR
@@ -727,32 +960,336 @@ const Cronograma = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent mode="single" selected={selectedDate} onSelect={date => {
-                if (date) {
-                  setSelectedDate(date);
-                  if (hasSessionsOnDate(date)) {
-                    openSessionDetailsModal(date);
-                  }
-                }
-              }} initialFocus className={cn("p-3")} components={{
-                Day: ({
-                  date,
-                  displayMonth,
-                  ...props
-                }) => {
-                  const hasSessions = hasSessionsOnDate(date);
-                  return <div className={cn("relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20", hasSessions && "bg-primary/10 text-primary hover:bg-primary/20", hasSessions && "cursor-pointer")} onClick={() => {
-                    if (hasSessions) {
-                      openSessionDetailsModal(date);
+                <CalendarComponent 
+                  mode="single" 
+                  selected={selectedDate} 
+                  onSelect={date => {
+                    if (date) {
+                      setSelectedDate(date);
+                      if (hasSessionsOnDate(date)) {
+                        openSessionDetailsModal(date);
+                      }
                     }
-                  }}>
-                          {date.getDate()}
-                          {hasSessions && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>}
-                        </div>;
-                }
-              }} />
+                  }} 
+                  initialFocus 
+                  className={cn("p-3")} 
+                  components={{
+                    Day: ({
+                      date,
+                      displayMonth,
+                      className,
+                      ...props
+                    }) => {
+                      const hasSessions = hasSessionsOnDate(date);
+                      return (
+                        <button
+                          type="button"
+                          {...props}
+                          className={cn(
+                            className, // Isso já inclui rdp-day, rdp-day_selected, etc.
+                            hasSessions && "studied-day" // Adicionar nossa classe para os estilos CSS
+                          )}
+                          style={hasSessions ? {
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            fontWeight: 600,
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '30px',
+                            height: '30px'
+                          } : undefined}
+                          onClick={(e) => {
+                            // Preservar comportamento padrão do DayPicker
+                            if (props.onClick) {
+                              (props.onClick as any)(e);
+                            }
+                            // Abrir modal se tiver sessões
+                            if (hasSessions) {
+                              openSessionDetailsModal(date);
+                            }
+                          }}
+                        >
+                          <span className="relative z-0">{date.getDate()}</span>
+                        </button>
+                      );
+                    }
+                  }} 
+                />
               </PopoverContent>
             </Popover>
+
+            {/* Divisor e Documentos - Compacto */}
+            {selectedCycle && (
+              <div className="border-t border-border pt-2 space-y-1.5">
+                {/* Trilha Semanal - Linha única */}
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                    {editingLabel === 'trilha_semanal' ? (
+                      <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <Input
+                          value={labelValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.length <= 20) {
+                              setLabelValue(val);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveLabel('trilha_semanal');
+                            } else if (e.key === 'Escape') {
+                              cancelEditingLabel();
+                            }
+                          }}
+                          className="h-6 px-2 text-xs flex-1 min-w-0"
+                          autoFocus
+                          maxLength={20}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => saveLabel('trilha_semanal')}
+                          title="Salvar"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={cancelEditingLabel}
+                          title="Cancelar"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 flex-1 min-w-0 group">
+                        <span className="font-medium truncate">
+                          {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_label || 'Trilha Semanal'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => startEditingLabel('trilha_semanal')}
+                          title="Editar nome"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_pdf_url ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => {
+                            const cycle = cycles.find(c => c.id === selectedCycle);
+                            if (cycle?.trilha_semanal_pdf_url) {
+                              window.open(cycle.trilha_semanal_pdf_url, '_blank');
+                            }
+                          }}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Ver
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => handlePDFUpload('trilha_semanal')}
+                          disabled={uploadingPDF === 'trilha_semanal'}
+                          title="Substituir PDF"
+                        >
+                          {uploadingPDF === 'trilha_semanal' ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Upload className="h-3 w-3" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={() => handlePDFRemove('trilha_semanal')}
+                          title="Remover PDF"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handlePDFUpload('trilha_semanal')}
+                        disabled={uploadingPDF === 'trilha_semanal'}
+                      >
+                        {uploadingPDF === 'trilha_semanal' ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-3 w-3 mr-1" />
+                            Enviar
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <input
+                    id="trilha-semanal-upload"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => handlePDFFileSelect(e, 'trilha_semanal')}
+                    className="hidden"
+                    disabled={!selectedCycle || uploadingPDF === 'trilha_semanal'}
+                  />
+                </div>
+
+                {/* Subjetiva - Linha única */}
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                    {editingLabel === 'subjetiva' ? (
+                      <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <Input
+                          value={labelValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.length <= 20) {
+                              setLabelValue(val);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveLabel('subjetiva');
+                            } else if (e.key === 'Escape') {
+                              cancelEditingLabel();
+                            }
+                          }}
+                          className="h-6 px-2 text-xs flex-1 min-w-0"
+                          autoFocus
+                          maxLength={20}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => saveLabel('subjetiva')}
+                          title="Salvar"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={cancelEditingLabel}
+                          title="Cancelar"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 flex-1 min-w-0 group">
+                        <span className="font-medium truncate">
+                          {cycles.find(c => c.id === selectedCycle)?.subjetiva_label || 'Subjetiva'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => startEditingLabel('subjetiva')}
+                          title="Editar nome"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {cycles.find(c => c.id === selectedCycle)?.subjetiva_pdf_url ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => {
+                            const cycle = cycles.find(c => c.id === selectedCycle);
+                            if (cycle?.subjetiva_pdf_url) {
+                              window.open(cycle.subjetiva_pdf_url, '_blank');
+                            }
+                          }}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Ver
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => handlePDFUpload('subjetiva')}
+                          disabled={uploadingPDF === 'subjetiva'}
+                          title="Substituir PDF"
+                        >
+                          {uploadingPDF === 'subjetiva' ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Upload className="h-3 w-3" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={() => handlePDFRemove('subjetiva')}
+                          title="Remover PDF"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handlePDFUpload('subjetiva')}
+                        disabled={uploadingPDF === 'subjetiva'}
+                      >
+                        {uploadingPDF === 'subjetiva' ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-3 w-3 mr-1" />
+                            Enviar
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <input
+                    id="subjetiva-upload"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => handlePDFFileSelect(e, 'subjetiva')}
+                    className="hidden"
+                    disabled={!selectedCycle || uploadingPDF === 'subjetiva'}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -834,36 +1371,11 @@ const Cronograma = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Horário de Início</label>
-                    <input 
-                      type="time" 
-                      value={startTime} 
-                      onChange={e => {
-                        setStartTime(e.target.value);
-                        // Validar se o horário de fim é anterior ao de início
-                        if (e.target.value && endTime && e.target.value >= endTime) {
-                          toast.error('O horário de início deve ser anterior ao horário de fim');
-                        }
-                      }} 
-                      className="w-full p-2 border rounded-md" 
-                      max={endTime}
-                    />
+                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded-md" />
                   </div>
                   <div>
                     <label className="text-sm font-medium">Horário de Fim</label>
-                    <input 
-                      type="time" 
-                      value={endTime} 
-                      onChange={e => {
-                        setEndTime(e.target.value);
-                        // Validar se o horário de fim é anterior ao de início
-                        if (startTime && e.target.value && e.target.value <= startTime) {
-                          toast.error('O horário de fim deve ser posterior ao horário de início');
-                          setEndTime(startTime); // Resetar para um valor válido
-                        }
-                      }} 
-                      className="w-full p-2 border rounded-md" 
-                      min={startTime}
-                    />
+                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded-md" />
                   </div>
                 </div>
 
@@ -909,7 +1421,7 @@ const Cronograma = () => {
 
               <div>
                 <Label htmlFor="courseName">Assunto</Label>
-                <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" maxLength={20} />
+                <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -1223,13 +1735,13 @@ const Cronograma = () => {
                 <p className="text-muted-foreground">Este dia não possui sessões de estudo registradas.</p>
               </div> : selectedDateSessions.map((sessionData, index) => <div key={index} className="border border-border rounded-lg p-4 bg-card">
                   {/* Header do Ciclo */}
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-semibold text-foreground">{sessionData.cycle.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {sessionData.cycle.organ} - {sessionData.cycle.position}
-                      </p>
-                    </div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                       <h4 className="font-semibold text-foreground">{sessionData.cycle?.name || 'N/A'}</h4>
+                       <p className="text-sm text-muted-foreground">
+                         {sessionData.cycle?.organ || 'N/A'} - {sessionData.cycle?.position || 'N/A'}
+                       </p>
+                      </div>
                     <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                       {sessionData.session.startTime} - {sessionData.session.endTime}
                     </span>
@@ -1247,19 +1759,6 @@ const Cronograma = () => {
                       </div>
                       <span className="text-sm text-muted-foreground">{sessionData.session.topic}</span>
                     </div>
-                    {/* Assunto */}
-                    {sessionData.session.courseName && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                          </svg>
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          <span className="font-medium">Assunto:</span> {sessionData.session.courseName}
-                        </span>
-                      </div>
-                    )}
                   </div>
                   
                   {/* Estatísticas */}
