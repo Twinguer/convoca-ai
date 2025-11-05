@@ -60,15 +60,21 @@ export class SecurityValidators {
   }
 
   public static validateFileUpload(file: File): { isValid: boolean; reason?: string } {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'application/pdf'
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!allowedTypes.includes(file.type)) {
-      return { isValid: false, reason: 'File type not allowed' };
+      return { isValid: false, reason: 'Tipo de arquivo não permitido. Use imagens (JPEG, PNG, GIF, WEBP) ou PDF' };
     }
 
     if (file.size > maxSize) {
-      return { isValid: false, reason: 'File size exceeds limit' };
+      return { isValid: false, reason: 'Arquivo excede o limite de 10MB' };
     }
 
     return { isValid: true };
