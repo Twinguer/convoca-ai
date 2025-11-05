@@ -106,8 +106,9 @@ export const PostCard: React.FC<PostCardProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
+                        className="gap-2"
                       >
-                        <Download className="h-4 w-4 mr-2" />
+                        <Download className="h-4 w-4" />
                         Baixar
                       </Button>
                     </a>
