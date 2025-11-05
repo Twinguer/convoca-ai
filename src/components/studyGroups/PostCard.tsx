@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Reply, Image as ImageIcon, FileText, ExternalLink } from 'lucide-react';
+import { MessageSquare, Reply, Image as ImageIcon, FileText, Download } from 'lucide-react';
 import type { GroupPost, GroupComment } from '@/types/studyGroups';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -97,14 +97,20 @@ export const PostCard: React.FC<PostCardProps> = ({
                       <p className="text-sm font-medium truncate">{attachment.name}</p>
                       <p className="text-xs text-muted-foreground">Documento PDF</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(attachment.url, '_blank')}
+                    <a
+                      href={attachment.url}
+                      download={attachment.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Abrir
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Baixar
+                      </Button>
+                    </a>
                   </div>
                 )}
               </div>
