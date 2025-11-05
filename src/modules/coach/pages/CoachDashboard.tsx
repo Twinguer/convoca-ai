@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AlertCircle, Plus, Users, Clock, CheckCircle, TrendingUp, X, Trash2, BookOpen } from 'lucide-react';
+import { AlertCircle, Plus, Users, Clock, CheckCircle, TrendingUp, X, Trash2, BookOpen, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserGroups } from '@/hooks/useGroupMembers';
 import { CoachGroupsTab } from '@/components/studyGroups/CoachGroupsTab';
@@ -463,70 +463,110 @@ const CoachDashboard = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {students.map((student) => (
-                <Card key={student.student_id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={student.avatar_url} alt={student.student_name} />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold">
-                            {getInitials(student.student_name || student.student_email || '')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">
-                            {student.student_name || student.student_email || 'Aluno #' + student.student_id.slice(0, 8)}
-                          </h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>
-                              <Clock className="inline mr-1" size={14} />
-                              {(student.performance.hours_this_week || 0)}h esta semana
-                            </span>
-                            <span>
-                              <CheckCircle className="inline mr-1" size={14} />
-                              {(student.performance.tasks_completed || 0)} tarefas
-                            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {students.map((student) => {
+                const fallbackAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(student.student_name || student.student_email || 'student')}`;
+                const avatarUrl = student.avatar_url || fallbackAvatarUrl;
+                
+                return (
+                  <Card 
+                    key={student.student_id} 
+                    className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20"
+                    style={{ boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}
+                  >
+                    <CardContent className="p-5 flex flex-col">
+                      {/* Avatar e Nome */}
+                      <div className="flex flex-col items-center mb-4">
+                        <div className="relative mb-3">
+                          <Avatar className="h-20 w-20 border-2 border-primary/20" style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+                            <AvatarImage src={avatarUrl} alt={student.student_name} />
+                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold text-lg">
+                              {getInitials(student.student_name || student.student_email || '')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Badge 
+                            variant={student.status === 'active' ? 'default' : 'secondary'}
+                            className="absolute -bottom-1 -right-1"
+                          >
+                            {student.status === 'active' ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+                        <h3 className="font-semibold text-base text-center leading-tight">
+                          {student.student_name || student.student_email || 'Aluno #' + student.student_id.slice(0, 8)}
+                        </h3>
+                      </div>
+
+                      {/* Estatísticas */}
+                      <div className="grid grid-cols-2 gap-3 mb-4 border-t border-b py-3">
+                        <div className="flex flex-col items-center">
+                          <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                            <Clock className="h-4 w-4" />
                           </div>
+                          <span className="text-lg font-bold text-primary">
+                            {(student.performance.hours_this_week || 0)}h
+                          </span>
+                          <span className="text-xs text-muted-foreground text-center">
+                            Esta semana
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                            <CheckCircle className="h-4 w-4" />
+                          </div>
+                          <span className="text-lg font-bold text-green-600">
+                            {(student.performance.tasks_completed || 0)}
+                          </span>
+                          <span className="text-xs text-muted-foreground text-center">
+                            Tarefas
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                          {student.status === 'active' ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                        
+                      {/* Última atividade */}
+                      {student.last_activity && (
+                        <div className="mb-4 text-center">
+                          <p className="text-xs text-muted-foreground">
+                            Última atividade:
+                          </p>
+                          <p className="text-xs font-medium">
+                            {new Date(student.last_activity).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Botões de Ação */}
+                      <div className="flex flex-col gap-2 mt-auto">
                         <Button 
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onClick={() => handleViewStudent(student.student_id)}
+                          className="w-full"
                         >
+                          <Eye className="mr-2 h-4 w-4" />
                           Ver Detalhes
                         </Button>
-                        
                         <Button 
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveStudent(student.student_id, student.student_email || 'aluno')}
-                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveStudent(student.student_id, student.student_email || 'aluno');
+                          }}
+                          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
                           disabled={removeStudentMutation.isPending}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Remover
                         </Button>
                       </div>
-                    </div>
-
-                    {/* Última atividade */}
-                    {student.last_activity && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Última atividade: {new Date(student.last_activity).toLocaleDateString('pt-BR')}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
           </CardContent>
