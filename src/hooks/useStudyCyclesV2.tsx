@@ -203,15 +203,15 @@ export const useStudyCyclesV2 = () => {
         if (!targetUserId) {
           await fetchCycles();
         }
-        toast.success('Sessão adicionada ao cronograma!');
+        toast.success('Tarefa adicionada ao cronograma!');
         return true;
       } else {
-        toast.error('Erro ao adicionar sessão');
+        toast.error('Erro ao adicionar tarefa');
         return false;
       }
     } catch (error) {
       console.error('Error adding session:', error);
-      toast.error('Erro ao adicionar sessão');
+      toast.error('Erro ao adicionar tarefa');
       return false;
     }
   };
@@ -264,7 +264,7 @@ export const useStudyCyclesV2 = () => {
       }
       
       if (!session) {
-        toast.error('Sessão não encontrada');
+        toast.error('Tarefa não encontrada');
         return false;
       }
 
@@ -357,7 +357,7 @@ export const useStudyCyclesV2 = () => {
 
       if (success) {
         await fetchCycles();
-        toast.success('Sessão registrada com sucesso!');
+        toast.success('Tarefa registrada com sucesso!');
         return true;
       } else {
         toast.error('Erro ao atualizar estatísticas');
@@ -365,7 +365,7 @@ export const useStudyCyclesV2 = () => {
       }
     } catch (error) {
       console.error('Error recording session:', error);
-      toast.error('Erro ao registrar sessão');
+      toast.error('Erro ao registrar tarefa');
       return false;
     }
   };
@@ -398,15 +398,15 @@ export const useStudyCyclesV2 = () => {
         setCycles(prev => prev.map(c => 
           c.id === cycleId ? { ...c, schedule_data: updatedSchedule } : c
         ));
-        toast.success('Sessão removida!');
+        toast.success('Tarefa removida!');
         return true;
       } else {
-        toast.error('Erro ao remover sessão');
+        toast.error('Erro ao remover tarefa');
         return false;
       }
     } catch (error) {
       console.error('Error removing session:', error);
-      toast.error('Erro ao remover sessão');
+      toast.error('Erro ao remover tarefa');
       return false;
     }
   };

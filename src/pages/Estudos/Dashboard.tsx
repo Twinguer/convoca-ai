@@ -365,7 +365,7 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
 
         {/* Sessions Overview */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Sessões de Estudo</h4>
+          <h4 className="text-sm font-medium">Tarefas de Estudo</h4>
           <div className="space-y-1">
             {(() => {
               // Agrupar sessões por bloco

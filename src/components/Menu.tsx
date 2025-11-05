@@ -103,16 +103,6 @@ const Menu = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink 
                   className={navigationMenuTriggerStyle()}
-                  onClick={() => navigate('/planos')}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Planos
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <NavigationMenuLink 
-                  className={navigationMenuTriggerStyle()}
                   onClick={() => navigate('/coach/dashboard')}
                 >
                   <GraduationCap className="mr-2 h-4 w-4" />
@@ -128,6 +118,16 @@ const Menu = () => {
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>}
+              
+              <NavigationMenuItem>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/planos')}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Planos
+                </NavigationMenuLink>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
 
@@ -160,10 +160,6 @@ const Menu = () => {
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
                 </Link>
-                <Link to="/planos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/planos') ? "text-primary" : "text-foreground/70")}>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Planos
-                </Link>
                 <Link to="/coach/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/coach') ? "text-primary" : "text-foreground/70")}>
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Modo Coach
@@ -185,6 +181,11 @@ const Menu = () => {
                     Usuários
                   </Link>
                 </>}
+                
+                <Link to="/planos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/planos') ? "text-primary" : "text-foreground/70")}>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Planos
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>

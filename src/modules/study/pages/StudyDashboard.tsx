@@ -184,13 +184,13 @@ const StudyDashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sessões</CardTitle>
+            <CardTitle className="text-sm font-medium">Tarefas</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{statistics.totalSessions}</div>
             <p className="text-xs text-muted-foreground">
-              Sessões realizadas
+              Tarefas realizadas
             </p>
           </CardContent>
         </Card>
@@ -269,7 +269,7 @@ const StudyDashboard = () => {
                       onClick={() => navigate('/estudos/cronograma')}
                     >
                       <BookOpen className="h-4 w-4 mr-2" />
-                      Iniciar Sessão
+                      Iniciar Tarefa
                     </Button>
                     <Button 
                       size="sm" 
@@ -318,10 +318,10 @@ const StudyDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Próximas Sessões
+              Próximas Tarefas
             </CardTitle>
             <CardDescription>
-              Suas próximas sessões de estudo programadas
+              Suas próximas tarefas de estudo programadas
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -330,7 +330,7 @@ const StudyDashboard = () => {
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <div className="font-medium text-foreground">
-                      {session.discipline_name || session.block_name || 'Sessão de Estudo'}
+                      {session.discipline_name || session.block_name || 'Tarefa de Estudo'}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {getDayName(session.day_of_week)} • {session.start_time} - {session.end_time}
@@ -358,7 +358,7 @@ const StudyDashboard = () => {
                 ⚠️ Esta ação irá excluir permanentemente:
               </span>
               <ul className="list-disc list-inside mt-2 text-sm text-muted-foreground">
-                <li>Todas as sessões de estudos</li>
+                <li>Todas as tarefas de estudos</li>
                 <li>O edital verticalizado</li>
                 <li>Todo o progresso registrado</li>
               </ul>
