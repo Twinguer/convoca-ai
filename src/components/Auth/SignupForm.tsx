@@ -9,7 +9,7 @@ import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 interface SignupFormProps {
-  onSubmit: (email: string, password: string, name: string) => Promise<void>;
+  onSubmit: (email: string, password: string, name: string, nickname?: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -18,6 +18,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -71,7 +72,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
       return;
     }
     
-    await onSubmit(email, password, name);
+    await onSubmit(email, password, name, nickname.trim() || undefined);
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,6 +229,39 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
             Senhas conferem
           </div>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="signup-nickname">Nickname (Opcional)</Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">@</span>
+          <Input
+            id="signup-nickname"
+            type="text"
+            placeholder="meunickname"
+            value={nickname}
+            onChange={(e) => {
+              let value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+              if (value.length <= 20) {
+                setNickname(value);
+              }
+            }}
+            disabled={isLoading}
+            className="pl-8"
+            maxLength={20}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {nickname.length === 0 ? (
+            'Se não informar, será gerado automaticamente baseado no seu nome'
+          ) : nickname.length < 3 ? (
+            'Mínimo 3 caracteres'
+          ) : /^[a-z0-9_]{3,20}$/.test(nickname) ? (
+            <span className="text-green-600">✓ Nickname válido</span>
+          ) : (
+            'Apenas letras minúsculas, números e underscore'
+          )}
+        </p>
       </div>
       
       <Button type="submit" className="w-full" disabled={isLoading || Object.keys(errors).some(key => errors[key])}>

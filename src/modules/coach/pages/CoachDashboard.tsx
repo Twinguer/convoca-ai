@@ -83,17 +83,75 @@ const CoachDashboard = () => {
   const { data: pendingInvitations = [], refetch: refetchInvitations } = useQuery({
     queryKey: ['coach-pending-invitations', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coach_invitations_history')
-        .select('*')
-        .eq('coach_id', user!.id)
-        .eq('status', 'pending')
-        .order('invited_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('coach_invitations_history')
+          .select('*')
+          .eq('coach_id', user!.id)
+          .eq('status', 'pending')
+          .order('invited_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+        if (error) {
+          console.error('Erro ao buscar convites pendentes:', error);
+          // Se for erro 403, tentar novamente após 2 segundos (cache pode estar atualizando)
+          if (error.code === 'PGRST301' || error.message?.includes('403')) {
+            console.warn('Erro 403 detectado, aguardando atualização do cache...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Tentar novamente
+            const { data: retryData, error: retryError } = await supabase
+              .from('coach_invitations_history')
+              .select('*')
+              .eq('coach_id', user!.id)
+              .eq('status', 'pending')
+              .order('invited_at', { ascending: false });
+            
+            if (retryError) throw retryError;
+            return retryData || [];
+          }
+          throw error;
+        }
+      
+      // Buscar nomes dos alunos
+      const invitationsWithNames = await Promise.all(
+        (data || []).map(async (invitation: any) => {
+          if (invitation.student_id) {
+            const { data: studentData } = await supabase
+              .from('users_profiles')
+              .select('name, nickname, avatar_url')
+              .eq('id', invitation.student_id)
+              .single();
+            
+            return {
+              ...invitation,
+              student_name: studentData?.name || invitation.student_email || 'Aluno',
+              student_nickname: studentData?.nickname,
+              student_avatar: studentData?.avatar_url
+            };
+          }
+          // Se não tiver student_id, usar email como fallback
+          return {
+            ...invitation,
+            student_name: invitation.student_email || 'Aluno desconhecido',
+            student_nickname: null,
+            student_avatar: null
+          };
+        })
+      );
+      
+        return invitationsWithNames;
+      } catch (err: any) {
+        console.error('Erro completo ao buscar convites:', err);
+        // Se ainda for erro de permissão, retornar array vazio
+        if (err.code === 'PGRST301' || err.message?.includes('403')) {
+          console.warn('Ainda com erro de permissão, retornando lista vazia');
+          return [];
+        }
+        throw err;
+      }
     },
     enabled: !!user,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   // Mutation para cancelar convite
@@ -104,20 +162,32 @@ const CoachDashboard = () => {
         p_coach_id: user!.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao cancelar convite:', error);
+        throw error;
+      }
+      
+      // Verificar se a resposta indica sucesso
+      if (data && !(data as any).success) {
+        throw new Error((data as any).error || 'Erro ao cancelar convite');
+      }
+      
       return data;
     },
     onSuccess: (data: any) => {
       toast({
         title: 'Convite cancelado',
-        description: data.message || 'O convite foi cancelado com sucesso',
+        description: (data as any)?.message || 'O convite foi cancelado com sucesso',
       });
       refetchInvitations();
+      queryClient.invalidateQueries({ queryKey: ['coach-pending-invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: any) => {
+      console.error('Erro completo ao cancelar convite:', error);
       toast({
         title: 'Erro ao cancelar convite',
-        description: error.message,
+        description: error.message || 'Não foi possível cancelar o convite',
         variant: 'destructive'
       });
     }
@@ -303,27 +373,51 @@ const CoachDashboard = () => {
                   key={invitation.id}
                   className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-200"
                 >
-                  <div className="flex-1">
-                    <p className="font-medium">
-                      {invitation.student_email}
-                    </p>
-                    {invitation.invitation_message && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {invitation.invitation_message}
+                  <div className="flex items-center gap-3 flex-1">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
+                      <AvatarImage src={invitation.student_avatar || undefined} />
+                      <AvatarFallback>
+                        {getInitials(invitation.student_name || invitation.student_email || 'A')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">
+                        {invitation.student_name || invitation.student_email || 'Aluno desconhecido'}
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enviado {new Date(invitation.invited_at).toLocaleDateString('pt-BR')}
-                    </p>
+                      {invitation.student_nickname && (
+                        <p className="text-xs text-muted-foreground">
+                          @{invitation.student_nickname}
+                        </p>
+                      )}
+                      {invitation.invitation_message && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {invitation.invitation_message}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enviado {new Date(invitation.invited_at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => cancelInvitationMutation.mutate(invitation.id)}
+                    onClick={() => {
+                      if (confirm('Tem certeza que deseja cancelar este convite?')) {
+                        cancelInvitationMutation.mutate(invitation.id);
+                      }
+                    }}
                     disabled={cancelInvitationMutation.isPending}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {cancelInvitationMutation.isPending ? 'Cancelando...' : 'Remover'}
                   </Button>
                 </div>
               ))}

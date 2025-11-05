@@ -14,6 +14,31 @@ export interface Notification {
   created_at: string;
 }
 
+// Hook para modal de convite do coach
+export const useCoachInvitation = () => {
+  const [activeInvitation, setActiveInvitation] = useState<Notification | null>(null);
+
+  const openInvitation = (notification: Notification) => {
+    console.log('openInvitation called:', {
+      type: notification.type,
+      id: notification.id,
+      metadata: notification.metadata
+    });
+    if (notification.type === 'coach_invitation') {
+      console.log('Setting activeInvitation:', notification);
+      setActiveInvitation(notification);
+    } else {
+      console.warn('Notification is not a coach_invitation:', notification.type);
+    }
+  };
+
+  const closeInvitation = () => {
+    setActiveInvitation(null);
+  };
+
+  return { activeInvitation, openInvitation, closeInvitation };
+};
+
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();

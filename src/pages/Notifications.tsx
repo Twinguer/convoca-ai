@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, Check, CheckCheck, User, Users, Trophy } from 'lucide-react';
-import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { Bell, Check, CheckCheck, User, Users, Trophy, Shield } from 'lucide-react';
+import { useNotifications, useCoachInvitation, Notification } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import CoachInvitationModal from '@/components/Coach/CoachInvitationModal';
 
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
@@ -24,26 +25,53 @@ const NotificationIcon = ({ type }: { type: string }) => {
 
 const NotificationCard = ({ 
   notification, 
-  onMarkAsRead 
+  onMarkAsRead,
+  onClick
 }: { 
   notification: Notification;
   onMarkAsRead: (id: string) => void;
+  onClick?: () => void;
 }) => {
   const timeAgo = formatDistanceToNow(new Date(notification.created_at), {
     addSuffix: true,
     locale: ptBR,
   });
 
+  const isClickable = notification.type === 'coach_invitation';
+
+  const handleClick = () => {
+    console.log('NotificationCard clicked:', {
+      type: notification.type,
+      isClickable,
+      hasOnClick: !!onClick
+    });
+    if (isClickable && onClick) {
+      console.log('Calling onClick handler');
+      onClick();
+    } else {
+      console.log('Not calling onClick - isClickable:', isClickable, 'hasOnClick:', !!onClick);
+    }
+  };
+
   return (
-    <Card className={`transition-all duration-200 ${
-      notification.is_read 
-        ? 'bg-background border-border' 
-        : 'bg-primary/5 border-primary/20 shadow-sm'
-    }`}>
+    <Card 
+      className={`transition-all duration-200 ${
+        isClickable ? 'cursor-pointer hover:shadow-md' : 'cursor-default'
+      } ${
+        notification.is_read 
+          ? 'bg-background border-border' 
+          : 'bg-primary/5 border-primary/20 shadow-sm'
+      }`}
+      onClick={handleClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 mt-1">
-            <NotificationIcon type={notification.type} />
+            {notification.type === 'coach_invitation' ? (
+              <Shield className="h-5 w-5 text-primary" />
+            ) : (
+              <NotificationIcon type={notification.type} />
+            )}
           </div>
           
           <div className="flex-1 min-w-0">
@@ -67,11 +95,20 @@ const NotificationCard = ({
                 {timeAgo}
               </span>
               
-              {!notification.is_read && (
+              {isClickable && !notification.is_read && (
+                <Badge variant="outline" className="text-primary border-primary">
+                  Clique para ver
+                </Badge>
+              )}
+              
+              {!notification.is_read && !isClickable && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onMarkAsRead(notification.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkAsRead(notification.id);
+                  }}
                   className="h-7 px-2 text-xs"
                 >
                   <Check className="h-3 w-3 mr-1" />
@@ -94,6 +131,13 @@ export default function NotificationsPage() {
     markAsRead, 
     markAllAsRead 
   } = useNotifications();
+
+  const { activeInvitation, openInvitation, closeInvitation } = useCoachInvitation();
+
+  // Debug: log quando activeInvitation muda
+  useEffect(() => {
+    console.log('activeInvitation changed:', activeInvitation);
+  }, [activeInvitation]);
 
   if (isLoading) {
     return (
@@ -157,12 +201,36 @@ export default function NotificationsPage() {
                   key={notification.id}
                   notification={notification}
                   onMarkAsRead={markAsRead}
+                  onClick={() => {
+                    console.log('Notification onClick triggered:', notification.type);
+                    if (notification.type === 'coach_invitation') {
+                      console.log('Opening invitation modal for:', notification);
+                      openInvitation(notification);
+                    } else {
+                      console.log('Notification is not a coach_invitation');
+                    }
+                  }}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal de convite do coach */}
+      {activeInvitation && (
+        <CoachInvitationModal
+          invitation={activeInvitation}
+          onClose={() => {
+            console.log('Closing invitation modal');
+            closeInvitation();
+            // Marcar como lida após fechar o modal
+            if (!activeInvitation.is_read) {
+              markAsRead(activeInvitation.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

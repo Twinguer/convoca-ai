@@ -45,18 +45,21 @@ const InviteStudentPage = () => {
     enabled: !!user
   });
 
-  // Buscar usuários por nickname
+  // Buscar usuários por nickname ou nome
   const { data: searchResults = [], isLoading: isSearching } = useQuery({
-    queryKey: ['search-users-by-nickname', debouncedSearchQuery],
+    queryKey: ['search-users-for-invite', debouncedSearchQuery],
     queryFn: async () => {
-      if (!debouncedSearchQuery || debouncedSearchQuery.length < 3) return [];
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) return [];
       
       const cleanQuery = debouncedSearchQuery.toLowerCase().replace(/^@/, '').trim();
       
+      if (!cleanQuery) return [];
+      
+      // Buscar por nickname OU nome
       const { data, error } = await supabase
         .from('users_profiles')
         .select('id, name, nickname, avatar_url')
-        .ilike('nickname', `%${cleanQuery}%`)
+        .or(`nickname.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
         .limit(10);
       
       if (error) {
@@ -64,9 +67,30 @@ const InviteStudentPage = () => {
         return [];
       }
       
-      return data || [];
+      console.log('Resultados da busca:', data);
+      
+      // Garantir que todos os resultados tenham nickname
+      const resultsWithNickname = (data || []).map(user => {
+        if (!user.nickname || user.nickname.trim() === '') {
+          // Gerar nickname baseado no nome se não tiver
+          const generatedNickname = (user.name || user.email || 'user')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+            .substring(0, 20) || `user${user.id.substring(0, 8)}`;
+          
+          return {
+            ...user,
+            nickname: generatedNickname
+          };
+        }
+        return user;
+      });
+      
+      console.log('Resultados com nickname:', resultsWithNickname);
+      
+      return resultsWithNickname;
     },
-    enabled: !!debouncedSearchQuery && debouncedSearchQuery.length >= 3
+    enabled: !!debouncedSearchQuery && debouncedSearchQuery.length >= 2
   });
 
   const handleInviteStudent = async () => {
@@ -87,18 +111,39 @@ const InviteStudentPage = () => {
 
     try {
       // Usar a função RPC que cria convite e envia notificação
+      // Ordem: p_coach_id, p_student_nickname, p_invitation_message
+      console.log('Enviando convite com:', {
+        p_coach_id: user.id,
+        p_student_nickname: nicknameToUse,
+        p_invitation_message: message || null
+      });
+      
       const { data, error } = await supabase.rpc('send_coach_invitation', {
         p_coach_id: user.id,
         p_student_nickname: nicknameToUse,
         p_invitation_message: message || null
       });
+      
+      console.log('Resposta do RPC:', { data, error });
 
       if (error) {
         throw error;
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || 'Erro ao enviar convite');
+        const errorMsg = data?.error || 'Erro ao enviar convite';
+        
+        // Se já existe convite pendente, oferecer opção de cancelar e reenviar
+        if (errorMsg.includes('convite pendente')) {
+          toast({
+            title: 'Convite já enviado',
+            description: 'Este aluno já possui um convite pendente. Você pode cancelá-lo e reenviar.',
+            variant: 'default'
+          });
+          throw new Error(errorMsg);
+        }
+        
+        throw new Error(errorMsg);
       }
 
       const studentName = selectedUser?.name || nicknameToUse;
@@ -126,11 +171,50 @@ const InviteStudentPage = () => {
     }
   };
 
-  const handleSelectUser = (user: any) => {
-    setSelectedUser(user);
-    setStudentNickname(user.nickname);
+  const handleSelectUser = React.useCallback((user: any) => {
+    console.log('Selecionando usuário - objeto completo:', user);
+    console.log('Nickname do usuário:', user?.nickname);
+    console.log('ID do usuário:', user?.id);
+    console.log('Nome do usuário:', user?.name);
+    
+    // Verificar se o usuário existe
+    if (!user || !user.id) {
+      console.error('Usuário inválido - sem ID:', user);
+      toast({
+        title: 'Erro',
+        description: 'Usuário inválido. Tente novamente.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Se não tem nickname, tentar gerar um baseado no nome
+    let nicknameToUse = user.nickname;
+    
+    if (!nicknameToUse || nicknameToUse.trim() === '') {
+      // Gerar nickname baseado no nome
+      const nameClean = (user.name || user.email || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 20);
+      
+      nicknameToUse = nameClean || `user${user.id.substring(0, 8)}`;
+      
+      console.log('Nickname gerado:', nicknameToUse);
+    }
+    
+    setSelectedUser({
+      ...user,
+      nickname: nicknameToUse
+    });
+    setStudentNickname(nicknameToUse);
     setSearchQuery('');
-  };
+    
+    toast({
+      title: 'Usuário selecionado',
+      description: `${user.name || 'Usuário'} (@${nicknameToUse}) foi selecionado`,
+    });
+  }, [toast]);
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
@@ -180,7 +264,7 @@ const InviteStudentPage = () => {
               <Input
                 id="search"
                 type="text"
-                placeholder="@nickname ou nome..."
+                placeholder="Digite o nome ou @nickname do aluno..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 disabled={isLoading}
@@ -189,26 +273,77 @@ const InviteStudentPage = () => {
             </div>
             
             {/* Resultados da busca */}
-            {searchQuery && searchResults.length > 0 && (
-              <div className="border rounded-lg max-h-60 overflow-y-auto mt-2">
+            {searchQuery && searchResults.length > 0 && !selectedUser && (
+              <div className="border rounded-lg max-h-60 overflow-y-auto mt-2 bg-background shadow-lg relative z-10">
                 {searchResults.map((user: any) => (
                   <div
                     key={user.id}
-                    onClick={() => handleSelectUser(user)}
-                    className="flex items-center gap-3 p-3 hover:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Click detectado no usuário:', user);
+                      handleSelectUser(user);
+                    }}
+                    onTouchStart={(e) => {
+                      // Para mobile
+                      e.stopPropagation();
+                      console.log('Touch detectado no usuário:', user);
+                      handleSelectUser(user);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-muted/80 active:bg-muted cursor-pointer transition-colors border-b last:border-b-0 select-none"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Selecionar ${user.name}`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelectUser(user);
+                      }
+                    }}
                   >
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 flex-shrink-0 pointer-events-none">
                       <AvatarImage src={user.avatar_url || undefined} />
                       <AvatarFallback>
                         {user.name?.charAt(0).toUpperCase() || <User className="h-5 w-5" />}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">@{user.nickname}</p>
+                    <div className="flex-1 min-w-0 pointer-events-none">
+                      <p className="font-medium truncate text-sm">{user.name || 'Sem nome'}</p>
+                      <p className="text-xs text-muted-foreground">@{user.nickname || 'sem-nickname'}</p>
                     </div>
+                    <div className="text-xs text-primary font-medium pointer-events-none">Selecionar →</div>
                   </div>
                 ))}
+              </div>
+            )}
+            
+            {/* Mostrar usuário selecionado */}
+            {selectedUser && (
+              <div className="border rounded-lg p-3 mt-2 bg-primary/10 border-primary/20">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarImage src={selectedUser.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {selectedUser.name?.charAt(0).toUpperCase() || <User className="h-5 w-5" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground">
+                      ✓ {selectedUser.name || 'Usuário selecionado'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">@{selectedUser.nickname}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedUser(null);
+                      setStudentNickname('');
+                    }}
+                  >
+                    Alterar
+                  </Button>
+                </div>
               </div>
             )}
             
@@ -216,7 +351,7 @@ const InviteStudentPage = () => {
               <p className="text-sm text-muted-foreground">Buscando...</p>
             )}
             
-            {searchQuery && !isSearching && searchResults.length === 0 && debouncedSearchQuery.length >= 3 && (
+            {searchQuery && !isSearching && searchResults.length === 0 && debouncedSearchQuery.length >= 2 && (
               <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
             )}
           </div>
@@ -243,7 +378,7 @@ const InviteStudentPage = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               {selectedUser ? (
-                <span className="text-green-600">✓ {selectedUser.name} selecionado</span>
+                <span className="text-primary">✓ Usuário selecionado acima</span>
               ) : (
                 'Apenas letras minúsculas, números e underscore (3-20 caracteres)'
               )}
@@ -263,9 +398,9 @@ const InviteStudentPage = () => {
           </div>
 
           {/* Alertas de Permissões */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-            <h4 className="font-semibold text-blue-900">O que você terá acesso:</h4>
-            <ul className="space-y-1 text-sm text-blue-800">
+          <div className="bg-accent/50 border border-border rounded-lg p-4 space-y-2">
+            <h4 className="font-semibold text-foreground">O que você terá acesso:</h4>
+            <ul className="space-y-1 text-sm text-muted-foreground">
               <li>✅ Módulo de estudos (horas, sessões)</li>
               <li>✅ Estatísticas gerais</li>
               <li>✅ Ciclos de estudo ativos</li>
@@ -273,8 +408,8 @@ const InviteStudentPage = () => {
             </ul>
             
             <div className="pt-2">
-              <h4 className="font-semibold text-red-900">O que você NÃO terá acesso:</h4>
-              <ul className="space-y-1 text-sm text-red-800">
+              <h4 className="font-semibold text-foreground">O que você NÃO terá acesso:</h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>❌ Rankings e respostas</li>
                 <li>❌ Dados de provas específicas</li>
                 <li>❌ Perfil completo do aluno</li>
