@@ -44,7 +44,12 @@ interface CronogramaProps {
 }
 
 // Usar StudyCycleV2 do types
-const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: CronogramaProps = {}) => {
+const Cronograma = ({
+  coachMode,
+  targetStudentId,
+  targetCycleId,
+  onSuccess
+}: CronogramaProps = {}) => {
   const {
     user
   } = useAuth();
@@ -204,7 +209,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const fetchCycles = async () => {
     const targetUserId = coachMode ? targetStudentId : user?.id;
     if (!targetUserId) return;
-    
     try {
       const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
       if (userStudyData) {
@@ -219,7 +223,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const fetchSessions = async () => {
     const targetUserId = coachMode ? targetStudentId : user?.id;
     if (!targetUserId) return;
-    
     try {
       const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
       if (!userStudyData) {
@@ -239,12 +242,11 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
             // IMPORTANTE: day_of_week está no formato ISO (1=segunda, 7=domingo)
             // Precisamos converter para formato JavaScript (0=domingo, 6=sábado)
             let dayOfWeek = session.day_of_week;
-            
+
             // Se for formato ISO (1-7), converter para JavaScript (0-6)
             if (dayOfWeek >= 1 && dayOfWeek <= 7) {
               dayOfWeek = dayOfWeek === 7 ? 0 : dayOfWeek; // Domingo: 7 -> 0
             }
-            
             allSessions.push({
               id: session.id,
               day: dayOfWeek,
@@ -358,12 +360,11 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     const finalBlock = selectedBlock === '__custom__' ? customBlock : selectedBlock;
     const finalDiscipline = selectedDiscipline === '__custom__' ? customDiscipline : selectedDiscipline;
     const targetUserId = coachMode ? targetStudentId : user?.id;
-    
     if (!selectedCycle || !finalBlock || !finalDiscipline) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-    
+
     // Validar horários
     if (endTime <= startTime) {
       toast.error('O horário de fim deve ser posterior ao horário de início');
@@ -410,7 +411,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         toast.error('Erro ao identificar usuário');
         return;
       }
-      
+
       // Remove session from schedule
       const success = await UserStudyService.removeScheduleSession(targetUserId, sessionId);
       if (success) {
@@ -451,11 +452,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       toast.error('Erro ao abrir seletor de arquivos');
     }
   };
-
-  const handlePDFFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: 'trilha_semanal' | 'subjetiva'
-  ) => {
+  const handlePDFFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, type: 'trilha_semanal' | 'subjetiva') => {
     const file = event.target.files?.[0];
     if (!file || !selectedCycle) {
       event.target.value = '';
@@ -463,8 +460,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
 
     // Validação de tipo (MIME type ou extensão)
-    const isPDF = file.type === 'application/pdf' || 
-                  file.name.toLowerCase().endsWith('.pdf');
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     if (!isPDF) {
       toast.error('Apenas arquivos PDF são permitidos');
       event.target.value = '';
@@ -478,17 +474,14 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       event.target.value = '';
       return;
     }
-
     setUploadingPDF(type);
     const targetUserId = coachMode ? targetStudentId : user?.id;
-    
     if (!targetUserId) {
       toast.error('Erro ao identificar usuário');
       setUploadingPDF(null);
       event.target.value = '';
       return;
     }
-
     try {
       const cycle = cycles.find(c => c.id === selectedCycle);
       if (!cycle) {
@@ -497,27 +490,29 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         event.target.value = '';
         return;
       }
-
       const fileExt = 'pdf';
       const fileName = `cycle-${selectedCycle}-${type}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `study-documents/${targetUserId}/${fileName}`;
 
       // Upload para storage
-      const { data, error: uploadError } = await supabase.storage
-        .from('profiles') // Usando bucket profiles (pode criar 'study-documents' depois)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
+      const {
+        data,
+        error: uploadError
+      } = await supabase.storage.from('profiles') // Usando bucket profiles (pode criar 'study-documents' depois)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
       if (uploadError) {
         throw uploadError;
       }
 
       // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(filePath);
+      const {
+        data: {
+          publicUrl
+        }
+      } = supabase.storage.from('profiles').getPublicUrl(filePath);
 
       // Atualizar ciclo com nova URL
       const updateField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
@@ -536,26 +531,21 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       event.target.value = '';
     }
   };
-
   const handlePDFRemove = async (type: 'trilha_semanal' | 'subjetiva') => {
     if (!selectedCycle) {
       toast.error('Nenhum ciclo selecionado');
       return;
     }
-    
     const targetUserId = coachMode ? targetStudentId : user?.id;
     if (!targetUserId) {
       toast.error('Erro ao identificar usuário');
       return;
     }
-
     const updateField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
-    
     try {
       await UserStudyService.updateCycle(targetUserId, selectedCycle, {
         [updateField]: null
       });
-      
       await fetchCycles();
       toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} removida`);
     } catch (error) {
@@ -568,50 +558,38 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const startEditingLabel = (type: 'trilha_semanal' | 'subjetiva') => {
     const cycle = cycles.find(c => c.id === selectedCycle);
     if (!cycle) return;
-    
-    const currentLabel = type === 'trilha_semanal' 
-      ? (cycle.trilha_semanal_label || 'Trilha Semanal')
-      : (cycle.subjetiva_label || 'Subjetiva');
-    
+    const currentLabel = type === 'trilha_semanal' ? cycle.trilha_semanal_label || 'Trilha Semanal' : cycle.subjetiva_label || 'Subjetiva';
     setEditingLabel(type);
     setLabelValue(currentLabel);
   };
-
   const cancelEditingLabel = () => {
     setEditingLabel(null);
     setLabelValue('');
   };
-
   const saveLabel = async (type: 'trilha_semanal' | 'subjetiva') => {
     if (!selectedCycle) {
       toast.error('Nenhum ciclo selecionado');
       return;
     }
-
     const trimmedValue = labelValue.trim();
     if (trimmedValue.length === 0) {
       toast.error('O nome não pode estar vazio');
       return;
     }
-
     if (trimmedValue.length > 20) {
       toast.error('O nome deve ter no máximo 20 caracteres');
       return;
     }
-    
     const targetUserId = coachMode ? targetStudentId : user?.id;
     if (!targetUserId) {
       toast.error('Erro ao identificar usuário');
       return;
     }
-
     const updateField = type === 'trilha_semanal' ? 'trilha_semanal_label' : 'subjetiva_label';
-    
     try {
       await UserStudyService.updateCycle(targetUserId, selectedCycle, {
         [updateField]: trimmedValue
       });
-      
       await fetchCycles();
       setEditingLabel(null);
       setLabelValue('');
@@ -659,7 +637,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
           if (!cycle && userStudy.study_cycles) {
             cycle = userStudy.study_cycles.find((c: any) => c.is_active);
           }
-          
+
           // ✅ ADICIONAR SESSÃO mesmo sem ciclo
           allSessions.push({
             cycle: cycle ? {
@@ -688,7 +666,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         }
       });
     }
-    
     return allSessions;
   };
 
@@ -943,8 +920,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
       }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
+            <CardTitle className="text-lg flex items-center gap-2">Progresso e Documentos<CalendarIcon className="h-5 w-5" />
               Calendário de Estudos
             </CardTitle>
             
@@ -960,336 +936,175 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent 
-                  mode="single" 
-                  selected={selectedDate} 
-                  onSelect={date => {
-                    if (date) {
-                      setSelectedDate(date);
-                      if (hasSessionsOnDate(date)) {
-                        openSessionDetailsModal(date);
-                      }
+                <CalendarComponent mode="single" selected={selectedDate} onSelect={date => {
+                if (date) {
+                  setSelectedDate(date);
+                  if (hasSessionsOnDate(date)) {
+                    openSessionDetailsModal(date);
+                  }
+                }
+              }} initialFocus className={cn("p-3")} components={{
+                Day: ({
+                  date,
+                  displayMonth,
+                  className,
+                  ...props
+                }) => {
+                  const hasSessions = hasSessionsOnDate(date);
+                  return <button type="button" {...props} className={cn(className,
+                  // Isso já inclui rdp-day, rdp-day_selected, etc.
+                  hasSessions && "studied-day" // Adicionar nossa classe para os estilos CSS
+                  )} style={hasSessions ? {
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    fontWeight: 600,
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '30px',
+                    height: '30px'
+                  } : undefined} onClick={e => {
+                    // Preservar comportamento padrão do DayPicker
+                    if (props.onClick) {
+                      (props.onClick as any)(e);
                     }
-                  }} 
-                  initialFocus 
-                  className={cn("p-3")} 
-                  components={{
-                    Day: ({
-                      date,
-                      displayMonth,
-                      className,
-                      ...props
-                    }) => {
-                      const hasSessions = hasSessionsOnDate(date);
-                      return (
-                        <button
-                          type="button"
-                          {...props}
-                          className={cn(
-                            className, // Isso já inclui rdp-day, rdp-day_selected, etc.
-                            hasSessions && "studied-day" // Adicionar nossa classe para os estilos CSS
-                          )}
-                          style={hasSessions ? {
-                            backgroundColor: '#10b981',
-                            color: 'white',
-                            fontWeight: 600,
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '30px',
-                            height: '30px'
-                          } : undefined}
-                          onClick={(e) => {
-                            // Preservar comportamento padrão do DayPicker
-                            if (props.onClick) {
-                              (props.onClick as any)(e);
-                            }
-                            // Abrir modal se tiver sessões
-                            if (hasSessions) {
-                              openSessionDetailsModal(date);
-                            }
-                          }}
-                        >
+                    // Abrir modal se tiver sessões
+                    if (hasSessions) {
+                      openSessionDetailsModal(date);
+                    }
+                  }}>
                           <span className="relative z-0">{date.getDate()}</span>
-                        </button>
-                      );
-                    }
-                  }} 
-                />
+                        </button>;
+                }
+              }} />
               </PopoverContent>
             </Popover>
 
             {/* Divisor e Documentos - Compacto */}
-            {selectedCycle && (
-              <div className="border-t border-border pt-2 space-y-1.5">
+            {selectedCycle && <div className="border-t border-border pt-2 space-y-1.5">
                 {/* Trilha Semanal - Linha única */}
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                    {editingLabel === 'trilha_semanal' ? (
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <Input
-                          value={labelValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.length <= 20) {
-                              setLabelValue(val);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              saveLabel('trilha_semanal');
-                            } else if (e.key === 'Escape') {
-                              cancelEditingLabel();
-                            }
-                          }}
-                          className="h-6 px-2 text-xs flex-1 min-w-0"
-                          autoFocus
-                          maxLength={20}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => saveLabel('trilha_semanal')}
-                          title="Salvar"
-                        >
+                    {editingLabel === 'trilha_semanal' ? <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <Input value={labelValue} onChange={e => {
+                    const val = e.target.value;
+                    if (val.length <= 20) {
+                      setLabelValue(val);
+                    }
+                  }} onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      saveLabel('trilha_semanal');
+                    } else if (e.key === 'Escape') {
+                      cancelEditingLabel();
+                    }
+                  }} className="h-6 px-2 text-xs flex-1 min-w-0" autoFocus maxLength={20} />
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => saveLabel('trilha_semanal')} title="Salvar">
                           <Check className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={cancelEditingLabel}
-                          title="Cancelar"
-                        >
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={cancelEditingLabel} title="Cancelar">
                           <X className="h-3 w-3" />
                         </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 flex-1 min-w-0 group">
+                      </div> : <div className="flex items-center gap-1 flex-1 min-w-0 group">
                         <span className="font-medium truncate">
                           {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_label || 'Trilha Semanal'}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => startEditingLabel('trilha_semanal')}
-                          title="Editar nome"
-                        >
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => startEditingLabel('trilha_semanal')} title="Editar nome">
                           <Pencil className="h-3 w-3" />
                         </Button>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_pdf_url ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => {
-                            const cycle = cycles.find(c => c.id === selectedCycle);
-                            if (cycle?.trilha_semanal_pdf_url) {
-                              window.open(`${cycle.trilha_semanal_pdf_url}?download`, '_blank');
-                            }
-                          }}
-                        >
+                    {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_pdf_url ? <>
+                        <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => {
+                    const cycle = cycles.find(c => c.id === selectedCycle);
+                    if (cycle?.trilha_semanal_pdf_url) {
+                      window.open(`${cycle.trilha_semanal_pdf_url}?download`, '_blank');
+                    }
+                  }}>
                           <Download className="h-3 w-3 mr-1" />
                           Baixar
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handlePDFUpload('trilha_semanal')}
-                          disabled={uploadingPDF === 'trilha_semanal'}
-                          title="Substituir PDF"
-                        >
-                          {uploadingPDF === 'trilha_semanal' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Upload className="h-3 w-3" />
-                          )}
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handlePDFUpload('trilha_semanal')} disabled={uploadingPDF === 'trilha_semanal'} title="Substituir PDF">
+                          {uploadingPDF === 'trilha_semanal' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handlePDFRemove('trilha_semanal')}
-                          title="Remover PDF"
-                        >
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => handlePDFRemove('trilha_semanal')} title="Remover PDF">
                           <X className="h-3 w-3" />
                         </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handlePDFUpload('trilha_semanal')}
-                        disabled={uploadingPDF === 'trilha_semanal'}
-                      >
-                        {uploadingPDF === 'trilha_semanal' ? (
-                          <>
+                      </> : <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => handlePDFUpload('trilha_semanal')} disabled={uploadingPDF === 'trilha_semanal'}>
+                        {uploadingPDF === 'trilha_semanal' ? <>
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                             Enviando...
-                          </>
-                        ) : (
-                          <>
+                          </> : <>
                             <Upload className="h-3 w-3 mr-1" />
                             Enviar
-                          </>
-                        )}
-                      </Button>
-                    )}
+                          </>}
+                      </Button>}
                   </div>
-                  <input
-                    id="trilha-semanal-upload"
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => handlePDFFileSelect(e, 'trilha_semanal')}
-                    className="hidden"
-                    disabled={!selectedCycle || uploadingPDF === 'trilha_semanal'}
-                  />
+                  <input id="trilha-semanal-upload" type="file" accept="application/pdf" onChange={e => handlePDFFileSelect(e, 'trilha_semanal')} className="hidden" disabled={!selectedCycle || uploadingPDF === 'trilha_semanal'} />
                 </div>
 
                 {/* Subjetiva - Linha única */}
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                    {editingLabel === 'subjetiva' ? (
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <Input
-                          value={labelValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.length <= 20) {
-                              setLabelValue(val);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              saveLabel('subjetiva');
-                            } else if (e.key === 'Escape') {
-                              cancelEditingLabel();
-                            }
-                          }}
-                          className="h-6 px-2 text-xs flex-1 min-w-0"
-                          autoFocus
-                          maxLength={20}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => saveLabel('subjetiva')}
-                          title="Salvar"
-                        >
+                    {editingLabel === 'subjetiva' ? <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <Input value={labelValue} onChange={e => {
+                    const val = e.target.value;
+                    if (val.length <= 20) {
+                      setLabelValue(val);
+                    }
+                  }} onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      saveLabel('subjetiva');
+                    } else if (e.key === 'Escape') {
+                      cancelEditingLabel();
+                    }
+                  }} className="h-6 px-2 text-xs flex-1 min-w-0" autoFocus maxLength={20} />
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => saveLabel('subjetiva')} title="Salvar">
                           <Check className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={cancelEditingLabel}
-                          title="Cancelar"
-                        >
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={cancelEditingLabel} title="Cancelar">
                           <X className="h-3 w-3" />
                         </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 flex-1 min-w-0 group">
+                      </div> : <div className="flex items-center gap-1 flex-1 min-w-0 group">
                         <span className="font-medium truncate">
                           {cycles.find(c => c.id === selectedCycle)?.subjetiva_label || 'Subjetiva'}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => startEditingLabel('subjetiva')}
-                          title="Editar nome"
-                        >
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => startEditingLabel('subjetiva')} title="Editar nome">
                           <Pencil className="h-3 w-3" />
                         </Button>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {cycles.find(c => c.id === selectedCycle)?.subjetiva_pdf_url ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => {
-                            const cycle = cycles.find(c => c.id === selectedCycle);
-                            if (cycle?.subjetiva_pdf_url) {
-                              window.open(`${cycle.subjetiva_pdf_url}?download`, '_blank');
-                            }
-                          }}
-                        >
+                    {cycles.find(c => c.id === selectedCycle)?.subjetiva_pdf_url ? <>
+                        <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => {
+                    const cycle = cycles.find(c => c.id === selectedCycle);
+                    if (cycle?.subjetiva_pdf_url) {
+                      window.open(`${cycle.subjetiva_pdf_url}?download`, '_blank');
+                    }
+                  }}>
                           <Download className="h-3 w-3 mr-1" />
                           Baixar
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handlePDFUpload('subjetiva')}
-                          disabled={uploadingPDF === 'subjetiva'}
-                          title="Substituir PDF"
-                        >
-                          {uploadingPDF === 'subjetiva' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Upload className="h-3 w-3" />
-                          )}
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handlePDFUpload('subjetiva')} disabled={uploadingPDF === 'subjetiva'} title="Substituir PDF">
+                          {uploadingPDF === 'subjetiva' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handlePDFRemove('subjetiva')}
-                          title="Remover PDF"
-                        >
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => handlePDFRemove('subjetiva')} title="Remover PDF">
                           <X className="h-3 w-3" />
                         </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handlePDFUpload('subjetiva')}
-                        disabled={uploadingPDF === 'subjetiva'}
-                      >
-                        {uploadingPDF === 'subjetiva' ? (
-                          <>
+                      </> : <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => handlePDFUpload('subjetiva')} disabled={uploadingPDF === 'subjetiva'}>
+                        {uploadingPDF === 'subjetiva' ? <>
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                             Enviando...
-                          </>
-                        ) : (
-                          <>
+                          </> : <>
                             <Upload className="h-3 w-3 mr-1" />
                             Enviar
-                          </>
-                        )}
-                      </Button>
-                    )}
+                          </>}
+                      </Button>}
                   </div>
-                  <input
-                    id="subjetiva-upload"
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => handlePDFFileSelect(e, 'subjetiva')}
-                    className="hidden"
-                    disabled={!selectedCycle || uploadingPDF === 'subjetiva'}
-                  />
+                  <input id="subjetiva-upload" type="file" accept="application/pdf" onChange={e => handlePDFFileSelect(e, 'subjetiva')} className="hidden" disabled={!selectedCycle || uploadingPDF === 'subjetiva'} />
                 </div>
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
