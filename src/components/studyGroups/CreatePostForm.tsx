@@ -139,6 +139,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           .upload(filePath, file, {
             cacheControl: '3600',
             upsert: false,
+            contentType: file.type,
           });
 
         if (uploadError) {
