@@ -38,9 +38,9 @@ const CoachSubscriptionPage = () => {
     {
       name: 'Starter',
       price: 49.90,
-      max_students: 3,
+      max_students: 5,
       features: [
-        'Até 3 alunos',
+        'Até 5 alunos',
         'Acesso completo ao dashboard',
         'Estatísticas detalhadas',
         'Sistema de tarefas',
@@ -63,10 +63,10 @@ const CoachSubscriptionPage = () => {
     },
     {
       name: 'Enterprise',
-      price: 399.90,
-      max_students: 100,
+      price: 249.90,
+      max_students: 50,
       features: [
-        'Até 100 alunos',
+        'Até 50 alunos',
         'Todos os recursos do Professional',
         'API personalizada',
         'Suporte dedicado',
@@ -95,7 +95,7 @@ const CoachSubscriptionPage = () => {
         {plans.map((plan) => (
           <Card 
             key={plan.name} 
-            className={plan.popular ? 'border-primary border-2 relative' : ''}
+            className={`flex flex-col ${plan.popular ? 'border-primary border-2 relative' : ''}`}
           >
             {plan.popular && (
               <Badge className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -111,14 +111,14 @@ const CoachSubscriptionPage = () => {
               </div>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="flex flex-col flex-grow space-y-6">
               <div>
                 <p className="text-sm text-muted-foreground">
                   Até {plan.max_students} alunos
                 </p>
               </div>
 
-              <ul className="space-y-3">
+              <ul className="space-y-3 flex-grow">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -128,7 +128,7 @@ const CoachSubscriptionPage = () => {
               </ul>
 
               <Button 
-                className="w-full"
+                className="w-full mt-auto"
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => createSubscription.mutate(plan.name.toLowerCase() as any)}
                 disabled={createSubscription.isPending}

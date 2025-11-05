@@ -4,7 +4,8 @@ import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
@@ -18,6 +19,7 @@ const Menu = () => {
   } = useAuth();
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isPlansSubmenuOpen, setIsPlansSubmenuOpen] = useState(false);
   useEffect(() => {
     // Check if admin mode is enabled via URL param
     const urlParams = new URLSearchParams(window.location.search);
@@ -34,6 +36,7 @@ const Menu = () => {
   };
   const handleLinkClick = () => {
     setIsSheetOpen(false);
+    setIsPlansSubmenuOpen(false);
   };
   return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
@@ -120,13 +123,41 @@ const Menu = () => {
               </NavigationMenuItem>}
               
               <NavigationMenuItem>
-                <NavigationMenuLink 
-                  className={navigationMenuTriggerStyle()}
-                  onClick={() => navigate('/planos')}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Planos
-                </NavigationMenuLink>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={cn(navigationMenuTriggerStyle(), "flex items-center gap-2")}>
+                      <CreditCard className="h-4 w-4" />
+                      Planos
+                      <ChevronDown className="relative top-[1px] ml-1 h-3 w-3 transition duration-200" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[200px]">
+                    <DropdownMenuItem
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        isActive('/planos') && !isActive('/coach/subscription') ? "bg-accent" : ""
+                      )}
+                      onClick={() => {
+                        navigate('/planos');
+                      }}
+                    >
+                      <User className="h-4 w-4" />
+                      Aluno
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        isActive('/coach/subscription') ? "bg-accent" : ""
+                      )}
+                      onClick={() => {
+                        navigate('/coach/subscription');
+                      }}
+                    >
+                      <GraduationCap className="h-4 w-4" />
+                      Modo Coach
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -182,10 +213,57 @@ const Menu = () => {
                   </Link>
                 </>}
                 
-                <Link to="/planos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/planos') ? "text-primary" : "text-foreground/70")}>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Planos
-                </Link>
+                <div className="mt-2">
+                  <button
+                    onClick={() => setIsPlansSubmenuOpen(!isPlansSubmenuOpen)}
+                    className={cn(
+                      "w-full flex items-center justify-between text-lg font-semibold py-2 rounded-md transition-colors",
+                      isActive('/planos') || isActive('/coach/subscription')
+                        ? "text-primary" 
+                        : "text-foreground/70 hover:text-foreground"
+                    )}
+                  >
+                    <div className="flex items-center">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Planos
+                    </div>
+                    {isPlansSubmenuOpen ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </button>
+                  {isPlansSubmenuOpen && (
+                    <div className="ml-4 mt-2 flex flex-col gap-2">
+                      <Link 
+                        to="/planos" 
+                        onClick={handleLinkClick} 
+                        className={cn(
+                          "flex items-center text-base font-medium pl-4 py-2 rounded-md transition-colors",
+                          isActive('/planos') && !isActive('/coach/subscription') 
+                            ? "text-primary bg-accent" 
+                            : "text-foreground/70 hover:text-foreground hover:bg-accent/50"
+                        )}
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Aluno
+                      </Link>
+                      <Link 
+                        to="/coach/subscription" 
+                        onClick={handleLinkClick} 
+                        className={cn(
+                          "flex items-center text-base font-medium pl-4 py-2 rounded-md transition-colors",
+                          isActive('/coach/subscription') 
+                            ? "text-primary bg-accent" 
+                            : "text-foreground/70 hover:text-foreground hover:bg-accent/50"
+                        )}
+                      >
+                        <GraduationCap className="mr-2 h-4 w-4" />
+                        Modo Coach
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </nav>
             </SheetContent>
           </Sheet>

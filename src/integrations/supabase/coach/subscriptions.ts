@@ -29,9 +29,9 @@ export const coachSubscriptionService = {
     planType: 'starter' | 'professional' | 'enterprise'
   ): Promise<CoachSubscription> {
     const plans = {
-      starter: { price: 49.90, max_students: 3 },
+      starter: { price: 49.90, max_students: 5 },
       professional: { price: 149.90, max_students: 25 },
-      enterprise: { price: 399.90, max_students: 100 }
+      enterprise: { price: 249.90, max_students: 50 }
     };
 
     const { data, error } = await supabase
