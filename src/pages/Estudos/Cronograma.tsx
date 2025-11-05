@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check } from 'lucide-react';
+import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, generateId } from '@/lib/utils';
@@ -1092,12 +1092,12 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                           onClick={() => {
                             const cycle = cycles.find(c => c.id === selectedCycle);
                             if (cycle?.trilha_semanal_pdf_url) {
-                              window.open(cycle.trilha_semanal_pdf_url, '_blank');
+                              window.open(`${cycle.trilha_semanal_pdf_url}?download`, '_blank');
                             }
                           }}
                         >
-                          <FileText className="h-3 w-3 mr-1" />
-                          Ver
+                          <Download className="h-3 w-3 mr-1" />
+                          Baixar
                         </Button>
                         <Button
                           variant="ghost"
@@ -1226,12 +1226,12 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                           onClick={() => {
                             const cycle = cycles.find(c => c.id === selectedCycle);
                             if (cycle?.subjetiva_pdf_url) {
-                              window.open(cycle.subjetiva_pdf_url, '_blank');
+                              window.open(`${cycle.subjetiva_pdf_url}?download`, '_blank');
                             }
                           }}
                         >
-                          <FileText className="h-3 w-3 mr-1" />
-                          Ver
+                          <Download className="h-3 w-3 mr-1" />
+                          Baixar
                         </Button>
                         <Button
                           variant="ghost"
