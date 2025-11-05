@@ -10,8 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { coachRelationshipService } from '@/integrations/supabase/coach/relationships';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Search, User } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const InviteStudentPage = () => {
   const navigate = useNavigate();
@@ -19,9 +21,13 @@ const InviteStudentPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [studentEmail, setStudentEmail] = useState('');
+  const [studentNickname, setStudentNickname] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Buscar assinatura do coach
   const { data: subscription } = useQuery({
@@ -39,13 +45,39 @@ const InviteStudentPage = () => {
     enabled: !!user
   });
 
+  // Buscar usuários por nickname
+  const { data: searchResults = [], isLoading: isSearching } = useQuery({
+    queryKey: ['search-users-by-nickname', debouncedSearchQuery],
+    queryFn: async () => {
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 3) return [];
+      
+      const cleanQuery = debouncedSearchQuery.toLowerCase().replace(/^@/, '').trim();
+      
+      const { data, error } = await supabase
+        .from('users_profiles')
+        .select('id, name, nickname, avatar_url')
+        .ilike('nickname', `%${cleanQuery}%`)
+        .limit(10);
+      
+      if (error) {
+        console.error('Error searching users:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!debouncedSearchQuery && debouncedSearchQuery.length >= 3
+  });
+
   const handleInviteStudent = async () => {
     if (!user?.id) return;
     
-    if (!studentEmail) {
+    const nicknameToUse = selectedUser?.nickname || studentNickname;
+    
+    if (!nicknameToUse) {
       toast({
-        title: 'Email necessário',
-        description: 'Por favor, informe o email do aluno',
+        title: 'Nickname necessário',
+        description: 'Por favor, informe o nickname do aluno ou selecione um usuário',
         variant: 'destructive'
       });
       return;
@@ -57,7 +89,7 @@ const InviteStudentPage = () => {
       // Usar a função RPC que cria convite e envia notificação
       const { data, error } = await supabase.rpc('send_coach_invitation', {
         p_coach_id: user.id,
-        p_student_email: studentEmail,
+        p_student_nickname: nicknameToUse,
         p_invitation_message: message || null
       });
 
@@ -65,9 +97,14 @@ const InviteStudentPage = () => {
         throw error;
       }
 
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro ao enviar convite');
+      }
+
+      const studentName = selectedUser?.name || nicknameToUse;
       toast({
         title: 'Convite enviado!',
-        description: `${studentEmail} recebeu seu convite por email e notificação`,
+        description: `${studentName} recebeu seu convite por email e notificação`,
       });
 
       // Atualizar cache
@@ -87,6 +124,12 @@ const InviteStudentPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSelectUser = (user: any) => {
+    setSelectedUser(user);
+    setStudentNickname(user.nickname);
+    setSearchQuery('');
   };
 
   return (
@@ -125,22 +168,85 @@ const InviteStudentPage = () => {
         <CardHeader>
           <CardTitle>Informações do Aluno</CardTitle>
           <CardDescription>
-            O aluno precisa estar cadastrado na plataforma Nomeia Aí
+            Digite o nickname do aluno ou busque na lista abaixo
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Busca de usuários */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email do Aluno</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="aluno@example.com"
-              value={studentEmail}
-              onChange={(e) => setStudentEmail(e.target.value)}
-              disabled={isLoading}
-            />
+            <Label htmlFor="search">Buscar Aluno</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="search"
+                type="text"
+                placeholder="@nickname ou nome..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Resultados da busca */}
+            {searchQuery && searchResults.length > 0 && (
+              <div className="border rounded-lg max-h-60 overflow-y-auto mt-2">
+                {searchResults.map((user: any) => (
+                  <div
+                    key={user.id}
+                    onClick={() => handleSelectUser(user)}
+                    className="flex items-center gap-3 p-3 hover:bg-muted cursor-pointer transition-colors"
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {user.name?.charAt(0).toUpperCase() || <User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{user.name}</p>
+                      <p className="text-sm text-muted-foreground">@{user.nickname}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {searchQuery && isSearching && (
+              <p className="text-sm text-muted-foreground">Buscando...</p>
+            )}
+            
+            {searchQuery && !isSearching && searchResults.length === 0 && debouncedSearchQuery.length >= 3 && (
+              <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
+            )}
+          </div>
+
+          {/* Campo de nickname (manual) */}
+          <div className="space-y-2">
+            <Label htmlFor="nickname">Nickname do Aluno</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">@</span>
+              <Input
+                id="nickname"
+                type="text"
+                placeholder="nickname"
+                value={studentNickname}
+                onChange={(e) => {
+                  const value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                  setStudentNickname(value);
+                  setSelectedUser(null);
+                }}
+                disabled={isLoading}
+                className="pl-8"
+                maxLength={20}
+              />
+            </div>
             <p className="text-sm text-muted-foreground">
-              O aluno deve ter uma conta ativa na plataforma
+              {selectedUser ? (
+                <span className="text-green-600">✓ {selectedUser.name} selecionado</span>
+              ) : (
+                'Apenas letras minúsculas, números e underscore (3-20 caracteres)'
+              )}
             </p>
           </div>
 
@@ -187,7 +293,7 @@ const InviteStudentPage = () => {
             </Button>
             <Button
               onClick={handleInviteStudent}
-              disabled={isLoading || !studentEmail}
+              disabled={isLoading || (!studentNickname && !selectedUser)}
             >
               {isLoading ? (
                 'Enviando...'

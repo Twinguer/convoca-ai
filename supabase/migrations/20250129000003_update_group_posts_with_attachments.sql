@@ -129,3 +129,4 @@ $$;
 GRANT EXECUTE ON FUNCTION public.add_group_post(UUID, UUID, TEXT, JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_group_feed(UUID, INTEGER, INTEGER) TO anon, authenticated;
 
+

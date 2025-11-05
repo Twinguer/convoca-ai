@@ -220,3 +220,4 @@ GRANT EXECUTE ON FUNCTION public.get_user_group_status(UUID, UUID) TO anon, auth
 GRANT EXECUTE ON FUNCTION public.get_group_members(UUID) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.user_is_group_member(UUID, UUID) TO anon, authenticated;
 
+

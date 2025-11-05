@@ -386,3 +386,4 @@ GRANT EXECUTE ON FUNCTION public.user_is_group_member(UUID, UUID) TO anon, authe
 GRANT EXECUTE ON FUNCTION public.respond_to_join_request(UUID, UUID, UUID, BOOLEAN) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.invite_user_to_group(UUID, UUID, UUID) TO authenticated;
 
+

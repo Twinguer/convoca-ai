@@ -12,28 +12,49 @@ export const NicknameField: React.FC<NicknameFieldProps> = ({
   setNickname
 }) => {
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Limitar a 15 caracteres
-    if (value.length <= 15) {
+    let value = e.target.value;
+    
+    // Converter para minúsculas
+    value = value.toLowerCase();
+    
+    // Remover caracteres inválidos (apenas a-z, 0-9, underscore)
+    value = value.replace(/[^a-z0-9_]/g, '');
+    
+    // Limitar a 20 caracteres
+    if (value.length <= 20) {
       setNickname(value);
     }
   };
 
+  const isValid = nickname.length >= 3 && nickname.length <= 20 && /^[a-z0-9_]+$/.test(nickname);
+  const isEmpty = nickname.length === 0;
+
   return (
     <div>
-      <Label htmlFor="nickname">Nome de usuário (máx. 15 caracteres)</Label>
-      <Input
-        id="nickname"
-        type="text"
-        value={nickname}
-        onChange={handleNicknameChange}
-        placeholder="Como você quer aparecer publicamente"
-        maxLength={15}
-        className="mt-1"
-      />
-      <p className="text-xs text-muted-foreground mt-1">
-        {nickname.length}/15 caracteres
-      </p>
+      <Label htmlFor="nickname">Nickname (3-20 caracteres)</Label>
+      <div className="relative mt-1">
+        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">@</span>
+        <Input
+          id="nickname"
+          type="text"
+          value={nickname}
+          onChange={handleNicknameChange}
+          placeholder="meunickname"
+          maxLength={20}
+          className={`pl-8 ${!isEmpty && !isValid ? 'border-red-500' : ''}`}
+        />
+      </div>
+      <div className="mt-1">
+        <p className={`text-xs ${isEmpty ? 'text-muted-foreground' : isValid ? 'text-green-600' : 'text-red-600'}`}>
+          {isEmpty ? (
+            `${nickname.length}/20 caracteres - Apenas letras minúsculas, números e underscore`
+          ) : isValid ? (
+            `✓ ${nickname.length}/20 caracteres - Válido`
+          ) : (
+            `⚠ ${nickname.length}/20 caracteres - Mínimo 3 caracteres`
+          )}
+        </p>
+      </div>
     </div>
   );
 };
