@@ -171,6 +171,46 @@ const StudentDetailsPage = () => {
     enabled: !!studentId,
   });
 
+  // Mutation para enviar mensagem ao aluno (deve estar antes de qualquer return condicional)
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      if (!studentId || !user?.id) {
+        throw new Error('Dados insuficientes para enviar mensagem');
+      }
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: studentId,
+          type: 'coach_message',
+          title: 'Mensagem do Coach',
+          message: message.trim(),
+          metadata: {
+            coach_id: user.id,
+            sent_at: new Date().toISOString()
+          }
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', studentId] });
+      toast({
+        title: 'Mensagem enviada',
+        description: 'A mensagem foi enviada com sucesso ao aluno.',
+      });
+      setMessageModalOpen(false);
+      setMessageText('');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao enviar mensagem',
+        description: error.message || 'Não foi possível enviar a mensagem.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Verificar se tem acesso
   useEffect(() => {
     if (student === null && !isLoading) {
@@ -334,48 +374,6 @@ const StudentDetailsPage = () => {
   };
 
   const performance = calculatePerformance();
-
-  // Mutation para enviar mensagem ao aluno
-  const sendMessageMutation = useMutation({
-    mutationFn: async (message: string) => {
-      if (!studentId || !user?.id) {
-        throw new Error('Dados insuficientes para enviar mensagem');
-      }
-
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: studentId,
-          type: 'coach_message',
-          title: 'Mensagem do Coach',
-          message: message.trim(),
-          metadata: {
-            coach_id: user.id,
-            sent_at: new Date().toISOString()
-          }
-        });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Mensagem enviada',
-        description: 'A mensagem foi enviada com sucesso para o aluno.',
-      });
-      setMessageModalOpen(false);
-      setMessageText('');
-      // Invalidar notificações do aluno para atualizar a lista
-      queryClient.invalidateQueries({ queryKey: ['notifications', studentId] });
-    },
-    onError: (error: any) => {
-      console.error('Erro ao enviar mensagem:', error);
-      toast({
-        title: 'Erro ao enviar mensagem',
-        description: error.message || 'Não foi possível enviar a mensagem. Tente novamente.',
-        variant: 'destructive',
-      });
-    },
-  });
 
   const handleSendMessage = () => {
     const trimmedMessage = messageText.trim();

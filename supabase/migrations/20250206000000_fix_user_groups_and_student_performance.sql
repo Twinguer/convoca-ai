@@ -59,3 +59,4 @@ $$;
 -- Permissões
 GRANT EXECUTE ON FUNCTION public.get_user_groups(UUID) TO anon, authenticated;
 
+
