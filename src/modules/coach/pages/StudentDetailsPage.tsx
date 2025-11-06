@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Alert } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft, Clock, CheckCircle, BookOpen, TrendingUp, Plus, Calendar, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Clock, CheckCircle, BookOpen, TrendingUp, Plus, Calendar, Trash2, MessageSquare } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { StudentRelationship } from '@/types/coach';
@@ -24,6 +27,11 @@ const StudentDetailsPage = () => {
   
   // Estado para estatísticas completas do aluno
   const [studentStatistics, setStudentStatistics] = useState<StudyStatistics | null>(null);
+  
+  // Estado para modal de mensagem
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const queryClient = useQueryClient();
 
   // Buscar dados do aluno específico
   const { data: student, isLoading } = useQuery({
@@ -327,6 +335,72 @@ const StudentDetailsPage = () => {
 
   const performance = calculatePerformance();
 
+  // Mutation para enviar mensagem ao aluno
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      if (!studentId || !user?.id) {
+        throw new Error('Dados insuficientes para enviar mensagem');
+      }
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: studentId,
+          type: 'coach_message',
+          title: 'Mensagem do Coach',
+          message: message.trim(),
+          metadata: {
+            coach_id: user.id,
+            sent_at: new Date().toISOString()
+          }
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Mensagem enviada',
+        description: 'A mensagem foi enviada com sucesso para o aluno.',
+      });
+      setMessageModalOpen(false);
+      setMessageText('');
+      // Invalidar notificações do aluno para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ['notifications', studentId] });
+    },
+    onError: (error: any) => {
+      console.error('Erro ao enviar mensagem:', error);
+      toast({
+        title: 'Erro ao enviar mensagem',
+        description: error.message || 'Não foi possível enviar a mensagem. Tente novamente.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSendMessage = () => {
+    const trimmedMessage = messageText.trim();
+    
+    if (!trimmedMessage) {
+      toast({
+        title: 'Mensagem vazia',
+        description: 'Por favor, digite uma mensagem antes de enviar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (trimmedMessage.length > 600) {
+      toast({
+        title: 'Mensagem muito longa',
+        description: 'A mensagem deve ter no máximo 600 caracteres.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    sendMessageMutation.mutate(trimmedMessage);
+  };
+
   return (
     <div className="container mx-auto p-6">
       {/* Header */}
@@ -371,8 +445,20 @@ const StudentDetailsPage = () => {
         <TabsContent value="study">
           <Card>
             <CardHeader>
-              <CardTitle>Atividade de Estudos</CardTitle>
-              <CardDescription>Acesso read-only ao módulo de estudos</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Atividade de Estudos</CardTitle>
+                  <CardDescription>Acesso read-only ao módulo de estudos</CardDescription>
+                </div>
+                <Button
+                  onClick={() => setMessageModalOpen(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Deixar mensagem
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Ciclos Ativos */}
@@ -655,6 +741,52 @@ const StudentDetailsPage = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de Mensagem */}
+      <Dialog open={messageModalOpen} onOpenChange={setMessageModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Deixar Mensagem para o Aluno</DialogTitle>
+            <DialogDescription>
+              Envie uma mensagem de até 600 caracteres que aparecerá como notificação para o aluno.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Digite sua mensagem aqui..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                maxLength={600}
+                rows={6}
+                className="resize-none"
+              />
+              <div className="flex justify-between items-center text-xs text-muted-foreground">
+                <span>Máximo de 600 caracteres</span>
+                <span>{messageText.length}/600</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMessageModalOpen(false);
+                setMessageText('');
+              }}
+              disabled={sendMessageMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={sendMessageMutation.isPending || !messageText.trim()}
+            >
+              {sendMessageMutation.isPending ? 'Enviando...' : 'Enviar Mensagem'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
