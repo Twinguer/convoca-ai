@@ -530,26 +530,24 @@ const CoachDashboard = () => {
           </CardHeader>
         </Card>
 
-        <Card>
+        <Card className={students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 ? "border-orange-500/20 bg-orange-500/5" : ""}>
           <CardHeader>
-            <CardDescription>Taxa de Conclusão</CardDescription>
+            <div className="flex items-center justify-between">
+              <CardDescription>Avisos</CardDescription>
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+            </div>
             <CardTitle className="text-4xl font-bold">
-              {Math.round(completionRate * 100)}%
+              {students.filter(s => (s.performance.hours_this_week || 0) === 0).length}
             </CardTitle>
+            <CardDescription className="text-xs mt-2">
+              {students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 
+                ? `aluno(s) sem atividade esta semana`
+                : 'Nenhum aviso'}
+            </CardDescription>
           </CardHeader>
         </Card>
           </div>
 
-          {/* Alertas */}
-          {students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Atenção: Alunos sem atividade</AlertTitle>
-          <AlertDescription>
-            {students.filter(s => (s.performance.hours_this_week || 0) === 0).length} aluno(s) não estudaram esta semana
-          </AlertDescription>
-          </Alert>
-          )}
 
           {/* Convites Pendentes */}
           {pendingInvitations.length > 0 && (
