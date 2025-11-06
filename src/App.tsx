@@ -50,6 +50,7 @@ import SecureStudyCycleRoute from "./components/Security/SecureStudyCycleRoute";
 import CoachDashboard from "./modules/coach/pages/CoachDashboard";
 import InviteStudentPage from "./modules/coach/pages/InviteStudentPage";
 import CoachSubscriptionPage from "./modules/coach/pages/CoachSubscriptionPage";
+import CoachLandingPage from "./modules/coach/pages/CoachLandingPage";
 import AcceptInvitationPage from "./modules/coach/pages/AcceptInvitationPage";
 import StudentDetailsPage from "./modules/coach/pages/StudentDetailsPage";
 import CreateCycleForStudent from "./modules/coach/pages/CreateCycleForStudent";
@@ -266,6 +267,14 @@ const AppContent = () => {
                           <Planos />
                         </>} />
                     {/* Rotas do Coach Mode */}
+                    <Route path="/coach" element={<>
+                        <Menu />
+                        <CoachLandingPage />
+                      </>} />
+                    <Route path="/coach/landing" element={<>
+                        <Menu />
+                        <CoachLandingPage />
+                      </>} />
                     <Route path="/coach/dashboard" element={<>
                         <Menu />
                         <ProtectedRoute>

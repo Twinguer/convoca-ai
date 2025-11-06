@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight } from 'lucide-react';
@@ -37,6 +39,30 @@ const Menu = () => {
   const handleLinkClick = () => {
     setIsSheetOpen(false);
     setIsPlansSubmenuOpen(false);
+  };
+
+  // Verificar se o usuário tem assinatura de coach
+  const { data: coachSubscription, isLoading: isLoadingSubscription } = useQuery({
+    queryKey: ['coach-subscription-menu', user?.id],
+    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
+    enabled: !!user,
+  });
+
+  const handleCoachClick = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
+    // Se ainda está carregando, vai para landing (será redirecionado se tiver assinatura)
+    // Se tiver assinatura, vai para dashboard, senão para landing
+    if (isLoadingSubscription) {
+      navigate('/coach');
+    } else if (coachSubscription) {
+      navigate('/coach/dashboard');
+    } else {
+      navigate('/coach');
+    }
   };
   return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
@@ -106,7 +132,7 @@ const Menu = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink 
                   className={navigationMenuTriggerStyle()}
-                  onClick={() => navigate('/coach/dashboard')}
+                  onClick={handleCoachClick}
                 >
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Modo Coach
@@ -191,10 +217,16 @@ const Menu = () => {
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
                 </Link>
-                <Link to="/coach/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/coach') ? "text-primary" : "text-foreground/70")}>
+                <button 
+                  onClick={() => {
+                    handleLinkClick();
+                    handleCoachClick();
+                  }}
+                  className={cn("flex items-center text-lg font-semibold w-full text-left", isActive('/coach') ? "text-primary" : "text-foreground/70")}
+                >
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Modo Coach
-                </Link>
+                </button>
                 
                 {isAdmin() && <>
                   <div className="h-px bg-border mt-2 mb-2"></div>
