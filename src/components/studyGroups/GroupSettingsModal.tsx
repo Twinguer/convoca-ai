@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trash2, UserMinus, FileText, Users, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { studyGroupService } from '@/integrations/supabase/studyGroups/groups';
@@ -364,15 +365,24 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
             </div>
 
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {members.map((member) => (
+              {members.map((member) => {
+                const getInitials = (name?: string) => {
+                  if (!name) return 'U';
+                  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                };
+                
+                return (
                 <div
                   key={member.id || member.user_id}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      {member.name?.[0]?.toUpperCase() || 'U'}
-                    </div>
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
+                      <AvatarFallback className="bg-muted">
+                        {getInitials(member.name)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <p className="font-medium">{member.name}</p>
                       <p className="text-sm text-muted-foreground">
@@ -392,7 +402,8 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
                     </Button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <Separator />

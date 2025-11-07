@@ -400,48 +400,50 @@ const StudentDetailsPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/coach/dashboard')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">Detalhes do Aluno</h1>
-          <p className="text-muted-foreground">
-            {student.student_name}
-          </p>
-        </div>
-        <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-          {student.status === 'active' ? 'Ativo' : 'Inativo'}
-        </Badge>
-      </div>
-
-      {/* Tabs: Estudos e Estatísticas */}
-      <Tabs defaultValue="study" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="study">
-              <BookOpen className="mr-2 h-4 w-4" />
-              Módulo de Estudos
-            </TabsTrigger>
-            <TabsTrigger value="statistics">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Estatísticas
-            </TabsTrigger>
-          </TabsList>
-          <Button 
-            onClick={() => navigate(`/coach/student/${studentId}/create-cycle`)}
-            size="sm"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Criar Ciclo para Aluno
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+      <div className="container mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/coach/dashboard')}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">Detalhes do Aluno</h1>
+            <p className="text-muted-foreground">
+              {student.student_name}
+            </p>
+          </div>
+          <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
+            {student.status === 'active' ? 'Ativo' : 'Inativo'}
+          </Badge>
         </div>
+
+        {/* Tabs: Estudos e Estatísticas */}
+        <Tabs defaultValue="study" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-purple-100 dark:bg-purple-900/30">
+              <TabsTrigger value="study" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Módulo de Estudos
+              </TabsTrigger>
+              <TabsTrigger value="statistics" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Estatísticas
+              </TabsTrigger>
+            </TabsList>
+            <Button 
+              onClick={() => navigate(`/coach/student/${studentId}/create-cycle`)}
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Ciclo para Aluno
+            </Button>
+          </div>
 
         {/* Aba: Módulo de Estudos (Read-Only) */}
         <TabsContent value="study">
-          <Card>
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -452,6 +454,7 @@ const StudentDetailsPage = () => {
                   onClick={() => setMessageModalOpen(true)}
                   variant="outline"
                   size="sm"
+                  className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Deixar mensagem
@@ -480,6 +483,7 @@ const StudentDetailsPage = () => {
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => navigate(`/coach/student/${studentId}/cycle/${cycle.id}/schedule`)}
+                                className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
                               >
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Cronograma
@@ -529,7 +533,7 @@ const StudentDetailsPage = () => {
         {/* Aba: Estatísticas (Read-Only) */}
         <TabsContent value="statistics">
           {loadingStats ? (
-            <Card>
+            <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <CardTitle>Estatísticas Gerais</CardTitle>
                 <CardDescription>Carregando estatísticas...</CardDescription>
@@ -541,7 +545,7 @@ const StudentDetailsPage = () => {
               </CardContent>
             </Card>
           ) : !fullStatistics || fullStatistics.totalHours === 0 ? (
-            <Card>
+            <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <CardTitle>Estatísticas Gerais</CardTitle>
                 <CardDescription>Nenhuma estatística disponível</CardDescription>
@@ -555,7 +559,7 @@ const StudentDetailsPage = () => {
           ) : (
             <div className="space-y-4">
               {/* Card com estatísticas gerais */}
-              <Card>
+              <Card className="bg-primary/5 border-primary/20">
                 <CardHeader>
                   <CardTitle>Estatísticas Gerais</CardTitle>
                   <CardDescription>Visão completa do desempenho do aluno</CardDescription>
@@ -773,18 +777,21 @@ const StudentDetailsPage = () => {
                 setMessageText('');
               }}
               disabled={sendMessageMutation.isPending}
+              className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSendMessage}
               disabled={sendMessageMutation.isPending || !messageText.trim()}
+              className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
             >
               {sendMessageMutation.isPending ? 'Enviando...' : 'Enviar Mensagem'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

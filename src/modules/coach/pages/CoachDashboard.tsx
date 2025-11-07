@@ -465,38 +465,29 @@ const CoachDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
       <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-purple-600 dark:text-purple-400">🎯 Coach Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Gerencie sua equipe de alunos e acompanhe o progresso de estudos
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white font-bold shadow-lg shadow-purple-500/50 dark:shadow-purple-900/50 border-2 border-purple-400/30 dark:border-purple-500/30">
-              Modo Coach
-            </Badge>
-          </div>
-        </div>
-
       {/* Tabs */}
       <Tabs defaultValue="alunos" className="space-y-6">
-        <TabsList className="bg-purple-100 dark:bg-purple-900/30">
-          <TabsTrigger value="alunos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
-            <Users className="mr-2 h-4 w-4" />
-            Alunos
-          </TabsTrigger>
-          <TabsTrigger value="grupos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Grupos
-            {coachGroups.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {coachGroups.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        {/* Header com TabsList e Badge */}
+        <div className="flex items-center justify-between">
+          <TabsList className="bg-purple-100 dark:bg-purple-900/30">
+            <TabsTrigger value="alunos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
+              <Users className="mr-2 h-4 w-4" />
+              Alunos
+            </TabsTrigger>
+            <TabsTrigger value="grupos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
+              <BookOpen className="mr-2 h-4 w-4" />
+              Grupos
+              {coachGroups.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {coachGroups.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+          <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white font-bold shadow-lg shadow-purple-500/50 dark:shadow-purple-900/50 border-2 border-purple-400/30 dark:border-purple-500/30">
+            Modo Coach
+          </Badge>
+        </div>
 
         {/* Tab: Alunos */}
         <TabsContent value="alunos" className="space-y-6">
@@ -514,7 +505,7 @@ const CoachDashboard = () => {
           </CardHeader>
         </Card>
 
-        <Card>
+        <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
             <CardDescription>Horas Semanais</CardDescription>
             <CardTitle className="text-4xl font-bold">{totalHours}h</CardTitle>
@@ -522,7 +513,7 @@ const CoachDashboard = () => {
           </CardHeader>
         </Card>
 
-        <Card>
+        <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
             <CardDescription>Ciclos Ativos</CardDescription>
             <CardTitle className="text-4xl font-bold">
@@ -625,11 +616,11 @@ const CoachDashboard = () => {
           )}
 
           {/* Lista de Alunos */}
-          <Card>
+          <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Sua Equipe</CardTitle>
+              <CardTitle>Seus Alunos</CardTitle>
               <CardDescription>
                 {students.length} aluno(s) cadastrado(s)
               </CardDescription>
@@ -676,7 +667,7 @@ const CoachDashboard = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {students.map((student) => {
                 const fallbackAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(student.student_name || student.student_email || 'student')}`;
                 const avatarUrl = student.avatar_url || fallbackAvatarUrl;
@@ -684,8 +675,8 @@ const CoachDashboard = () => {
                 return (
                   <Card 
                     key={student.student_id} 
-                    className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20"
-                    style={{ boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}
+                    className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all duration-200"
+                    style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}
                   >
                     <CardContent className="p-5 flex flex-col">
                       {/* Avatar e Nome */}

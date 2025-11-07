@@ -7,6 +7,7 @@ interface GroupsGridProps {
   onClick?: (groupId: string) => void;
   onJoin?: (groupId: string) => void;
   userMemberGroupIds?: string[];
+  className?: string;
 }
 
 export const GroupsGrid: React.FC<GroupsGridProps> = ({
@@ -14,6 +15,7 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
   onClick,
   onJoin,
   userMemberGroupIds = [],
+  className = '',
 }) => {
   if (groups.length === 0) {
     return (
@@ -23,8 +25,11 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
     );
   }
 
+  const defaultGridClasses = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2";
+  const gridClasses = className || defaultGridClasses;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className={gridClasses}>
       {groups.map((group) => (
         <GroupCard
           key={group.id}

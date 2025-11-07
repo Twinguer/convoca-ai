@@ -42,6 +42,7 @@ export const CoachGroupsTab: React.FC = () => {
           groups={groups}
           onClick={handleGroupClick}
           userMemberGroupIds={groups.map(g => g.id)}
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2"
         />
       ) : (
         <Card>

@@ -65,15 +65,15 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20 cursor-pointer"
-      style={{ boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}
+      className="rounded-xl border border-border bg-card text-card-foreground shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300"
+      style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}
       onClick={handleCardClick}
     >
       <CardContent className="p-5 flex flex-col">
         {/* Avatar e Nome */}
         <div className="flex flex-col items-center mb-4">
           <div className="relative mb-3">
-            <Avatar className="h-20 w-20 border-2 border-primary/20" style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+            <Avatar className="h-20 w-20" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
               {group.cover_image_url ? (
                 <AvatarImage src={group.cover_image_url} alt={group.name} />
               ) : (
