@@ -1,7 +1,7 @@
 /**
  * Payment Service
  * 
- * Serviço para integração com pagamentos via Mercado Pago
+ * Serviço para integração com pagamentos via Stripe
  * Segurança: Validação de sessão, tratamento de erros robusto, logging
  */
 
@@ -11,10 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 // TIPOS E INTERFACES
 // ============================================
 
-export interface CreatePreferenceResponse {
-  init_point: string;
-  preference_id: string;
-  sandbox_init_point?: string;
+export interface CreateCheckoutResponse {
+  url: string;
+  session_id: string;
 }
 
 export interface CreatePreferenceParams {
@@ -127,14 +126,11 @@ function handleApiError(error: any): Error {
 
 export const paymentService = {
   /**
-   * Cria preferência de pagamento no Mercado Pago
+   * Cria sessão de checkout no Stripe
    */
-  async createPreference(
-    planId: string,
-    email?: string,
-    name?: string,
-    voucherCode?: string
-  ): Promise<CreatePreferenceResponse> {
+  async createCheckout(
+    planId: string
+  ): Promise<CreateCheckoutResponse> {
     try {
       // Validar parâmetros
       if (!planId || typeof planId !== "string") {
@@ -144,13 +140,11 @@ export const paymentService = {
       // Garantir sessão válida (para garantir que o usuário está autenticado)
       await ensureValidSession();
       
-      // Usar supabase.functions.invoke para evitar expor URL no console do navegador
-      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+      // Usar supabase.functions.invoke para criar sessão de checkout no Stripe
+      console.log("[paymentService] Criando checkout no Stripe para plano:", planId);
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          planId,
-          email,
-          name,
-          ...(voucherCode && { voucherCode: voucherCode.trim().toUpperCase() })
+          planId
         }
       });
       
@@ -165,14 +159,14 @@ export const paymentService = {
       }
       
       // Validar dados de resposta
-      if (!data.init_point || !data.preference_id) {
+      if (!data.url || !data.session_id) {
         throw new Error("Resposta incompleta do servidor");
       }
       
       // Log genérico de sucesso (sem expor IDs específicos)
-      console.log("[paymentService] Preferência de pagamento criada com sucesso");
+      console.log("[paymentService] Sessão de checkout criada com sucesso");
       
-      return data as CreatePreferenceResponse;
+      return data as CreateCheckoutResponse;
       
     } catch (error) {
       // Re-lançar erros já tratados

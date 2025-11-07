@@ -36,10 +36,28 @@ const Planos = () => {
   const [subscriptionVoucherCode, setSubscriptionVoucherCode] = useState("");
   const [applyingSubscriptionVoucher, setApplyingSubscriptionVoucher] = useState(false);
   useEffect(() => {
-    // Tratar retorno do Mercado Pago
+    // Tratar retorno do Stripe
     const status = searchParams.get("status");
     const plan = searchParams.get("plan");
     
+    // Stripe retorna status=success ou status=canceled
+    if (status === "success" && plan) {
+      toast({
+        title: "Pagamento realizado com sucesso!",
+        description: `Seu plano foi ativado. Bem-vindo ao premium!`
+      });
+      refetch();
+      navigate("/planos", { replace: true });
+    } else if (status === "canceled") {
+      toast({
+        title: "Pagamento cancelado",
+        description: "Você pode tentar novamente quando quiser.",
+        variant: "destructive"
+      });
+      navigate("/planos", { replace: true });
+    }
+    
+    // Suporte legado para Mercado Pago (manter por compatibilidade temporária)
     if (status === "approved" && plan) {
       toast({
         title: "Pagamento aprovado!",
@@ -59,26 +77,6 @@ const Planos = () => {
       toast({
         title: "Pagamento não aprovado",
         description: "Não foi possível processar seu pagamento. Verifique os dados e tente novamente.",
-        variant: "destructive"
-      });
-      navigate("/planos", { replace: true });
-    }
-    
-    // Suporte legado para Stripe (se ainda existir)
-    const success = searchParams.get("success");
-    const canceled = searchParams.get("canceled");
-    
-    if (success === "true" && plan) {
-      toast({
-        title: "Pagamento realizado com sucesso!",
-        description: `Seu plano foi ativado. Bem-vindo ao premium!`
-      });
-      refetch();
-      navigate("/planos", { replace: true });
-    } else if (canceled === "true") {
-      toast({
-        title: "Pagamento cancelado",
-        description: "Você pode tentar novamente quando quiser.",
         variant: "destructive"
       });
       navigate("/planos", { replace: true });
@@ -124,24 +122,18 @@ const Planos = () => {
         return;
       }
 
-      // Criar preferência de pagamento com voucher de desconto (se aplicado)
-      const preference = await paymentService.createPreference(
-        planoId,
-        session.user.email,
-        session.user.user_metadata?.name,
-        appliedDiscountVoucher?.code
-      );
+      // Criar sessão de checkout no Stripe
+      console.log("[Planos] Iniciando checkout Stripe para plano:", planoId);
+      const checkout = await paymentService.createCheckout(planoId);
 
-      // Redirecionar para o checkout do Mercado Pago
-      // Prioriza sandbox_init_point se estiver em desenvolvimento/teste
-      const checkoutUrl = preference.sandbox_init_point || preference.init_point;
-      
-      if (!checkoutUrl) {
+      // Redirecionar para o checkout do Stripe
+      if (!checkout.url) {
         throw new Error("URL de checkout não disponível");
       }
 
-      // Redirecionar para o Mercado Pago
-      window.location.href = checkoutUrl;
+      console.log("[Planos] Redirecionando para Stripe Checkout:", checkout.url.substring(0, 50) + "...");
+      // Redirecionar para o Stripe
+      window.location.href = checkout.url;
 
     } catch (error: any) {
       // Log genérico sem expor detalhes técnicos
