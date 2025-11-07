@@ -193,7 +193,16 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error("Configuração do Stripe não encontrada");
     }
     
-    console.log(`[create-checkout] Inicializando Stripe com chave: ${stripeSecretKey.substring(0, 12)}...`);
+    // Verificar se é chave de teste ou produção
+    const isTestMode = stripeSecretKey.startsWith("sk_test_");
+    const isLiveMode = stripeSecretKey.startsWith("sk_live_");
+    
+    if (!isTestMode && !isLiveMode) {
+      console.error("[create-checkout] Chave Stripe inválida (deve começar com sk_test_ ou sk_live_)");
+      throw new Error("Chave Stripe inválida");
+    }
+    
+    console.log(`[create-checkout] Inicializando Stripe com chave: ${stripeSecretKey.substring(0, 12)}... (modo: ${isTestMode ? "TESTE" : "LIVE"})`);
     
     let stripe;
     try {
@@ -254,6 +263,13 @@ serve(async (req: Request): Promise<Response> => {
         statusCode: stripeError?.statusCode,
         raw: stripeError?.raw
       });
+      
+      // Tratamento específico para erro de conta não habilitada
+      if (stripeError?.message?.includes("cannot currently make live charges")) {
+        const errorMessage = "Conta Stripe não habilitada para modo live. Use chave de teste (sk_test_) ou complete a verificação da conta no Stripe Dashboard.";
+        console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
+        throw new Error(`Erro do Stripe: ${errorMessage}`);
+      }
       
       const errorMessage = stripeError?.message || "Erro desconhecido ao criar sessão no Stripe";
       throw new Error(`Erro do Stripe: ${errorMessage}`);
