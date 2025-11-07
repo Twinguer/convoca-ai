@@ -185,45 +185,79 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error("Configuração do Stripe não encontrada");
     }
     
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
-    });
+    console.log(`[create-checkout] Inicializando Stripe com chave: ${stripeSecretKey.substring(0, 12)}...`);
+    
+    let stripe;
+    try {
+      stripe = new Stripe(stripeSecretKey, {
+        apiVersion: "2023-10-16",
+      });
+    } catch (error) {
+      console.error("[create-checkout] Erro ao inicializar cliente Stripe:", error);
+      throw new Error(`Erro ao inicializar Stripe: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
+    }
     
     // Construir URL base
     const baseUrl = (origin && origin.trim()) ? origin : PRODUCTION_ORIGINS[0];
     const successUrl = `${baseUrl}/planos?status=success&plan=${requestData.planId}`;
     const cancelUrl = `${baseUrl}/planos?status=canceled`;
     
-    // Criar sessão de checkout no Stripe
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+    console.log(`[create-checkout] Criando sessão de checkout com:`, {
+      priceId,
       mode: "subscription",
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      customer_email: user.email,
-      metadata: {
-        user_id: user.id,
-        plan_id: requestData.planId,
-      },
-      // Permitir Pix e Boleto no Brasil
-      payment_method_types: ["card"],
-      payment_method_options: {
-        card: {
-          installments: {
-            enabled: true,
+      successUrl,
+      cancelUrl,
+      customerEmail: user.email ? `${user.email.substring(0, 3)}***` : "none"
+    });
+    
+    // Criar sessão de checkout no Stripe
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        customer_email: user.email,
+        metadata: {
+          user_id: user.id,
+          plan_id: requestData.planId,
+        },
+        payment_method_types: ["card"],
+        payment_method_options: {
+          card: {
+            installments: {
+              enabled: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (stripeError: any) {
+      console.error("[create-checkout] Erro ao criar sessão no Stripe:", {
+        error: stripeError,
+        message: stripeError?.message,
+        type: stripeError?.type,
+        code: stripeError?.code,
+        statusCode: stripeError?.statusCode,
+        raw: stripeError?.raw
+      });
+      
+      const errorMessage = stripeError?.message || "Erro desconhecido ao criar sessão no Stripe";
+      throw new Error(`Erro do Stripe: ${errorMessage}`);
+    }
     
     console.log(`[create-checkout] Checkout session created: ${session.id} for user ${user.id}`);
     
     if (!session.url) {
+      console.error("[create-checkout] Sessão criada mas sem URL:", {
+        sessionId: session.id,
+        hasUrl: !!session.url
+      });
       throw new Error("URL de checkout não foi gerada pelo Stripe");
     }
     
@@ -239,12 +273,19 @@ serve(async (req: Request): Promise<Response> => {
     );
     
   } catch (error) {
-    console.error("[create-checkout] Unhandled error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error("[create-checkout] Unhandled error:", {
+      message: errorMessage,
+      stack: errorStack,
+      error: error
+    });
     
     return new Response(
       JSON.stringify({
         error: "Internal Server Error",
-        details: error instanceof Error ? error.message : "Erro desconhecido ao processar requisição"
+        details: errorMessage
       }),
       {
         status: 500,
