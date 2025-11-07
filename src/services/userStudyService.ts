@@ -58,14 +58,20 @@ export class UserStudyService {
         .from('user_study_v2')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // Usar maybeSingle em vez de single para evitar erro quando não há dados
 
       if (error) {
+        // PGRST116 = nenhum resultado encontrado (normal quando usuário não tem dados ainda)
         if (error.code === 'PGRST116') {
           logger.warn('Nenhum dado encontrado para o usuário');
           return null;
         }
-        logger.error('Erro ao buscar dados do usuário', { error, code: error.code });
+        // 406 = Not Acceptable (pode ser RLS Policy bloqueando)
+        if (error.code === 'PGRST406' || error.status === 406) {
+          logger.error('Acesso negado aos dados do usuário (possível problema de permissão)', { error, code: error.code });
+          return null;
+        }
+        logger.error('Erro ao buscar dados do usuário', { error, code: error.code, status: error.status });
         return null;
       }
 

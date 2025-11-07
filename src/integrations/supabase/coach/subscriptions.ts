@@ -15,9 +15,13 @@ export const coachSubscriptionService = {
       .select('*')
       .eq('coach_id', coachId)
       .eq('status', 'active')
-      .single();
+      .maybeSingle(); // Usar maybeSingle em vez de single para evitar erro 406
 
-    if (error && error.code !== 'PGRST116') throw error;
+    // PGRST116 = nenhum resultado encontrado (normal quando não há subscription)
+    // PGRST406 = Not Acceptable (RLS Policy bloqueando - usuário não é coach)
+    if (error && error.code !== 'PGRST116' && error.code !== 'PGRST406') {
+      throw error;
+    }
     return data;
   },
 

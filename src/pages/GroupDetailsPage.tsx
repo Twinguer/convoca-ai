@@ -44,6 +44,44 @@ export const GroupDetailsPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // VALIDAÇÃO: Verificar se usuário é Pro ou Coach antes de carregar dados
+  React.useEffect(() => {
+    const checkUserPlan = async () => {
+      if (!user?.id) return;
+      
+      // Verificar subscription (Pro)
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('plan, is_active')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
+      
+      // Verificar se é Coach
+      const { data: coachSubscription } = await supabase
+        .from('coach_subscriptions')
+        .select('id, status')
+        .eq('coach_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      const userIsCoach = !!coachSubscription;
+      
+      // Se não é Pro nem Coach, redirecionar
+      if (!userIsPro && !userIsCoach) {
+        toast({
+          title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
+          description: 'Faça upgrade para acessar grupos de estudos.',
+          variant: 'destructive',
+        });
+        navigate('/planos');
+      }
+    };
+    
+    checkUserPlan();
+  }, [user?.id, navigate, toast]);
+  
   const { group, isLoading: isLoadingGroup, isError: isErrorGroup, refetch: refetchGroup } = useStudyGroup(groupId);
   const { posts, isLoading: isLoadingPosts, refetch: refetchPosts, isError: isErrorPosts } = useGroupFeed(groupId);
 

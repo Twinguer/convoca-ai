@@ -151,11 +151,11 @@ const CommunityPage = () => {
         <TabsList>
           <TabsTrigger value="usuarios">
             <Users className="mr-2 h-4 w-4" />
-            Usuários
+            Concurseiros
           </TabsTrigger>
           <TabsTrigger value="grupos">
             <BookOpen className="mr-2 h-4 w-4" />
-            Grupos
+            Grupos de Estudos
           </TabsTrigger>
         </TabsList>
 

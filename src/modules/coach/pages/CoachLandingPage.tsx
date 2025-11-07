@@ -110,15 +110,15 @@ const CoachLandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-12">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
-            <GraduationCap className="h-5 w-5" />
-            <span className="font-semibold">Modo Coach</span>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white font-bold text-lg shadow-lg shadow-purple-500/50 dark:shadow-purple-900/50 mb-6 border-2 border-purple-400/30 dark:border-purple-500/30">
+            <GraduationCap className="h-6 w-6" />
+            <span>Modo Coach</span>
           </div>
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 text-purple-600 dark:text-purple-400 drop-shadow-lg shadow-purple-500/50 dark:shadow-purple-400/50">
             Transforme o Sucesso dos Seus Alunos
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
@@ -128,6 +128,11 @@ const CoachLandingPage = () => {
             Começar Agora
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
+        </div>
+
+        {/* Título Coach Dashboard */}
+        <div className="text-left mb-8">
+          <h2 className="text-4xl font-bold mb-2">Coach Dashboard</h2>
         </div>
 
         {/* Estatísticas Gerais */}
@@ -181,9 +186,9 @@ const CoachLandingPage = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-3xl font-bold mb-2">Nossa Equipe de Sucesso</CardTitle>
+                <CardTitle className="text-3xl font-bold mb-2">Meus Alunos</CardTitle>
                 <CardDescription className="text-lg">
-                  Veja como nossos alunos estão progredindo com acompanhamento personalizado
+                  10 alunos cadastrados
                 </CardDescription>
               </div>
               <Badge variant="secondary" className="text-lg px-4 py-2">

@@ -15,15 +15,25 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   v_updated_data JSONB;
+  v_is_admin BOOLEAN;
 BEGIN
-  -- Verificar se o usuário é admin do grupo
-  IF NOT EXISTS (
-    SELECT 1 FROM study_group_members
-    WHERE group_id = p_group_id
-      AND user_id = auth.uid()
-      AND role IN ('admin', 'coach')
-      AND status = 'active'
-  ) THEN
+  -- Verificar se o usuário é admin do grupo OU criador do grupo
+  SELECT 
+    EXISTS (
+      SELECT 1 FROM study_group_members
+      WHERE group_id = p_group_id
+        AND user_id = auth.uid()
+        AND role IN ('admin', 'coach')
+        AND status = 'active'
+    )
+    OR EXISTS (
+      SELECT 1 FROM study_groups
+      WHERE id = p_group_id
+        AND created_by = auth.uid()
+    )
+  INTO v_is_admin;
+
+  IF NOT v_is_admin THEN
     RETURN jsonb_build_object(
       'success', false,
       'error', 'Apenas administradores podem excluir posts'
@@ -50,7 +60,7 @@ END;
 $$;
 
 -- ============================================
--- 2. REMOVER MEMBRO DO GRUPO (apenas admin)
+-- 2. REMOVER MEMBRO DO GRUPO (apenas admin ou criador)
 -- ============================================
 CREATE OR REPLACE FUNCTION remove_group_member(
   p_group_id UUID,
@@ -65,18 +75,29 @@ AS $$
 DECLARE
   v_member_role TEXT;
   v_member_user_id UUID;
+  v_is_admin BOOLEAN;
+  v_created_by UUID;
 BEGIN
-  -- Verificar se o admin é realmente admin do grupo
-  IF NOT EXISTS (
-    SELECT 1 FROM study_group_members
-    WHERE group_id = p_group_id
-      AND user_id = p_admin_id
-      AND role IN ('admin', 'coach')
-      AND status = 'active'
-  ) THEN
+  -- Verificar se o admin é realmente admin do grupo OU criador do grupo
+  SELECT created_by INTO v_created_by
+  FROM study_groups
+  WHERE id = p_group_id;
+
+  SELECT 
+    EXISTS (
+      SELECT 1 FROM study_group_members
+      WHERE group_id = p_group_id
+        AND user_id = p_admin_id
+        AND role IN ('admin', 'coach')
+        AND status = 'active'
+    )
+    OR (v_created_by = p_admin_id)
+  INTO v_is_admin;
+
+  IF NOT v_is_admin THEN
     RETURN jsonb_build_object(
       'success', false,
-      'error', 'Apenas administradores podem remover membros'
+      'error', 'Apenas administradores ou o criador do grupo podem remover membros'
     );
   END IF;
 
@@ -94,21 +115,16 @@ BEGIN
   END IF;
 
   -- Criador não pode ser removido
-  IF EXISTS (
-    SELECT 1 FROM study_groups
-    WHERE id = p_group_id
-      AND created_by = v_member_user_id
-  ) THEN
+  IF v_created_by = v_member_user_id THEN
     RETURN jsonb_build_object(
       'success', false,
       'error', 'O criador do grupo não pode ser removido'
     );
   END IF;
 
-  -- Remover membro (soft delete)
+  -- Remover membro (soft delete) - sem updated_at pois a coluna não existe
   UPDATE study_group_members
-  SET status = 'removed',
-      updated_at = NOW()
+  SET status = 'removed'
   WHERE id = p_member_id
     AND group_id = p_group_id;
 
@@ -156,9 +172,9 @@ BEGIN
   DELETE FROM study_group_members
   WHERE group_id = p_group_id;
 
-  -- Deletar pedidos pendentes
-  DELETE FROM study_group_join_requests
-  WHERE group_id = p_group_id;
+  -- Deletar pedidos pendentes (se a tabela existir)
+  -- DELETE FROM study_group_join_requests
+  -- WHERE group_id = p_group_id;
 
   -- Deletar grupo
   DELETE FROM study_groups
@@ -175,4 +191,3 @@ $$;
 GRANT EXECUTE ON FUNCTION public.delete_group_post(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.remove_group_member(UUID, UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_study_group(UUID) TO authenticated;
-

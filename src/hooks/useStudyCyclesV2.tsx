@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2, StudySchedule } from '@/types/userStudy';
@@ -43,6 +44,7 @@ export interface WeeklySchedule {
 
 export const useStudyCyclesV2 = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -94,6 +96,26 @@ export const useStudyCyclesV2 = () => {
     
     if (!targetUserId || !user) return null;
 
+    // VALIDAÇÃO: Verificar se usuário é Free (apenas se for o próprio usuário, não coach)
+    if (!cycleData.userId) {
+      // Verificar subscription diretamente para evitar problemas com estado do hook
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('plan, is_active')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
+      
+      // Se não é Pro, bloquear e redirecionar imediatamente
+      if (!userIsPro) {
+        toast.error('Ciclos de estudos estão disponíveis apenas no plano Pro.');
+        // Redirecionar imediatamente
+        navigate('/planos');
+        return null;
+      }
+    }
+
     try {
       // Verificar se já existem 2 ciclos ativos (usar targetUserId)
       const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
@@ -133,7 +155,16 @@ export const useStudyCyclesV2 = () => {
       }
     } catch (error: any) {
       console.error('Error creating cycle:', error);
-      toast.error('Erro ao criar ciclo');
+      
+      // Verificar se o erro é sobre plano Free
+      const errorMessage = error?.message || error?.error?.message || '';
+      if (errorMessage.includes('plano Pro') || errorMessage.includes('upgrade')) {
+        toast.error('Ciclos de estudos estão disponíveis apenas no plano Pro.');
+        navigate('/planos');
+      } else {
+        toast.error('Erro ao criar ciclo de estudos');
+      }
+      
       return null;
     }
   };

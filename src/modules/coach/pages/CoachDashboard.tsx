@@ -463,30 +463,31 @@ const CoachDashboard = () => {
   const { groups: coachGroups } = useUserGroups(user?.id);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold">🎯 Coach Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Gerencie sua equipe de alunos e acompanhe o progresso de estudos
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-purple-600 dark:text-purple-400">🎯 Coach Dashboard</h1>
+            <p className="text-muted-foreground mt-2">
+              Gerencie sua equipe de alunos e acompanhe o progresso de estudos
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white font-bold shadow-lg shadow-purple-500/50 dark:shadow-purple-900/50 border-2 border-purple-400/30 dark:border-purple-500/30">
+              Modo Coach
+            </Badge>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
-            Modo Coach
-          </Badge>
-        </div>
-      </div>
 
       {/* Tabs */}
       <Tabs defaultValue="alunos" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="alunos">
+        <TabsList className="bg-purple-100 dark:bg-purple-900/30">
+          <TabsTrigger value="alunos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
             <Users className="mr-2 h-4 w-4" />
             Alunos
           </TabsTrigger>
-          <TabsTrigger value="grupos">
+          <TabsTrigger value="grupos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
             <BookOpen className="mr-2 h-4 w-4" />
             Grupos
             {coachGroups.length > 0 && (
@@ -530,11 +531,11 @@ const CoachDashboard = () => {
           </CardHeader>
         </Card>
 
-        <Card className={students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 ? "border-orange-500/20 bg-orange-500/5" : ""}>
+        <Card className={students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 ? "border-red-500/20 bg-red-500/5" : ""}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardDescription>Avisos</CardDescription>
-              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <CardTitle className="text-4xl font-bold">
               {students.filter(s => (s.performance.hours_this_week || 0) === 0).length}
@@ -638,6 +639,7 @@ const CoachDashboard = () => {
                 onClick={() => setBroadcastModalOpen(true)}
                 variant="outline"
                 disabled={students.length === 0}
+                className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
               >
                 <MessageSquare className="mr-2" size={16} />
                 Enviar Mensagem
@@ -645,6 +647,7 @@ const CoachDashboard = () => {
               <Button 
                 onClick={handleInviteStudent}
                 disabled={!subscriptionData?.can_invite}
+                className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
               >
                 <Plus className="mr-2" size={16} />
                 Convidar Aluno
@@ -664,7 +667,10 @@ const CoachDashboard = () => {
               <p className="text-muted-foreground mb-4">
                 Comece convidando um aluno para sua equipe
               </p>
-              <Button onClick={handleInviteStudent}>
+              <Button 
+                onClick={handleInviteStudent}
+                className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
+              >
                 <Plus className="mr-2" size={16} />
                 Convidar Primeiro Aluno
               </Button>
@@ -751,7 +757,7 @@ const CoachDashboard = () => {
                           variant="default"
                           size="sm"
                           onClick={() => handleViewStudent(student.student_id)}
-                          className="w-full"
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
                         >
                           <Eye className="mr-2 h-4 w-4" />
                           Ver Detalhes
@@ -830,18 +836,21 @@ const CoachDashboard = () => {
                 setBroadcastMessage('');
               }}
               disabled={broadcastMessageMutation.isPending}
+              className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleBroadcastMessage}
               disabled={broadcastMessageMutation.isPending || !broadcastMessage.trim() || students.length === 0}
+              className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
             >
               {broadcastMessageMutation.isPending ? 'Enviando...' : `Enviar para ${students.length} aluno(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

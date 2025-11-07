@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { studyGroupMembersService } from '@/integrations/supabase/studyGroups/members';
 import type { GroupMember } from '@/types/studyGroups';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Hook para buscar membros do grupo
@@ -66,10 +68,49 @@ export const useRequestToJoin = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (groupId: string) => 
-      studyGroupMembersService.requestToJoinGroup(groupId, user!.id),
+    mutationFn: async (groupId: string) => {
+      // VALIDAÇÃO: Verificar plano antes de solicitar entrada
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Verificar subscription diretamente (Pro)
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('plan, is_active')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
+      
+      // Verificar se é Coach (tem assinatura ativa do Modo Coach)
+      const { data: coachSubscription } = await supabase
+        .from('coach_subscriptions')
+        .select('id, status')
+        .eq('coach_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      const userIsCoach = !!coachSubscription;
+      
+      // Apenas Pro ou Coach podem participar de grupos
+      if (!userIsPro && !userIsCoach) {
+        toast({
+          title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
+          description: 'Faça upgrade para participar de grupos de estudos.',
+          variant: 'destructive',
+        });
+        setTimeout(() => {
+          navigate('/planos');
+        }, 2000);
+        throw new Error('Grupos de estudos estão disponíveis apenas no plano Pro ou Modo Coach.');
+      }
+
+      return studyGroupMembersService.requestToJoinGroup(groupId, user.id);
+    },
     onSuccess: (result, groupId) => {
         queryClient.invalidateQueries({ queryKey: ['group-members', groupId] });
         queryClient.invalidateQueries({ queryKey: ['study-group', groupId] });
@@ -83,19 +124,43 @@ export const useRequestToJoin = () => {
           description: 'Aguarde a aprovação do administrador.',
         });
       } else {
+        // Verificar se o erro requer upgrade
+        if (result.error?.includes('plano Pro') || result.error?.includes('Modo Coach') || result.error?.includes('upgrade') || result.requires_upgrade) {
+          toast({
+            title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
+            description: 'Faça upgrade para participar de grupos de estudos.',
+            variant: 'destructive',
+          });
+          setTimeout(() => {
+            navigate('/planos');
+          }, 2000);
+        } else {
+          toast({
+            title: 'Aviso',
+            description: result.error || 'Não foi possível enviar o pedido.',
+            variant: 'destructive',
+          });
+        }
+      }
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('plano Pro') || errorMessage.includes('Modo Coach') || errorMessage.includes('upgrade')) {
         toast({
-          title: 'Aviso',
-          description: result.error || 'Não foi possível enviar o pedido.',
+          title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
+          description: 'Faça upgrade para participar de grupos de estudos.',
+          variant: 'destructive',
+        });
+        setTimeout(() => {
+          navigate('/planos');
+        }, 2000);
+      } else {
+        toast({
+          title: 'Erro ao solicitar entrada',
+          description: 'Não foi possível enviar o pedido.',
           variant: 'destructive',
         });
       }
-    },
-    onError: () => {
-      toast({
-        title: 'Erro ao solicitar entrada',
-        description: 'Não foi possível enviar o pedido.',
-        variant: 'destructive',
-      });
     },
   });
 };
