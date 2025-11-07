@@ -246,3 +246,4 @@ COMMENT ON FUNCTION invite_user_to_group(UUID, UUID, UUID) IS
   'Convida um usuário para um grupo de estudos. Bloqueia convites para usuários Free - apenas Pro ou Coach pode ser convidado.';
 
 
+

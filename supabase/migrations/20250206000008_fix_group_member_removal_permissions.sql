@@ -37,3 +37,4 @@ COMMENT ON POLICY "Admins can remove members" ON public.study_group_members IS
   'Permite que criadores e admins do grupo removam membros, mudando o status para "removed".';
 
 
+

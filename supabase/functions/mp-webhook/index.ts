@@ -223,13 +223,33 @@ serve(async (req: Request): Promise<Response> => {
   }
   
   try {
+    // Log inicial para debug
+    console.log("[mp-webhook] Webhook chamado:", {
+      method: req.method,
+      url: req.url,
+      hasAuth: !!req.headers.get("authorization"),
+      contentType: req.headers.get("content-type")
+    });
+    
     // Criar cliente Supabase
     const supabase = createServiceRoleClient();
     
     if (!supabase) {
-      console.error("[mp-webhook] Falha ao criar cliente Supabase");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      console.error("[mp-webhook] Falha ao criar cliente Supabase:", {
+        hasUrl: !!supabaseUrl,
+        hasServiceKey: !!serviceRoleKey,
+        urlLength: supabaseUrl?.length || 0,
+        keyLength: serviceRoleKey?.length || 0
+      });
+      
       return new Response(
-        JSON.stringify({ error: "Internal Server Error" }),
+        JSON.stringify({ 
+          error: "Internal Server Error",
+          details: "Falha ao criar cliente Supabase. Verifique variáveis de ambiente."
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -300,7 +320,11 @@ serve(async (req: Request): Promise<Response> => {
     const refInfo = parseExternalReference(payment.external_reference);
     
     if (!refInfo) {
-      console.error("[mp-webhook] External reference inválido:", payment.external_reference);
+      console.error("[mp-webhook] External reference inválido:", {
+        external_reference: payment.external_reference,
+        payment_id: paymentId,
+        status: payment.status
+      });
       // Mesmo com external_reference inválido, retornar 200 para não entrar em retry
       return new Response(
         JSON.stringify({ received: true, message: "Invalid external reference" }),
@@ -313,6 +337,28 @@ serve(async (req: Request): Promise<Response> => {
     
     const { userId, planId } = refInfo;
     
+    // Verificar se o pagamento já foi processado (idempotência)
+    const { data: existingPayment } = await supabase
+      .from("payment_preferences")
+      .select("status, payment_id")
+      .eq("external_reference", payment.external_reference)
+      .single();
+    
+    if (existingPayment?.payment_id === paymentId && 
+        existingPayment?.status === payment.status) {
+      console.log(`[mp-webhook] Pagamento já processado: ${paymentId}`, {
+        external_reference: payment.external_reference,
+        status: payment.status
+      });
+      return new Response(
+        JSON.stringify({ received: true, message: "Already processed" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+    
     // Atualizar registro da preferência
     const updateData: any = {
       payment_id: paymentId,
@@ -321,17 +367,57 @@ serve(async (req: Request): Promise<Response> => {
       updated_at: new Date().toISOString()
     };
     
-    const { error: updateError } = await supabase
+    const { data: updatedData, error: updateError } = await supabase
       .from("payment_preferences")
       .update(updateData)
-      .eq("external_reference", payment.external_reference);
+      .eq("external_reference", payment.external_reference)
+      .select();
     
     if (updateError) {
-      console.error("[mp-webhook] Erro ao atualizar payment_preferences:", updateError);
-      // Não retornar erro aqui - tentar continuar o processamento
-    } else {
-      console.log(`[mp-webhook] Payment preference atualizada: ${payment.external_reference}`);
+      console.error("[mp-webhook] Erro ao atualizar payment_preferences:", {
+        error: updateError,
+        external_reference: payment.external_reference,
+        payment_id: paymentId,
+        status: payment.status
+      });
+      
+      // Retornar erro para que o Mercado Pago tente novamente
+      return new Response(
+        JSON.stringify({ 
+          error: "Database update failed",
+          details: updateError.message 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
+    
+    if (!updatedData || updatedData.length === 0) {
+      console.error("[mp-webhook] Nenhum registro atualizado:", {
+        external_reference: payment.external_reference,
+        payment_id: paymentId
+      });
+      
+      // Retornar erro para retry
+      return new Response(
+        JSON.stringify({ 
+          error: "Payment preference not found",
+          external_reference: payment.external_reference
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+    
+    console.log(`[mp-webhook] Payment preference atualizada: ${payment.external_reference}`, {
+      payment_id: paymentId,
+      status: payment.status,
+      updated_rows: updatedData.length
+    });
     
     // Processar pagamento aprovado
     if (payment.status === "approved") {
