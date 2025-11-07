@@ -29,10 +29,13 @@ const LOCAL_IP_PATTERN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])
 // ============================================
 // CONFIGURAÇÃO DE PLANOS E PRICES DO STRIPE
 // ============================================
-// Price IDs do Stripe (já criados)
+// Price IDs do Stripe
 const STRIPE_PRICES = {
-  pro: "price_1SQtQwRwuherhQlTKYDiUcgF", // R$ 21,90/mês
-  // Adicionar outros planos quando criados no Stripe
+  pro: "price_1SQukZQOI1Sr9J1AGjhIjXur", // R$ 21,90/mês - Plano Pro
+  // Outros planos disponíveis:
+  // coach_starter: "price_1SQumMQOI1Sr9J1AmXgN1l2g", // R$ 49,90/mês
+  // coach_professional: "price_1SQun3QOI1Sr9J1A2PAOmLOW", // R$ 149,90/mês
+  // coach_enterprise: "price_1SQunxQOI1Sr9J1AKgm2zDvc", // R$ 249,90/mês
 };
 
 // ============================================
@@ -92,6 +95,11 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verificar se Stripe está disponível
+    if (typeof Stripe === "undefined" || !Stripe) {
+      console.error("[create-checkout] Stripe não está disponível");
+      throw new Error("Módulo Stripe não foi carregado corretamente");
+    }
     // Criar cliente Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
