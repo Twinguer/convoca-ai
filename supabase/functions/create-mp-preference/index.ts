@@ -289,6 +289,7 @@ async function createMercadoPagoPreference(
     notification_url: notificationUrl,
     statement_descriptor: statementDescriptor,
     binary_mode: false,
+    // Calcular número máximo de parcelas
     installments: (() => {
       // Regra: Só é possível parcelar para compras acima de R$ 199,00 (máximo 10 parcelas)
       // Valor mínimo por parcela: R$ 5,00
@@ -310,6 +311,25 @@ async function createMercadoPagoPreference(
       console.log(`[create-mp-preference] Valor R$ ${finalPrice.toFixed(2)} acima de R$ ${minValueForInstallments.toFixed(2)} - usando ${installments} parcelas (máximo calculado: ${maxInstallments})`);
       return installments;
     })(),
+    // Objeto payment_methods completo (necessário para o Checkout Pro)
+    payment_methods: {
+      excluded_payment_methods: [],
+      excluded_payment_types: [],
+      installments: (() => {
+        // Mesma lógica de parcelas para payment_methods
+        const minInstallmentValue = 5.00;
+        const minValueForInstallments = 199.00;
+        
+        if (finalPrice < minValueForInstallments) {
+          return 1; // À vista
+        }
+        
+        const maxByValue = Math.floor(finalPrice / minInstallmentValue);
+        const maxInstallments = Math.min(10, maxByValue);
+        return Math.max(1, maxInstallments);
+      })(),
+      default_installments: 1 // Sempre começar com 1 parcela (à vista) como padrão
+    },
     metadata: {
       user_id: user.id,
       plan_months: plan.months.toString(),
@@ -329,6 +349,12 @@ async function createMercadoPagoPreference(
     planPrice: plan.price,
     finalPrice: finalPrice,
     installments: preferenceData.installments,
+    paymentMethods: {
+      installments: preferenceData.payment_methods?.installments || "not set",
+      defaultInstallments: preferenceData.payment_methods?.default_installments || "not set",
+      excludedMethods: preferenceData.payment_methods?.excluded_payment_methods?.length || 0,
+      excludedTypes: preferenceData.payment_methods?.excluded_payment_types?.length || 0
+    },
     userId: user.id,
     userEmail: user.email ? `${user.email.substring(0, 3)}***` : "none",
     payerName: preferenceData.payer.name,
