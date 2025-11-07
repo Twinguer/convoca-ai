@@ -31,11 +31,11 @@ const LOCAL_IP_PATTERN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])
 // ============================================
 // Price IDs do Stripe
 const STRIPE_PRICES = {
-  pro: "price_1SQukZQOI1Sr9J1AGjhIjXur", // R$ 21,90/mês - Plano Pro
+  pro: "price_1SQwL6QOI1Sr9J1A87vPtQs5", // R$ 21,90/mês - Aluno Pro
   // Outros planos disponíveis:
-  // coach_starter: "price_1SQumMQOI1Sr9J1AmXgN1l2g", // R$ 49,90/mês
-  // coach_professional: "price_1SQun3QOI1Sr9J1A2PAOmLOW", // R$ 149,90/mês
-  // coach_enterprise: "price_1SQunxQOI1Sr9J1AKgm2zDvc", // R$ 249,90/mês
+  coach_starter: "price_1SQwLwQOI1Sr9J1AnLYAo0JD", // R$ 49,90/mês - Modo Coach Starter
+  coach_professional: "price_1SQwMqQOI1Sr9J1Aagx6iQoE", // R$ 149,90/mês - Modo Coach Professional
+  coach_enterprise: "price_1SQwNTQOI1Sr9J1AOTPomBNh", // R$ 249,90/mês - Modo Coach Enterprise
 };
 
 // ============================================
@@ -264,14 +264,20 @@ serve(async (req: Request): Promise<Response> => {
         raw: stripeError?.raw
       });
       
-      // Tratamento específico para erro de conta não habilitada
+      // Tratamento específico para erros comuns do Stripe
+      let errorMessage = stripeError?.message || "Erro desconhecido ao criar sessão no Stripe";
+      
       if (stripeError?.message?.includes("cannot currently make live charges")) {
-        const errorMessage = "Conta Stripe não habilitada para modo live. Use chave de teste (sk_test_) ou complete a verificação da conta no Stripe Dashboard.";
+        errorMessage = "Conta Stripe não habilitada para modo live. Use chave de teste (sk_test_) ou complete a verificação da conta no Stripe Dashboard.";
         console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
-        throw new Error(`Erro do Stripe: ${errorMessage}`);
+      } else if (stripeError?.message?.includes("No such price")) {
+        errorMessage = `Price ID não encontrado no Stripe. Verifique se o Price ID existe no modo correto (teste ou live). Price usado: ${priceId}`;
+        console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
+      } else if (stripeError?.code === "resource_missing") {
+        errorMessage = `Recurso não encontrado no Stripe: ${stripeError?.param || "desconhecido"}. Verifique se está usando os IDs corretos para o modo (teste/live).`;
+        console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
       }
       
-      const errorMessage = stripeError?.message || "Erro desconhecido ao criar sessão no Stripe";
       throw new Error(`Erro do Stripe: ${errorMessage}`);
     }
     
