@@ -42,12 +42,41 @@ const Planos = () => {
     
     // Stripe retorna status=success ou status=canceled
     if (status === "success" && plan) {
-      toast({
-        title: "Pagamento realizado com sucesso!",
-        description: `Seu plano foi ativado. Bem-vindo ao premium!`
-      });
-      refetch();
-      navigate("/planos", { replace: true });
+      // Verificar e ativar assinatura imediatamente no Stripe
+      const verifyAndActivate = async () => {
+        try {
+          console.log("[Planos] Verificando assinatura no Stripe após pagamento...");
+          const result = await paymentService.verifySubscription();
+          
+          if (result.success) {
+            console.log("[Planos] Assinatura verificada e ativada com sucesso");
+            toast({
+              title: "Pagamento realizado com sucesso!",
+              description: `Seu plano foi ativado. Bem-vindo ao premium!`
+            });
+          } else {
+            console.warn("[Planos] Assinatura não encontrada ainda, aguardando webhook...");
+            toast({
+              title: "Pagamento realizado!",
+              description: "Estamos processando sua assinatura. Você receberá acesso em instantes."
+            });
+          }
+          
+          // Sempre fazer refetch para atualizar o estado
+          await refetch();
+          navigate("/planos", { replace: true });
+        } catch (error) {
+          console.error("[Planos] Erro ao verificar assinatura:", error);
+          toast({
+            title: "Pagamento realizado!",
+            description: "Estamos processando sua assinatura. Se o acesso não aparecer em alguns minutos, entre em contato com o suporte."
+          });
+          await refetch();
+          navigate("/planos", { replace: true });
+        }
+      };
+      
+      verifyAndActivate();
     } else if (status === "canceled") {
       toast({
         title: "Pagamento cancelado",

@@ -49,7 +49,7 @@ export const GroupDetailsPage: React.FC = () => {
     const checkUserPlan = async () => {
       if (!user?.id) return;
       
-      // Verificar subscription (Pro)
+      // Verificar subscription (APENAS Pro)
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('plan, is_active')
@@ -58,21 +58,11 @@ export const GroupDetailsPage: React.FC = () => {
       
       const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
       
-      // Verificar se é Coach
-      const { data: coachSubscription } = await supabase
-        .from('coach_subscriptions')
-        .select('id, status')
-        .eq('coach_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-      
-      const userIsCoach = !!coachSubscription;
-      
-      // Se não é Pro nem Coach, redirecionar
-      if (!userIsPro && !userIsCoach) {
+      // APENAS Pro pode acessar grupos (Coach NÃO pode)
+      if (!userIsPro) {
         toast({
-          title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
-          description: 'Faça upgrade para acessar grupos de estudos.',
+          title: 'Grupos disponíveis apenas no plano Pro',
+          description: 'Faça upgrade para Pro para acessar grupos de estudos.',
           variant: 'destructive',
         });
         navigate('/planos');
@@ -524,7 +514,7 @@ export const GroupDetailsPage: React.FC = () => {
                 <CardContent className="py-12 text-center">
                   <p className="text-muted-foreground">
                     {group.privacy_level === 'public'
-                      ? 'Faça login e solicite entrada na barra lateral para ver os posts e participar do grupo.'
+                      ? 'Solicite entrada na barra lateral para ver os posts e participar do grupo.'
                       : 'Este grupo é privado. Solicite entrada na barra lateral para participar.'}
                   </p>
                 </CardContent>

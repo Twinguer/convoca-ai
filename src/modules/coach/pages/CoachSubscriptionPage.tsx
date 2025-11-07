@@ -1,38 +1,145 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
-import { Check, ArrowLeft } from 'lucide-react';
+import { paymentService } from '@/services/paymentService';
+import { Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CoachSubscriptionPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const createSubscription = useMutation({
-    mutationFn: async (planType: 'starter' | 'professional' | 'enterprise') => {
-      return await coachSubscriptionService.createCoachSubscription(user!.id, planType);
-    },
-    onSuccess: (data) => {
+  // Tratar retorno do Stripe
+  useEffect(() => {
+    const status = searchParams.get("status");
+    const plan = searchParams.get("plan");
+    
+    if (status === "success" && plan) {
+      // Verificar e ativar assinatura imediatamente no Stripe
+      const verifyAndActivate = async () => {
+        try {
+          console.log("[CoachSubscriptionPage] Verificando assinatura Coach no Stripe após pagamento...");
+          const result = await paymentService.verifySubscription();
+          
+          if (result.success) {
+            console.log("[CoachSubscriptionPage] Assinatura Coach verificada e ativada com sucesso");
+            
+            // Invalidar todas as queries relacionadas à assinatura Coach para atualizar o estado
+            await queryClient.invalidateQueries({ queryKey: ['coach-subscription', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
+            
+            toast({
+              title: "Pagamento realizado com sucesso!",
+              description: `Seu plano Coach foi ativado. Bem-vindo ao Modo Coach!`
+            });
+            navigate("/coach/dashboard", { replace: true });
+          } else {
+            console.warn("[CoachSubscriptionPage] Assinatura Coach não encontrada ainda, aguardando webhook...");
+            
+            // Invalidar queries mesmo se não encontrou ainda (pode ter sido criada pelo webhook)
+            await queryClient.invalidateQueries({ queryKey: ['coach-subscription', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
+            
+            toast({
+              title: "Pagamento realizado!",
+              description: "Estamos processando sua assinatura Coach. Você receberá acesso em instantes."
+            });
+            navigate("/coach/dashboard", { replace: true });
+          }
+        } catch (error) {
+          console.error("[CoachSubscriptionPage] Erro ao verificar assinatura Coach:", error);
+          
+          // Invalidar queries mesmo em caso de erro (webhook pode ter processado)
+          await queryClient.invalidateQueries({ queryKey: ['coach-subscription', user?.id] });
+          await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
+          await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
+          await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
+          
+          toast({
+            title: "Pagamento realizado!",
+            description: "Estamos processando sua assinatura Coach. Se o acesso não aparecer em alguns minutos, entre em contato com o suporte."
+          });
+          navigate("/coach/dashboard", { replace: true });
+        }
+      };
+      
+      verifyAndActivate();
+    } else if (status === "canceled") {
       toast({
-        title: 'Assinatura criada!',
-        description: `Você agora tem ${data.max_students} vagas disponíveis`,
+        title: "Pagamento cancelado",
+        description: "Você pode tentar novamente quando quiser.",
+        variant: "destructive"
       });
-      navigate('/coach/dashboard');
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Erro ao criar assinatura',
-        description: error.message,
-        variant: 'destructive'
-      });
+      navigate("/coach/subscription", { replace: true });
     }
-  });
+  }, [searchParams, navigate, toast]);
+
+  const handleSubscribe = async (planType: 'starter' | 'professional' | 'enterprise') => {
+    if (!user?.id) {
+      toast({
+        title: "Autenticação necessária",
+        description: "Por favor, faça login para continuar",
+        variant: "destructive"
+      });
+      navigate("/auth");
+      return;
+    }
+
+    // Mapear planType para planId do Stripe
+    const planIdMap: Record<string, string> = {
+      'starter': 'coach_starter',
+      'professional': 'coach_professional',
+      'enterprise': 'coach_enterprise'
+    };
+
+    const planId = planIdMap[planType];
+    if (!planId) {
+      toast({
+        title: "Erro",
+        description: "Plano inválido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoadingPlan(planType);
+    try {
+      console.log("[CoachSubscriptionPage] Iniciando checkout Stripe para plano Coach:", planId);
+      console.log("[CoachSubscriptionPage] Tipo do planId:", typeof planId);
+      console.log("[CoachSubscriptionPage] planId antes de enviar:", JSON.stringify(planId));
+      const checkout = await paymentService.createCheckout(planId);
+
+      if (!checkout.url) {
+        throw new Error("URL de checkout não disponível");
+      }
+
+      console.log("[CoachSubscriptionPage] Redirecionando para Stripe Checkout:", checkout.url.substring(0, 50) + "...");
+      window.location.href = checkout.url;
+
+    } catch (error: any) {
+      console.error("Erro ao processar pagamento Coach");
+      toast({
+        title: "Erro ao processar pagamento",
+        description: error.message || "Tente novamente em alguns instantes.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   const plans = [
     {
@@ -130,10 +237,17 @@ const CoachSubscriptionPage = () => {
               <Button 
                 className="w-full mt-auto"
                 variant={plan.popular ? 'default' : 'outline'}
-                onClick={() => createSubscription.mutate(plan.name.toLowerCase() as any)}
-                disabled={createSubscription.isPending}
+                onClick={() => handleSubscribe(plan.name.toLowerCase() as 'starter' | 'professional' | 'enterprise')}
+                disabled={loadingPlan === plan.name.toLowerCase()}
               >
-                {createSubscription.isPending ? 'Processando...' : 'Começar agora'}
+                {loadingPlan === plan.name.toLowerCase() ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  'Assinar'
+                )}
               </Button>
             </CardContent>
           </Card>

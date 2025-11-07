@@ -107,7 +107,9 @@ function handleApiError(error: any): Error {
   
   if (errorMessage.includes("400") || errorMessage.includes("Bad Request")) {
     console.error("[paymentService] Dados inválidos");
-    return new Error("Dados inválidos. Verifique os campos e tente novamente.");
+    // Tentar extrair detalhes do erro se disponível
+    const errorDetails = error?.context?.body?.details || error?.message || "Dados inválidos";
+    return new Error(`Erro: ${errorDetails}`);
   }
   
   if (errorMessage.includes("500") || errorMessage.includes("Internal Server")) {
@@ -142,14 +144,52 @@ export const paymentService = {
       
       // Usar supabase.functions.invoke para criar sessão de checkout no Stripe
       console.log("[paymentService] Criando checkout no Stripe para plano:", planId);
+      console.log("[paymentService] Body que será enviado:", JSON.stringify({ planId }));
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           planId
         }
       });
       
+      // Log da resposta
+      if (data) {
+        console.log("[paymentService] Resposta recebida:", data);
+      }
+      
       // Tratar erro
       if (error) {
+        console.error("[paymentService] Erro completo da API:", error);
+        
+        // Tentar ler o body da resposta para ver a mensagem de erro real
+        if (error?.context) {
+          try {
+            // O context pode ser um Response object
+            const response = error.context as Response;
+            if (response && response.body) {
+              const errorText = await response.clone().text();
+              console.error("[paymentService] Erro da função (texto):", errorText);
+              try {
+                const errorBody = JSON.parse(errorText);
+                console.error("[paymentService] Detalhes do erro da função:", errorBody);
+                if (errorBody.details) {
+                  // Lançar erro com a mensagem detalhada
+                  const detailedError = new Error(errorBody.details);
+                  throw detailedError;
+                }
+              } catch (parseError) {
+                // Se não conseguir parsear, usar o texto
+                throw new Error(errorText || error.message);
+              }
+            }
+          } catch (e: any) {
+            // Se já lançou um erro acima, re-lançar
+            if (e instanceof Error && e.message) {
+              throw e;
+            }
+            console.error("[paymentService] Erro ao ler resposta:", e);
+          }
+        }
+        
         throw handleApiError(error);
       }
       
@@ -185,6 +225,40 @@ export const paymentService = {
       // Tratar erros desconhecidos (log genérico)
       console.error("[paymentService] Erro ao processar pagamento");
       throw new Error("Erro inesperado ao processar pagamento. Tente novamente.");
+    }
+  },
+
+  /**
+   * Verifica assinatura no Stripe e atualiza banco de dados
+   * Usado quando o usuário retorna do checkout para garantir que a assinatura seja ativada imediatamente
+   */
+  async verifySubscription(): Promise<{ success: boolean; message: string; plan_id?: string }> {
+    try {
+      await ensureValidSession();
+      
+      console.log("[paymentService] Verificando assinatura no Stripe...");
+      const { data, error } = await supabase.functions.invoke('verify-stripe-subscription', {
+        body: {}
+      });
+      
+      if (error) {
+        throw handleApiError(error);
+      }
+      
+      if (!data || typeof data !== 'object') {
+        throw new Error("Resposta inválida do servidor");
+      }
+      
+      console.log("[paymentService] Verificação de assinatura concluída:", data);
+      return data as { success: boolean; message: string; plan_id?: string };
+      
+    } catch (error) {
+      console.error("[paymentService] Erro ao verificar assinatura:", error);
+      // Não lançar erro, apenas logar - o webhook pode processar depois
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : "Erro ao verificar assinatura" 
+      };
     }
   }
 };

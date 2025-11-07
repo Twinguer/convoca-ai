@@ -77,7 +77,7 @@ export const useRequestToJoin = () => {
         throw new Error('Usuário não autenticado');
       }
 
-      // Verificar subscription diretamente (Pro)
+      // Verificar subscription diretamente (APENAS Pro)
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('plan, is_active')
@@ -86,27 +86,17 @@ export const useRequestToJoin = () => {
       
       const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
       
-      // Verificar se é Coach (tem assinatura ativa do Modo Coach)
-      const { data: coachSubscription } = await supabase
-        .from('coach_subscriptions')
-        .select('id, status')
-        .eq('coach_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-      
-      const userIsCoach = !!coachSubscription;
-      
-      // Apenas Pro ou Coach podem participar de grupos
-      if (!userIsPro && !userIsCoach) {
+      // APENAS Pro pode participar de grupos (Coach NÃO pode)
+      if (!userIsPro) {
         toast({
-          title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
-          description: 'Faça upgrade para participar de grupos de estudos.',
+          title: 'Grupos disponíveis apenas no plano Pro',
+          description: 'Faça upgrade para Pro para participar de grupos de estudos.',
           variant: 'destructive',
         });
         setTimeout(() => {
           navigate('/planos');
         }, 2000);
-        throw new Error('Grupos de estudos estão disponíveis apenas no plano Pro ou Modo Coach.');
+        throw new Error('Grupos de estudos estão disponíveis apenas no plano Pro.');
       }
 
       return studyGroupMembersService.requestToJoinGroup(groupId, user.id);

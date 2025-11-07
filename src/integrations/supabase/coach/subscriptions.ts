@@ -26,34 +26,13 @@ export const coachSubscriptionService = {
   },
 
   /**
-   * Criar assinatura para o coach
+   * ⚠️ REMOVIDO: createCoachSubscription
+   * 
+   * Assinaturas Coach devem ser criadas APENAS via Stripe.
+   * Use paymentService.createCheckout() para criar assinatura.
+   * 
+   * Esta função foi removida para evitar criação de assinaturas sem pagamento.
    */
-  async createCoachSubscription(
-    coachId: string,
-    planType: 'starter' | 'professional' | 'enterprise'
-  ): Promise<CoachSubscription> {
-    const plans = {
-      starter: { price: 49.90, max_students: 5 },
-      professional: { price: 149.90, max_students: 25 },
-      enterprise: { price: 249.90, max_students: 50 }
-    };
-
-    const { data, error } = await supabase
-      .from('coach_subscriptions')
-      .insert({
-        coach_id: coachId,
-        plan_type: planType,
-        max_students: plans[planType].max_students,
-        price: plans[planType].price,
-        status: 'active',
-        current_students: 0
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
 
   /**
    * Verificar se pode convidar aluno

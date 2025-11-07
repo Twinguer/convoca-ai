@@ -32,10 +32,28 @@ const LOCAL_IP_PATTERN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])
 // Price IDs do Stripe
 const STRIPE_PRICES = {
   pro: "price_1SQwL6QOI1Sr9J1A87vPtQs5", // R$ 21,90/mês - Aluno Pro
-  // Outros planos disponíveis:
   coach_starter: "price_1SQwLwQOI1Sr9J1AnLYAo0JD", // R$ 49,90/mês - Modo Coach Starter
   coach_professional: "price_1SQwMqQOI1Sr9J1Aagx6iQoE", // R$ 149,90/mês - Modo Coach Professional
   coach_enterprise: "price_1SQwNTQOI1Sr9J1AOTPomBNh", // R$ 249,90/mês - Modo Coach Enterprise
+};
+
+// Configuração de planos Coach
+const COACH_PLANS = {
+  coach_starter: {
+    plan_type: "starter",
+    price: 49.90,
+    max_students: 5
+  },
+  coach_professional: {
+    plan_type: "professional",
+    price: 149.90,
+    max_students: 25
+  },
+  coach_enterprise: {
+    plan_type: "enterprise",
+    price: 249.90,
+    max_students: 50
+  }
 };
 
 // ============================================
@@ -149,11 +167,15 @@ serve(async (req: Request): Promise<Response> => {
     let requestData: { planId: string };
     try {
       const body = await req.json();
+      console.log(`[create-checkout] Body recebido:`, JSON.stringify(body));
       if (!body.planId || typeof body.planId !== "string") {
+        console.error(`[create-checkout] planId inválido ou ausente:`, body);
         throw new Error("planId é obrigatório");
       }
       requestData = { planId: body.planId };
+      console.log(`[create-checkout] planId validado: ${requestData.planId}`);
     } catch (error) {
+      console.error(`[create-checkout] Erro ao parsear body:`, error);
       return new Response(
         JSON.stringify({ 
           error: "Bad Request",
@@ -166,12 +188,15 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
     
-    // Validar planId
-    if (requestData.planId !== "pro") {
+    // Validar planId e obter price_id do Stripe
+    const validPlanIds = ["pro", "coach_starter", "coach_professional", "coach_enterprise"];
+    console.log(`[create-checkout] Validando planId: ${requestData.planId} contra: ${validPlanIds.join(", ")}`);
+    if (!validPlanIds.includes(requestData.planId)) {
+      console.error(`[create-checkout] Plano inválido: ${requestData.planId}`);
       return new Response(
         JSON.stringify({ 
           error: "Bad Request",
-          details: "Plano inválido. Apenas 'pro' está disponível." 
+          details: `Plano inválido. Planos disponíveis: ${validPlanIds.join(", ")}` 
         }),
         {
           status: 400,
@@ -180,11 +205,13 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
     
-    // Obter price_id do Stripe
     const priceId = STRIPE_PRICES[requestData.planId as keyof typeof STRIPE_PRICES];
     if (!priceId) {
       throw new Error(`Price ID não encontrado para o plano: ${requestData.planId}`);
     }
+    
+    // Determinar se é plano Coach
+    const isCoachPlan = requestData.planId.startsWith("coach_");
     
     // Inicializar Stripe
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -216,14 +243,65 @@ serve(async (req: Request): Promise<Response> => {
     
     // Construir URL base
     const baseUrl = (origin && origin.trim()) ? origin : PRODUCTION_ORIGINS[0];
-    const successUrl = `${baseUrl}/planos?status=success&plan=${requestData.planId}`;
-    const cancelUrl = `${baseUrl}/planos?status=canceled`;
+    
+    // Redirecionar para página correta baseado no tipo de plano
+    // (isCoachPlan já foi declarado acima na linha 214)
+    const successUrl = isCoachPlan 
+      ? `${baseUrl}/coach/subscription?status=success&plan=${requestData.planId}`
+      : `${baseUrl}/planos?status=success&plan=${requestData.planId}`;
+    const cancelUrl = isCoachPlan
+      ? `${baseUrl}/coach/subscription?status=canceled`
+      : `${baseUrl}/planos?status=canceled`;
+    
+    // Criar ou buscar customer no Stripe (necessário para Accounts V2)
+    let customerId: string;
+    try {
+      // Buscar customer existente por email
+      const existingCustomers = await stripe.customers.list({
+        email: user.email || undefined,
+        limit: 1,
+      });
+      
+      if (existingCustomers.data.length > 0) {
+        customerId = existingCustomers.data[0].id;
+        console.log(`[create-checkout] Customer existente encontrado: ${customerId}`);
+        
+        // Atualizar metadata do customer existente para garantir que plan_id está correto
+        try {
+          await stripe.customers.update(customerId, {
+            metadata: {
+              user_id: user.id,
+              plan_id: requestData.planId,
+            },
+          });
+          console.log(`[create-checkout] Metadata do customer atualizado com plan_id: ${requestData.planId}`);
+        } catch (updateError: any) {
+          console.warn(`[create-checkout] Aviso: Não foi possível atualizar metadata do customer: ${updateError?.message}`);
+          // Não falhar o checkout por causa disso, apenas logar
+        }
+      } else {
+        // Criar novo customer com metadata
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            user_id: user.id,
+            plan_id: requestData.planId,
+          },
+        });
+        customerId = customer.id;
+        console.log(`[create-checkout] Novo customer criado: ${customerId}`);
+      }
+    } catch (customerError: any) {
+      console.error("[create-checkout] Erro ao criar/buscar customer:", customerError);
+      throw new Error(`Erro ao criar customer no Stripe: ${customerError?.message || "Erro desconhecido"}`);
+    }
     
     console.log(`[create-checkout] Criando sessão de checkout com:`, {
       priceId,
       mode: "subscription",
       successUrl,
       cancelUrl,
+      customerId,
       customerEmail: user.email ? `${user.email.substring(0, 3)}***` : "none"
     });
     
@@ -240,19 +318,19 @@ serve(async (req: Request): Promise<Response> => {
         mode: "subscription",
         success_url: successUrl,
         cancel_url: cancelUrl,
-        customer_email: user.email,
+        customer: customerId, // Usar customer_id ao invés de customer_email para Accounts V2
         metadata: {
           user_id: user.id,
           plan_id: requestData.planId,
         },
-        payment_method_types: ["card"],
-        payment_method_options: {
-          card: {
-            installments: {
-              enabled: true,
-            },
+        subscription_data: {
+          metadata: {
+            user_id: user.id,
+            plan_id: requestData.planId,
           },
         },
+        payment_method_types: ["card"],
+        // Nota: installments não é suportado em subscription mode, apenas em payment mode
       });
     } catch (stripeError: any) {
       console.error("[create-checkout] Erro ao criar sessão no Stripe:", {
