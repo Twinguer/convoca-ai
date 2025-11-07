@@ -488,3 +488,4 @@ COMMENT ON FUNCTION public.can_view_study_statistics(UUID) IS
 -- FIM DA MIGRATION
 -- ============================================================================
 
+

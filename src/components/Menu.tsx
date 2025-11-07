@@ -151,7 +151,7 @@ const Menu = () => {
               <NavigationMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className={cn(navigationMenuTriggerStyle(), "flex items-center gap-2")}>
+                    <button className={cn(navigationMenuTriggerStyle(), "flex items-center gap-2 cursor-pointer select-none")}>
                       <CreditCard className="h-4 w-4" />
                       Planos
                       <ChevronDown className="relative top-[1px] ml-1 h-3 w-3 transition duration-200" />
@@ -197,23 +197,23 @@ const Menu = () => {
             </SheetTrigger>
             <SheetContent side="right" className="pr-0 max-w-[280px]">
               <nav className="flex flex-col gap-4 px-4 pt-8">
-                <Link to="/" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/') ? "text-primary" : "text-foreground/70")}>
                   <Home className="mr-2 h-4 w-4" />
                   Home
                 </Link>
-                <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-primary" />
                   Ranking
                 </Link>
-                <Link to="/estudos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/estudos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   Estudar
                 </Link>
-                <Link to="/estatisticas" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estatisticas') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/estatisticas" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/estatisticas') ? "text-primary" : "text-foreground/70")}>
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Estatistica
                 </Link>
-                <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
                 </Link>
@@ -222,7 +222,7 @@ const Menu = () => {
                     handleLinkClick();
                     handleCoachClick();
                   }}
-                  className={cn("flex items-center text-lg font-semibold w-full text-left", isActive('/coach') ? "text-primary" : "text-foreground/70")}
+                  className={cn("flex items-center text-lg font-semibold w-full text-left cursor-pointer select-none", isActive('/coach') ? "text-primary" : "text-foreground/70")}
                 >
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Modo Coach
@@ -231,15 +231,15 @@ const Menu = () => {
                 {isAdmin() && <>
                   <div className="h-px bg-border mt-2 mb-2"></div>
                   <div className="font-bold text-foreground/70 mb-2">Administração</div>
-                  <Link to="/project/admin/man/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
+                  <Link to="/project/admin/man/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </Link>
-                  <Link to="/project/admin/man/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
+                  <Link to="/project/admin/man/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
                     <FileText className="mr-2 h-4 w-4" />
                     Concursos
                   </Link>
-                  <Link to="/project/admin/man/usuarios" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
+                  <Link to="/project/admin/man/usuarios" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
                     <Users className="mr-2 h-4 w-4" />
                     Usuários
                   </Link>
@@ -249,7 +249,7 @@ const Menu = () => {
                   <button
                     onClick={() => setIsPlansSubmenuOpen(!isPlansSubmenuOpen)}
                     className={cn(
-                      "w-full flex items-center justify-between text-lg font-semibold py-2 rounded-md transition-colors",
+                      "w-full flex items-center justify-between text-lg font-semibold py-2 rounded-md transition-colors cursor-pointer select-none",
                       isActive('/planos') || isActive('/coach/subscription')
                         ? "text-primary" 
                         : "text-foreground/70 hover:text-foreground"
@@ -271,7 +271,7 @@ const Menu = () => {
                         to="/planos" 
                         onClick={handleLinkClick} 
                         className={cn(
-                          "flex items-center text-base font-medium pl-4 py-2 rounded-md transition-colors",
+                          "flex items-center text-base font-medium pl-4 py-2 rounded-md transition-colors cursor-pointer select-none",
                           isActive('/planos') && !isActive('/coach/subscription') 
                             ? "text-primary bg-accent" 
                             : "text-foreground/70 hover:text-foreground hover:bg-accent/50"
@@ -284,7 +284,7 @@ const Menu = () => {
                         to="/coach/subscription" 
                         onClick={handleLinkClick} 
                         className={cn(
-                          "flex items-center text-base font-medium pl-4 py-2 rounded-md transition-colors",
+                          "flex items-center text-base font-medium pl-4 py-2 rounded-md transition-colors cursor-pointer select-none",
                           isActive('/coach/subscription') 
                             ? "text-primary bg-accent" 
                             : "text-foreground/70 hover:text-foreground hover:bg-accent/50"

@@ -97,3 +97,4 @@ GRANT EXECUTE ON FUNCTION public.remove_group_member(UUID, UUID, UUID) TO authen
 COMMENT ON FUNCTION public.remove_group_member(UUID, UUID, UUID) IS 
   'Remove um membro de um grupo. Apenas criadores ou admins do grupo podem remover membros. Parâmetros: p_group_id, p_member_id, p_admin_id.';
 
+
