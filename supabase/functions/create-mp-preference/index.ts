@@ -143,6 +143,11 @@ async function createMercadoPagoPreference(
     throw new Error("Preço do plano inválido");
   }
   
+  // Validar valor mínimo do Mercado Pago (R$ 0,50)
+  if (plan.price < 0.50) {
+    throw new Error("O valor do plano é muito baixo. O valor mínimo é R$ 0,50.");
+  }
+  
   // Validar e aplicar desconto do voucher (se fornecido)
   let finalPrice = plan.price;
   let appliedVoucherCode: string | undefined = undefined;
@@ -165,16 +170,22 @@ async function createMercadoPagoPreference(
         if (discount_type === 'percentage') {
           // Desconto percentual: reduzir o valor
           const discountAmount = (plan.price * parseFloat(discount_value)) / 100;
-          finalPrice = Math.max(0.01, plan.price - discountAmount); // Mínimo R$ 0,01
+          finalPrice = Math.max(0.50, plan.price - discountAmount); // Mínimo R$ 0,50 (exigência do Mercado Pago)
           console.log(`[create-mp-preference] Desconto percentual aplicado: ${discount_value}% = R$ ${discountAmount.toFixed(2)}`);
         } else if (discount_type === 'fixed') {
           // Desconto fixo: reduzir valor fixo
-          finalPrice = Math.max(0.01, plan.price - parseFloat(discount_value)); // Mínimo R$ 0,01
+          finalPrice = Math.max(0.50, plan.price - parseFloat(discount_value)); // Mínimo R$ 0,50 (exigência do Mercado Pago)
           console.log(`[create-mp-preference] Desconto fixo aplicado: R$ ${discount_value}`);
         }
         
         appliedVoucherCode = voucherCode.trim().toUpperCase();
         console.log(`[create-mp-preference] Preço original: R$ ${plan.price.toFixed(2)}, Preço final: R$ ${finalPrice.toFixed(2)}`);
+        
+        // Validar valor mínimo após desconto
+        if (finalPrice < 0.50) {
+          console.warn(`[create-mp-preference] ATENÇÃO: Valor final (R$ ${finalPrice.toFixed(2)}) abaixo do mínimo do Mercado Pago (R$ 0,50). Ajustando para R$ 0,50.`);
+          finalPrice = 0.50;
+        }
       } else {
         throw new Error(voucherData?.error || "Cupom de desconto inválido ou expirado");
       }
@@ -189,6 +200,14 @@ async function createMercadoPagoPreference(
   
   const externalRef = `${user.id}_pro_${Date.now()}`;
   const nameParts = (user.name || user.email.split("@")[0] || "Cliente").split(" ");
+  
+  // Tratamento do sobrenome - garantir que não seja vazio ou "."
+  let surname = nameParts.slice(1).join(" ").substring(0, 80);
+  if (!surname || surname.trim().length === 0 || surname === ".") {
+    // Usar parte do email ou "Usuario" como fallback
+    const emailPart = user.email.split("@")[0];
+    surname = emailPart.substring(0, 80) || "Usuario";
+  }
   
   // Statement descriptor deve ter no máximo 13 caracteres e apenas letras/números
   const statementDescriptor = "NOMEIA-AI".substring(0, 13).toUpperCase();
@@ -257,7 +276,7 @@ async function createMercadoPagoPreference(
     ],
     payer: {
       name: (nameParts[0] || "Cliente").substring(0, 80),
-      surname: nameParts.slice(1).join(" ").substring(0, 80) || ".",
+      surname: surname,
       email: user.email
     },
     back_urls: {
@@ -270,7 +289,27 @@ async function createMercadoPagoPreference(
     notification_url: notificationUrl,
     statement_descriptor: statementDescriptor,
     binary_mode: false,
-    installments: 12,
+    installments: (() => {
+      // Regra: Só é possível parcelar para compras acima de R$ 199,00 (máximo 10 parcelas)
+      // Valor mínimo por parcela: R$ 5,00
+      const minInstallmentValue = 5.00;
+      const minValueForInstallments = 199.00;
+      
+      if (finalPrice < minValueForInstallments) {
+        // Valor abaixo de R$ 199,00: apenas 1 parcela (à vista)
+        console.log(`[create-mp-preference] Valor R$ ${finalPrice.toFixed(2)} abaixo de R$ ${minValueForInstallments.toFixed(2)} - usando 1 parcela (à vista)`);
+        return 1;
+      }
+      
+      // Valor acima de R$ 199,00: calcular máximo de parcelas
+      // Máximo de 10 parcelas ou baseado no valor mínimo por parcela
+      const maxByValue = Math.floor(finalPrice / minInstallmentValue);
+      const maxInstallments = Math.min(10, maxByValue);
+      const installments = Math.max(1, maxInstallments);
+      
+      console.log(`[create-mp-preference] Valor R$ ${finalPrice.toFixed(2)} acima de R$ ${minValueForInstallments.toFixed(2)} - usando ${installments} parcelas (máximo calculado: ${maxInstallments})`);
+      return installments;
+    })(),
     metadata: {
       user_id: user.id,
       plan_months: plan.months.toString(),
@@ -288,8 +327,12 @@ async function createMercadoPagoPreference(
   console.log("[create-mp-preference] Creating preference with:", {
     planName: plan.name,
     planPrice: plan.price,
+    finalPrice: finalPrice,
+    installments: preferenceData.installments,
     userId: user.id,
     userEmail: user.email ? `${user.email.substring(0, 3)}***` : "none",
+    payerName: preferenceData.payer.name,
+    payerSurname: preferenceData.payer.surname,
     baseUrl: fullBaseUrl,
     successUrl,
     pendingUrl,
@@ -339,7 +382,10 @@ async function createMercadoPagoPreference(
       error: errorDetails,
       payload: {
         price: plan.price,
+        finalPrice: finalPrice,
+        installments: preferenceData.installments,
         hasEmail: !!user.email,
+        payerSurname: preferenceData.payer.surname,
         baseUrl: fullBaseUrl
       }
     });
@@ -349,7 +395,18 @@ async function createMercadoPagoPreference(
     throw new Error(`Erro ao criar preferência no Mercado Pago: ${mpError}`);
   }
   
-  return await response.json();
+  const preferenceResponse = await response.json();
+  
+  // Log da resposta do Mercado Pago (sem dados sensíveis)
+  console.log("[create-mp-preference] Preference created successfully:", {
+    preference_id: preferenceResponse.id,
+    init_point: preferenceResponse.init_point ? "present" : "missing",
+    sandbox_init_point: preferenceResponse.sandbox_init_point ? "present" : "missing",
+    status: preferenceResponse.status,
+    installments: preferenceResponse.payment_methods?.installments || "not specified"
+  });
+  
+  return preferenceResponse;
 }
 
 // ============================================
