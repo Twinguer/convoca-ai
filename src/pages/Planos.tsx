@@ -151,7 +151,10 @@ const Planos = () => {
 
       // Criar sessão de checkout no Stripe
       console.log("[Planos] Iniciando checkout Stripe para plano:", planoId);
-      const checkout = await paymentService.createCheckout(planoId);
+      const checkout = await paymentService.createCheckout(
+        planoId,
+        appliedDiscountVoucher?.code
+      );
 
       // Redirecionar para o checkout do Stripe
       if (!checkout.url) {

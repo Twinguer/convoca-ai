@@ -6,9 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { paymentService } from '@/services/paymentService';
-import { Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { Check, ArrowLeft, Loader2, X, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const CoachSubscriptionPage = () => {
   const navigate = useNavigate();
@@ -16,7 +20,16 @@ const CoachSubscriptionPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { validateDiscountVoucher } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [appliedDiscountVoucher, setAppliedDiscountVoucher] = useState<{
+    code: string;
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+  } | null>(null);
+  const [validatingVoucher, setValidatingVoucher] = useState(false);
+  const [voucherDialogOpen, setVoucherDialogOpen] = useState(false);
 
   // Tratar retorno do Stripe
   useEffect(() => {
@@ -111,7 +124,10 @@ const CoachSubscriptionPage = () => {
       console.log("[CoachSubscriptionPage] Iniciando checkout Stripe para plano Coach:", planId);
       console.log("[CoachSubscriptionPage] Tipo do planId:", typeof planId);
       console.log("[CoachSubscriptionPage] planId antes de enviar:", JSON.stringify(planId));
-      const checkout = await paymentService.createCheckout(planId);
+      const checkout = await paymentService.createCheckout(
+        planId,
+        appliedDiscountVoucher?.code
+      );
 
       if (!checkout.url) {
         throw new Error("URL de checkout não disponível");
@@ -129,6 +145,60 @@ const CoachSubscriptionPage = () => {
       });
     } finally {
       setLoadingPlan(null);
+    }
+  };
+
+  const handleValidateDiscountVoucher = async () => {
+    if (!voucherCode.trim()) {
+      toast({
+        title: "Código inválido",
+        description: "Digite um código de cupom válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setValidatingVoucher(true);
+    try {
+      const result = await validateDiscountVoucher(voucherCode) as {
+        valid?: boolean;
+        discount_type?: 'percentage' | 'fixed';
+        discount_value?: number;
+        error?: string;
+      };
+      
+      if (result?.valid) {
+        setAppliedDiscountVoucher({
+          code: voucherCode.trim().toUpperCase(),
+          discountType: result.discount_type || 'percentage',
+          discountValue: parseFloat(result.discount_value?.toString() || '0')
+        });
+        
+        const discountText = result.discount_type === 'percentage' 
+          ? `${result.discount_value}%`
+          : `R$ ${result.discount_value?.toFixed(2)}`;
+        
+        toast({
+          title: "Cupom aplicado!",
+          description: `Desconto de ${discountText} será aplicado no pagamento`
+        });
+        setVoucherCode("");
+        setVoucherDialogOpen(false);
+      } else {
+        toast({
+          title: "Cupom inválido",
+          description: result?.error || "Cupom de desconto inválido ou expirado",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao validar cupom",
+        description: error.message || "Tente novamente",
+        variant: "destructive"
+      });
+    } finally {
+      setValidatingVoucher(false);
     }
   };
 
@@ -204,8 +274,35 @@ const CoachSubscriptionPage = () => {
             <CardHeader>
               <CardTitle className="text-2xl">{plan.name}</CardTitle>
               <div className="mt-4">
-                <span className="text-4xl font-bold">R$ {plan.price.toFixed(2)}</span>
-                <span className="text-muted-foreground">/mês</span>
+                {appliedDiscountVoucher ? (() => {
+                  const discountAmount = appliedDiscountVoucher.discountType === 'percentage'
+                    ? (plan.price * appliedDiscountVoucher.discountValue) / 100
+                    : appliedDiscountVoucher.discountValue;
+                  const finalPrice = Math.max(0.01, plan.price - discountAmount);
+                  return (
+                    <>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="text-2xl line-through text-muted-foreground">
+                          R$ {plan.price.toFixed(2)}
+                        </div>
+                        <div className="text-3xl font-bold text-green-600">
+                          R$ {finalPrice.toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="text-sm text-green-600 font-medium mt-1">
+                        {appliedDiscountVoucher.discountType === 'percentage' 
+                          ? `${appliedDiscountVoucher.discountValue}% OFF`
+                          : `R$ ${appliedDiscountVoucher.discountValue.toFixed(2)} OFF`}
+                      </div>
+                      <div className="text-sm text-muted-foreground">/mês</div>
+                    </>
+                  );
+                })() : (
+                  <>
+                    <span className="text-4xl font-bold">R$ {plan.price.toFixed(2)}</span>
+                    <span className="text-muted-foreground">/mês</span>
+                  </>
+                )}
               </div>
             </CardHeader>
             
@@ -243,6 +340,83 @@ const CoachSubscriptionPage = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Voucher Section */}
+      <div className="max-w-5xl mx-auto mt-6 flex items-center justify-center">
+        {appliedDiscountVoucher ? (
+          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+            <Check className="w-4 h-4" />
+            <span>
+              Cupom {appliedDiscountVoucher.code} aplicado ({appliedDiscountVoucher.discountType === 'percentage' 
+                ? `${appliedDiscountVoucher.discountValue}% OFF`
+                : `R$ ${appliedDiscountVoucher.discountValue.toFixed(2)} OFF`})
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+              onClick={() => setAppliedDiscountVoucher(null)}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        ) : (
+          <Dialog open={voucherDialogOpen} onOpenChange={setVoucherDialogOpen}>
+            <DialogTrigger asChild>
+              <button 
+                type="button"
+                className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group"
+              >
+                <span>Inserir um cupom de desconto</span>
+                <ChevronDown className="w-3 h-3 transition-transform group-hover:translate-y-0.5" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Inserir cupom de desconto</DialogTitle>
+                <DialogDescription>
+                  Aplique um cupom de desconto no seu plano Modo Coach
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="voucher-code-coach">
+                    Código do cupom
+                  </Label>
+                  <Input
+                    id="voucher-code-coach"
+                    value={voucherCode}
+                    onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                    placeholder="Digite o código"
+                    className="font-mono tracking-wider"
+                    disabled={validatingVoucher}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleValidateDiscountVoucher();
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  onClick={handleValidateDiscountVoucher}
+                  disabled={validatingVoucher || !voucherCode.trim()}
+                  className="w-full"
+                >
+                  {validatingVoucher ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Validando...
+                    </>
+                  ) : (
+                    'Aplicar cupom'
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* FAQ */}

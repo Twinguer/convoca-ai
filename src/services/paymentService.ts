@@ -131,7 +131,8 @@ export const paymentService = {
    * Cria sessão de checkout no Stripe
    */
   async createCheckout(
-    planId: string
+    planId: string,
+    voucherCode?: string
   ): Promise<CreateCheckoutResponse> {
     try {
       // Validar parâmetros
@@ -144,11 +145,14 @@ export const paymentService = {
       
       // Usar supabase.functions.invoke para criar sessão de checkout no Stripe
       console.log("[paymentService] Criando checkout no Stripe para plano:", planId);
-      console.log("[paymentService] Body que será enviado:", JSON.stringify({ planId }));
+      console.log("[paymentService] Voucher:", voucherCode || "nenhum");
+      const body: any = { planId };
+      if (voucherCode) {
+        body.voucherCode = voucherCode;
+      }
+      console.log("[paymentService] Body que será enviado:", JSON.stringify(body));
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          planId
-        }
+        body
       });
       
       // Log da resposta

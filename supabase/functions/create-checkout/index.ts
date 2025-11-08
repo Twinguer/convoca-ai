@@ -164,7 +164,7 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     // Parsear body
-    let requestData: { planId: string };
+    let requestData: { planId: string; voucherCode?: string };
     try {
       const body = await req.json();
       console.log(`[create-checkout] Body recebido:`, JSON.stringify(body));
@@ -172,8 +172,11 @@ serve(async (req: Request): Promise<Response> => {
         console.error(`[create-checkout] planId inválido ou ausente:`, body);
         throw new Error("planId é obrigatório");
       }
-      requestData = { planId: body.planId };
-      console.log(`[create-checkout] planId validado: ${requestData.planId}`);
+      requestData = { 
+        planId: body.planId,
+        voucherCode: body.voucherCode || undefined
+      };
+      console.log(`[create-checkout] planId validado: ${requestData.planId}, voucher: ${requestData.voucherCode || 'nenhum'}`);
     } catch (error) {
       console.error(`[create-checkout] Erro ao parsear body:`, error);
       return new Response(
@@ -300,36 +303,101 @@ serve(async (req: Request): Promise<Response> => {
       successUrl,
       cancelUrl,
       customerId,
-      customerEmail: user.email ? `${user.email.substring(0, 3)}***` : "none"
+      customerEmail: user.email ? `${user.email.substring(0, 3)}***` : "none",
+      voucherCode: requestData.voucherCode || 'nenhum'
     });
+    
+    // Validar voucher de desconto se fornecido
+    let discountCoupons: string[] | undefined = undefined;
+    if (requestData.voucherCode) {
+      try {
+        console.log(`[create-checkout] Validando voucher de desconto: ${requestData.voucherCode}`);
+        const { data: voucherData, error: voucherError } = await supabase
+          .rpc('validate_discount_voucher', {
+            voucher_code_param: requestData.voucherCode.trim().toUpperCase()
+          });
+        
+        if (voucherError) {
+          console.error(`[create-checkout] Erro ao validar voucher:`, voucherError);
+          throw new Error(`Voucher inválido: ${voucherError.message}`);
+        }
+        
+        if (!voucherData || !voucherData.valid) {
+          throw new Error("Voucher de desconto inválido ou expirado");
+        }
+        
+        console.log(`[create-checkout] Voucher válido:`, voucherData);
+        
+        // Criar um Promotion Code no Stripe baseado no voucher
+        // Stripe usa Promotion Codes para descontos em checkout
+        const discountType = voucherData.discount_type;
+        const discountValue = parseFloat(voucherData.discount_value);
+        
+        // Criar cupom no Stripe
+        const stripeCoupon = await stripe.coupons.create({
+          ...(discountType === 'percentage' 
+            ? { percent_off: discountValue }
+            : { amount_off: Math.round(discountValue * 100), currency: 'brl' }),
+          duration: 'once', // Aplicar apenas no primeiro pagamento
+          name: `Voucher ${requestData.voucherCode}`,
+        });
+        
+        console.log(`[create-checkout] Cupom Stripe criado: ${stripeCoupon.id}`);
+        discountCoupons = [stripeCoupon.id];
+        
+      } catch (voucherError: any) {
+        console.error(`[create-checkout] Erro ao processar voucher:`, voucherError);
+        // Não falhar o checkout, apenas logar o erro
+        // O usuário pode tentar novamente sem voucher
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid Voucher",
+            details: voucherError.message || "Voucher de desconto inválido" 
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+    }
     
     // Criar sessão de checkout no Stripe
     let session;
     try {
-      session = await stripe.checkout.sessions.create({
+      const sessionParams: any = {
         line_items: [
           {
             price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: "subscription",
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
         success_url: successUrl,
         cancel_url: cancelUrl,
-        customer: customerId, // Usar customer_id ao invés de customer_email para Accounts V2
+        customer: customerId,
         metadata: {
           user_id: user.id,
           plan_id: requestData.planId,
+          voucher_code: requestData.voucherCode || undefined,
         },
         subscription_data: {
-      metadata: {
+          metadata: {
             user_id: user.id,
             plan_id: requestData.planId,
-      },
+            voucher_code: requestData.voucherCode || undefined,
+          },
         },
         payment_method_types: ["card"],
-        // Nota: installments não é suportado em subscription mode, apenas em payment mode
-      });
+      };
+      
+      // Adicionar cupons de desconto se houver
+      if (discountCoupons && discountCoupons.length > 0) {
+        sessionParams.discounts = discountCoupons.map(coupon => ({ coupon }));
+        console.log(`[create-checkout] Aplicando desconto com cupons:`, discountCoupons);
+      }
+      
+      session = await stripe.checkout.sessions.create(sessionParams);
     } catch (stripeError: any) {
       console.error("[create-checkout] Erro ao criar sessão no Stripe:", {
         error: stripeError,
