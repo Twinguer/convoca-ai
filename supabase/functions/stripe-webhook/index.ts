@@ -274,6 +274,7 @@ serve(async (req: Request): Promise<Response> => {
             if (userId && subscription.status === "active") {
               const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
               const isCoachPlan = planId?.startsWith("coach_");
+              const voucherCode = session.metadata?.voucher_code;
               
               if (isCoachPlan && planId) {
                 await updateCoachSubscription(supabase, userId, planId, subscription.status, expiresAt);
@@ -281,6 +282,23 @@ serve(async (req: Request): Promise<Response> => {
               } else {
                 await updateUserSubscription(supabase, userId, "pro", subscription.status, expiresAt);
                 console.log(`[stripe-webhook] Assinatura Pro ativada para userId: ${userId}`);
+              }
+              
+              // Marcar voucher como usado se houver
+              if (voucherCode) {
+                const { error: voucherError } = await supabase
+                  .from("vouchers_applied")
+                  .insert({
+                    user_id: userId,
+                    voucher_code: voucherCode,
+                    applied_at: new Date().toISOString()
+                  });
+                
+                if (voucherError) {
+                  console.error(`[stripe-webhook] Erro ao marcar voucher como usado: ${voucherCode}`, voucherError);
+                } else {
+                  console.log(`[stripe-webhook] Voucher marcado como usado: ${voucherCode} para userId: ${userId}`);
+                }
               }
             }
           }

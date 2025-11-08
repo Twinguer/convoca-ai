@@ -18,116 +18,55 @@ const WelcomePage = () => {
 
   useEffect(() => {
     if (!user) {
-      // Se não estiver logado, redirecionar para login
       navigate('/auth', { replace: true });
       return;
     }
 
     if (!plan) {
-      // Se não tiver plano, redirecionar para planos
       navigate('/planos', { replace: true });
       return;
     }
 
+    // Evitar execução duplicada
+    if (hasVerifiedRef.current) return;
+    hasVerifiedRef.current = true;
+
     const redirectUser = () => {
-      // Determinar para onde redirecionar baseado no plano
       if (plan.startsWith('coach_')) {
-        // Plano Coach - redirecionar para dashboard do Coach
         navigate('/coach/dashboard', { replace: true });
       } else if (plan === 'pro' || isPro) {
-        // Plano Pro - redirecionar para página de Estudos
         navigate('/estudos', { replace: true });
       } else {
-        // Fallback - redirecionar para planos
         navigate('/planos', { replace: true });
       }
     };
 
-    let timeoutId: NodeJS.Timeout | null = null;
-    let intervalId: NodeJS.Timeout | null = null;
-    let startCountdownTimeout: NodeJS.Timeout | null = null;
-
-    const verifyAndRedirect = async () => {
-      // Evitar verificação duplicada
-      if (hasVerifiedRef.current) return;
-      hasVerifiedRef.current = true;
-
-      try {
-        console.log('[WelcomePage] Verificando assinatura após pagamento...');
-        
-        // Verificar assinatura no Stripe
-        const result = await paymentService.verifySubscription();
-        
-        if (result.success) {
-          console.log('[WelcomePage] Assinatura verificada com sucesso');
-          setStatus('success');
-          
-          // Atualizar estado da assinatura
-          await refetch();
-        } else {
-          console.warn('[WelcomePage] Assinatura ainda não encontrada, aguardando webhook...');
-          setStatus('error');
+    // Atualizar subscription
+    refetch();
+    
+    // Mostrar sucesso imediatamente e iniciar contagem
+    setStatus('success');
+    setCountdown(5);
+    
+    const intervalId = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          redirectUser();
+          return 0;
         }
-        
-        // Aguardar 3 segundos MÍNIMOS antes de iniciar a contagem regressiva
-        // Isso garante que a página seja sempre exibida antes do redirecionamento
-        startCountdownTimeout = setTimeout(() => {
-          // Iniciar contagem regressiva (5 segundos)
-          setCountdown(5);
-          intervalId = setInterval(() => {
-            setCountdown((prev) => {
-              if (prev <= 1) {
-                if (intervalId) clearInterval(intervalId);
-                redirectUser();
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-          
-          // Fallback: redirecionar após 5 segundos de contagem (total de 8 segundos)
-          timeoutId = setTimeout(() => {
-            if (intervalId) clearInterval(intervalId);
-            redirectUser();
-          }, 5000);
-        }, 3000); // 3 segundos mínimos de exibição
-      } catch (error) {
-        console.error('[WelcomePage] Erro ao verificar assinatura:', error);
-        setStatus('error');
-        
-        // Mesmo com erro, aguardar 3 segundos antes de iniciar contagem
-        startCountdownTimeout = setTimeout(() => {
-          setCountdown(5);
-          intervalId = setInterval(() => {
-            setCountdown((prev) => {
-              if (prev <= 1) {
-                if (intervalId) clearInterval(intervalId);
-                redirectUser();
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-          
-          timeoutId = setTimeout(() => {
-            if (intervalId) clearInterval(intervalId);
-            redirectUser();
-          }, 5000);
-        }, 3000);
-      }
-    };
+        return prev - 1;
+      });
+    }, 1000);
+    
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+      redirectUser();
+    }, 5000);
 
-    // Pequeno delay para garantir que a página seja renderizada primeiro
-    const initTimeout = setTimeout(() => {
-      verifyAndRedirect();
-    }, 100);
-
-    // Cleanup function
     return () => {
-      if (initTimeout) clearTimeout(initTimeout);
-      if (startCountdownTimeout) clearTimeout(startCountdownTimeout);
-      if (timeoutId) clearTimeout(timeoutId);
-      if (intervalId) clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
     };
   }, [user, plan, navigate, isPro, refetch]);
 
