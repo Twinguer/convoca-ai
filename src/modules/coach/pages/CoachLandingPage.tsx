@@ -16,7 +16,6 @@ import {
   Award, 
   Target, 
   BarChart3,
-  Star,
   ArrowRight,
   GraduationCap
 } from 'lucide-react';
@@ -288,21 +287,6 @@ const CoachLandingPage = () => {
             </CardHeader>
           </Card>
         </div>
-
-        {/* CTA Final */}
-        <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-2 border-primary/20">
-          <CardContent className="py-12 text-center">
-            <Star className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h2 className="text-3xl font-bold mb-4">Pronto para Transformar o Sucesso dos Seus Alunos?</h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Junte-se a centenas de coaches que já estão obtendo resultados extraordinários com seus alunos.
-            </p>
-            <Button size="lg" onClick={handleGetStarted} className="text-lg px-8 py-6">
-              Começar Agora Gratuitamente
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
