@@ -249,7 +249,7 @@ const RankingsPage = () => {
                         backgroundImage: `url(${concurso.watermark_image_url})`,
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
-                        backgroundSize: 'contain'
+                        backgroundSize: 'cover'
                       }}
                     />
                   )}
