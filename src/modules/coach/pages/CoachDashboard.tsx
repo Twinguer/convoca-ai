@@ -618,14 +618,14 @@ const CoachDashboard = () => {
           {/* Lista de Alunos */}
           <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <CardTitle>Seus Alunos</CardTitle>
               <CardDescription>
                 {students.length} aluno(s) cadastrado(s)
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button 
                 onClick={() => setBroadcastModalOpen(true)}
                 variant="outline"

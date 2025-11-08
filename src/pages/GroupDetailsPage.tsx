@@ -438,9 +438,9 @@ export const GroupDetailsPage: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {pendingRequests.map((request: any) => (
-                    <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                    <div key={request.id} className="p-3 bg-muted/50 rounded-lg border border-border">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage src={request.avatar_url} />
                           <AvatarFallback>{getInitials(request.name || '')}</AvatarFallback>
                         </Avatar>
@@ -454,14 +454,16 @@ export const GroupDetailsPage: React.FC = () => {
                           variant="default"
                           onClick={() => handleAcceptRequest(request.id)}
                           disabled={respondToRequest.isPending}
+                          className="flex-1"
                         >
                           Aceitar
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="destructive"
                           onClick={() => handleRejectRequest(request.id)}
                           disabled={respondToRequest.isPending}
+                          className="flex-1"
                         >
                           Rejeitar
                         </Button>
