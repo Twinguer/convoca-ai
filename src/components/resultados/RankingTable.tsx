@@ -97,17 +97,22 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   const rankingsWithQuotaPositions = React.useMemo(() => {
     if (!rankings) return [];
 
-    // Separate classified from eliminated users
-    const classifiedRankings = rankings.filter(ranking => !isBelowMinimum(ranking));
-    const eliminatedRankings = rankings.filter(ranking => isBelowMinimum(ranking));
-
-    // Sort classified rankings by score (descending)
-    classifiedRankings.sort((a, b) => b.score - a.score);
+    // ✅ PRESERVAR a ordem original dos rankings (já vem ordenada do backend)
+    // Não reordenar, pois isso quebra a correspondência entre position e a ordem real
     
-    // Sort eliminated rankings by score (descending) but they go to the end
-    eliminatedRankings.sort((a, b) => b.score - a.score);
+    // Separate classified from eliminated users (mantendo ordem original)
+    const classifiedRankings: Ranking[] = [];
+    const eliminatedRankings: Ranking[] = [];
+    
+    rankings.forEach(ranking => {
+      if (isBelowMinimum(ranking)) {
+        eliminatedRankings.push(ranking);
+      } else {
+        classifiedRankings.push(ranking);
+      }
+    });
 
-    // Group classified rankings by reservation type
+    // Group classified rankings by reservation type (mantendo ordem original dentro de cada grupo)
     const groupedByQuota: Record<string, Ranking[]> = {};
     classifiedRankings.forEach(ranking => {
       if (!groupedByQuota[ranking.reservationType]) {
@@ -116,31 +121,34 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       groupedByQuota[ranking.reservationType].push(ranking);
     });
 
-    // Sort each quota group by score (descending) to calculate correct quota positions
+    // ✅ Ordenar cada grupo de cota por score (descending) APENAS para calcular quotaPosition
+    // Mas manter a ordem original dos rankings classificados para preservar position
     Object.keys(groupedByQuota).forEach(quotaType => {
       groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
     });
 
-    // Calculate positions for classified users
-    const classifiedWithPositions = classifiedRankings.map((ranking, index) => {
+    // Calculate positions for classified users (mantendo ordem original)
+    const classifiedWithPositions = classifiedRankings.map((ranking) => {
       const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
       
       return {
         ...ranking,
-        position: index + 1, // Override position based on classification
-        quotaPosition: quotaPosition > 0 ? quotaPosition : 0 // Garantir que seja sempre um número válido
+        // ✅ PRESERVAR a posição original na ampla concorrência que veio do backend
+        // Esta posição foi calculada considerando TODOS os rankings, não apenas os da cota
+        position: ranking.position || 0,
+        quotaPosition: quotaPosition > 0 ? quotaPosition : 0
       };
     });
 
     // Eliminated users don't get positions, they're marked as eliminated
     const eliminatedWithoutPositions = eliminatedRankings.map(ranking => ({
       ...ranking,
-      position: 0, // No position for eliminated users
+      position: ranking.position || 0, // ✅ PRESERVAR posição original mesmo para eliminados
       quotaPosition: 0
     }));
 
-    // Return classified users first, then eliminated users
+    // Return classified users first, then eliminated users (mantendo ordem original dentro de cada grupo)
     return [...classifiedWithPositions, ...eliminatedWithoutPositions];
   }, [rankings]);
 
@@ -352,22 +360,37 @@ const RankingTableContent: React.FC<{
   const rankingsWithRecalculatedQuotaPositions = React.useMemo(() => {
     if (!rankings || rankings.length === 0) return rankings || [];
     
-    // Separate classified from eliminated
+    // ✅ PRESERVAR a ordem e posições originais dos rankings
+    // Não recalcular position baseado no índice, pois isso quebra a posição na ampla concorrência
+    
+    // Separate classified from eliminated (mantendo ordem original)
     const classified = rankings.filter(r => !isBelowMinimum(r));
     const eliminated = rankings.filter(r => isBelowMinimum(r));
     
-    // Sort classified by score (descending)
-    classified.sort((a, b) => b.score - a.score);
+    // Group classified by quota type (mantendo ordem original dentro de cada grupo)
+    const groupedByQuota: Record<string, Ranking[]> = {};
+    classified.forEach(ranking => {
+      if (!groupedByQuota[ranking.reservationType]) {
+        groupedByQuota[ranking.reservationType] = [];
+      }
+      groupedByQuota[ranking.reservationType].push(ranking);
+    });
     
-    // Recalculate quota positions within the filtered group
-    const withPositions = classified.map((ranking, index) => {
-      // Find position within the same quota group (only classified users in the filtered list)
-      const sameQuotaClassified = classified.filter(r => r.reservationType === ranking.reservationType);
-      const quotaPosition = sameQuotaClassified.findIndex(r => r.id === ranking.id) + 1;
+    // Sort each quota group by score (descending) APENAS para calcular quotaPosition
+    Object.keys(groupedByQuota).forEach(quotaType => {
+      groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
+    });
+    
+    // Calculate quota positions (mantendo ordem original dos classificados)
+    const withPositions = classified.map((ranking) => {
+      const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
+      const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
       
       return {
         ...ranking,
-        position: index + 1, // Overall position in filtered list
+        // ✅ PRESERVAR a posição original na ampla concorrência que veio do backend
+        // Esta posição foi calculada considerando TODOS os rankings, não apenas os filtrados
+        position: ranking.position || 0,
         quotaPosition: quotaPosition > 0 ? quotaPosition : 0
       };
     });
@@ -375,7 +398,7 @@ const RankingTableContent: React.FC<{
     // Eliminated users don't get positions
     const eliminatedWithoutPositions = eliminated.map(ranking => ({
       ...ranking,
-      position: 0,
+      position: ranking.position || 0, // ✅ PRESERVAR posição original mesmo para eliminados
       quotaPosition: 0
     }));
     
