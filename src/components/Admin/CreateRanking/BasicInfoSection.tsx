@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { StateSelector } from '../FormSections/StateSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 interface BasicInfoSectionProps {
   form: any;
   jobTitles: Array<{
@@ -31,6 +35,71 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   selectedStates,
   setSelectedStates
 }) => {
+  const { toast } = useToast();
+  const [uploadingWatermark, setUploadingWatermark] = useState(false);
+
+  const handleWatermarkUpload = async (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Arquivo inválido',
+        description: 'Por favor, selecione uma imagem.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validar tamanho (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Arquivo muito grande',
+        description: 'A imagem deve ter no máximo 5MB.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploadingWatermark(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `watermark-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `rankings/${fileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) {
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profiles')
+        .getPublicUrl(filePath);
+
+      onChange(publicUrl);
+      toast({
+        title: 'Imagem enviada',
+        description: 'A marca dágua foi enviada com sucesso.'
+      });
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      toast({
+        title: 'Erro ao fazer upload',
+        description: error.message || 'Ocorreu um erro ao enviar a imagem. Tente novamente.',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploadingWatermark(false);
+    }
+  };
+
   return <Card>
       <CardContent className="pt-6">
         <h3 className="text-lg font-semibold mb-4">Informações Gerais</h3>
@@ -269,6 +338,52 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                   />
                 </FormControl>
               </FormItem>} />
+          
+          {/* Upload de Marca d'Água */}
+          <FormField 
+            control={form.control} 
+            name="watermark_image_url" 
+            render={({ field }) => (
+              <FormItem className="col-span-2">
+                <FormLabel>Imagem de Marca d'Água (Opcional)</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingWatermark}
+                      onChange={(e) => handleWatermarkUpload(e, field.onChange)}
+                      className="cursor-pointer"
+                    />
+                    {uploadingWatermark && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Enviando imagem...</span>
+                      </div>
+                    )}
+                    {field.value && !uploadingWatermark && (
+                      <div className="mt-2 space-y-2">
+                        <img 
+                          src={field.value} 
+                          alt="Preview marca d'água" 
+                          className="max-w-xs max-h-32 object-contain border rounded p-2 bg-muted"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => field.onChange('')}
+                          className="text-xs"
+                        >
+                          Remover imagem
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+              </FormItem>
+            )} 
+          />
         </div>
       </CardContent>
     </Card>;

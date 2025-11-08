@@ -280,7 +280,8 @@ export const useSaveRanking = () => {
         vagas: ensureNumeric(formValues.vagas),
         inscritos: ensureNumeric(formValues.inscritos),
         etapa_atual: formValues.etapa_atual,
-        link: formValues.link
+        link: formValues.link,
+        watermark_image_url: formValues.watermark_image_url || null
         // Pontuações mínimas agora vão dentro da estrutura disciplines
       };
 
@@ -321,6 +322,7 @@ export const useSaveRanking = () => {
           inscritos: ensureNumeric(formValues.inscritos),
           etapa_atual: formValues.etapa_atual,
           link: formValues.link,
+          watermark_image_url: formValues.watermark_image_url || null,
           // Campos de localidade e cotas
           localidades: formValues.localidades,
           // Campos de configuração de exame
@@ -407,6 +409,7 @@ export const useSaveRanking = () => {
             inscritos: ensureNumeric(formValues.inscritos),
             etapa_atual: formValues.etapa_atual,
             link: formValues.link,
+            watermark_image_url: formValues.watermark_image_url || null,
             // Campos de localidade e cotas
             localidades: formValues.localidades,
             // Campos JSONB sincronizados com convoca-ai

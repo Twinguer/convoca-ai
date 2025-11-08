@@ -22,6 +22,7 @@ interface Concurso {
   created_at: string;
   status: string;
   participant_count?: number;
+  watermark_image_url?: string;
 }
 const RankingsPage = () => {
   const {
@@ -112,7 +113,8 @@ const RankingsPage = () => {
           vagas,
           inscritos,
           created_at,
-          status
+          status,
+          watermark_image_url
         `).order('created_at', {
         ascending: false
       });
@@ -238,8 +240,21 @@ const RankingsPage = () => {
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5">
-                  <CardHeader>
+                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5 relative">
+                  {/* Marca d'água */}
+                  {concurso.watermark_image_url && (
+                    <div 
+                      className="absolute inset-0 pointer-events-none opacity-10 z-0"
+                      style={{
+                        backgroundImage: `url(${concurso.watermark_image_url})`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'center',
+                        backgroundSize: 'contain'
+                      }}
+                    />
+                  )}
+                  
+                  <CardHeader className="relative z-10">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-lg line-clamp-2 mb-2">
@@ -251,7 +266,7 @@ const RankingsPage = () => {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative z-10">
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Vagas:</span>

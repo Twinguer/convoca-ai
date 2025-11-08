@@ -143,7 +143,8 @@ const CriarRanking = () => {
       has_hipossuficientes: false,
       has_indigenas: false,
       has_transsexuais: false,
-      localidades: []
+      localidades: [],
+      watermark_image_url: ''
     }
   });
 
@@ -246,6 +247,7 @@ const CriarRanking = () => {
               vagas: data.vagas || 0,
               inscritos: data.inscritos || 0,
               etapa_atual: data.etapa_atual || 'Prova Objetiva',
+              watermark_image_url: data.watermark_image_url || '',
               link: data.link || '',
               // Mapear cotas do JSONB para campos do formulário
               has_ampla_concorrencia: true, // Sempre true
