@@ -64,15 +64,13 @@ const Planos = () => {
           
           // Sempre fazer refetch para atualizar o estado
           await refetch();
-          navigate("/planos", { replace: true });
+          // Redirecionar para página de boas-vindas
+          navigate(`/welcome?plan=${plan}`, { replace: true });
         } catch (error) {
           console.error("[Planos] Erro ao verificar assinatura:", error);
-          toast({
-            title: "Pagamento realizado!",
-            description: "Estamos processando sua assinatura. Se o acesso não aparecer em alguns minutos, entre em contato com o suporte."
-          });
+          // Mesmo com erro, redirecionar para página de boas-vindas
           await refetch();
-          navigate("/planos", { replace: true });
+          navigate(`/welcome?plan=${plan}`, { replace: true });
         }
       };
       

@@ -42,6 +42,7 @@ import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
+import WelcomePage from "./pages/WelcomePage";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import { GroupDetailsPage } from "./pages/GroupDetailsPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
@@ -266,6 +267,7 @@ const AppContent = () => {
                           <Menu />
                           <Planos />
                         </>} />
+                     <Route path="/welcome" element={<WelcomePage />} />
                     {/* Rotas do Coach Mode */}
                     <Route path="/coach" element={<>
                         <Menu />

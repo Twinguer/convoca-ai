@@ -244,11 +244,9 @@ serve(async (req: Request): Promise<Response> => {
     // Construir URL base
     const baseUrl = (origin && origin.trim()) ? origin : PRODUCTION_ORIGINS[0];
     
-    // Redirecionar para página correta baseado no tipo de plano
+    // Redirecionar para página de boas-vindas após pagamento bem-sucedido
     // (isCoachPlan já foi declarado acima na linha 214)
-    const successUrl = isCoachPlan 
-      ? `${baseUrl}/coach/subscription?status=success&plan=${requestData.planId}`
-      : `${baseUrl}/planos?status=success&plan=${requestData.planId}`;
+    const successUrl = `${baseUrl}/welcome?plan=${requestData.planId}`;
     const cancelUrl = isCoachPlan
       ? `${baseUrl}/coach/subscription?status=canceled`
       : `${baseUrl}/planos?status=canceled`;

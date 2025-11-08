@@ -44,25 +44,44 @@ export const GroupDetailsPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // VALIDAÇÃO: Verificar se usuário é Pro ou Coach antes de carregar dados
+  // VALIDAÇÃO: Verificar se usuário tem qualquer assinatura ativa antes de carregar dados
   React.useEffect(() => {
     const checkUserPlan = async () => {
       if (!user?.id) return;
       
-      // Verificar subscription (APENAS Pro)
+      // Verificar se tem assinatura Pro ativa
       const { data: subscription } = await supabase
         .from('user_subscriptions')
-        .select('plan, is_active')
+        .select('plan, is_active, expires_at')
         .eq('user_id', user.id)
         .maybeSingle();
       
-      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
+      const userIsPro = subscription?.plan === 'pro' 
+        && subscription?.is_active === true
+        && (!subscription?.expires_at || new Date(subscription.expires_at) > new Date());
+
+      // Verificar se tem assinatura Coach ativa
+      let userIsCoach = false;
+      try {
+        const { data: coachSubscription } = await supabase
+          .from('coach_subscriptions')
+          .select('status, expires_at')
+          .eq('coach_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        userIsCoach = !!coachSubscription 
+          && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
+      } catch (error) {
+        // Se der erro ao buscar (ex: RLS), considerar como não Coach
+        console.warn('[GroupDetailsPage] Erro ao verificar assinatura Coach:', error);
+      }
       
-      // APENAS Pro pode acessar grupos (Coach NÃO pode)
-      if (!userIsPro) {
+      // Qualquer assinante (Pro ou Coach) pode acessar grupos
+      if (!userIsPro && !userIsCoach) {
         toast({
-          title: 'Grupos disponíveis apenas no plano Pro',
-          description: 'Faça upgrade para Pro para acessar grupos de estudos.',
+          title: 'Grupos disponíveis apenas para assinantes',
+          description: 'Faça upgrade para acessar grupos de estudos.',
           variant: 'destructive',
         });
         navigate('/planos');
@@ -349,18 +368,33 @@ export const GroupDetailsPage: React.FC = () => {
                     )}
 
                     {!isMember && user && !hasRequested && (
-                      <Button
-                        className="w-full"
-                        onClick={handleRequestJoin}
-                        disabled={requestToJoin.isPending}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        {isInvited
-                          ? 'Aceitar Convite'
-                          : requestToJoin.isPending 
-                            ? 'Enviando...' 
-                            : 'Solicitar Entrada'}
-                      </Button>
+                      <>
+                        {/* Grupos públicos: permitir solicitação */}
+                        {group.privacy_level === 'public' && (
+                          <Button
+                            className="w-full"
+                            onClick={handleRequestJoin}
+                            disabled={requestToJoin.isPending}
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            {isInvited
+                              ? 'Aceitar Convite'
+                              : requestToJoin.isPending 
+                                ? 'Enviando...' 
+                                : 'Solicitar Entrada'}
+                          </Button>
+                        )}
+                        
+                        {/* Grupos privados: apenas por convite */}
+                        {(group.privacy_level === 'private' || group.privacy_level === 'invite_only') && (
+                          <div className="text-center p-3 bg-muted rounded-md">
+                            <Lock className="h-4 w-4 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Este grupo é privado. Apenas membros convidados podem participar.
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {!isMember && user && hasRequested && (
@@ -473,16 +507,21 @@ export const GroupDetailsPage: React.FC = () => {
                 {isErrorPosts && (
                   <Card className="rounded-lg border-red-200 bg-red-50">
                     <CardContent className="py-6 text-center">
+                      <Lock className="h-8 w-8 mx-auto mb-2 text-red-600" />
                       <p className="text-sm text-red-600 mb-2">
-                        Erro ao carregar posts
+                        {group.privacy_level === 'private' || group.privacy_level === 'invite_only'
+                          ? 'Este grupo é privado. Apenas membros podem visualizar o conteúdo.'
+                          : 'Erro ao carregar posts'}
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => refetchPosts()}
-                      >
-                        Tentar novamente
-                      </Button>
+                      {group.privacy_level !== 'private' && group.privacy_level !== 'invite_only' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => refetchPosts()}
+                        >
+                          Tentar novamente
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 )}

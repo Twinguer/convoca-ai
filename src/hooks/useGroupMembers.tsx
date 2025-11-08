@@ -5,6 +5,7 @@ import type { GroupMember } from '@/types/studyGroups';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 
 /**
  * Hook para buscar membros do grupo
@@ -72,31 +73,45 @@ export const useRequestToJoin = () => {
 
   return useMutation({
     mutationFn: async (groupId: string) => {
-      // VALIDAÇÃO: Verificar plano antes de solicitar entrada
+      // VALIDAÇÃO: Verificar se tem qualquer assinatura ativa antes de solicitar entrada
       if (!user?.id) {
         throw new Error('Usuário não autenticado');
       }
 
-      // Verificar subscription diretamente (APENAS Pro)
+      // Verificar se tem assinatura Pro ativa
       const { data: subscription } = await supabase
         .from('user_subscriptions')
-        .select('plan, is_active')
+        .select('plan, is_active, expires_at')
         .eq('user_id', user.id)
         .maybeSingle();
       
-      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
+      const userIsPro = subscription?.plan === 'pro' 
+        && subscription?.is_active === true
+        && (!subscription?.expires_at || new Date(subscription.expires_at) > new Date());
+
+      // Verificar se tem assinatura Coach ativa
+      let userIsCoach = false;
+      try {
+        const coachSubscription = await coachSubscriptionService.getCoachSubscription(user.id);
+        userIsCoach = !!coachSubscription && coachSubscription.status === 'active'
+          && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
+      } catch (error) {
+        // Se der erro ao buscar (ex: RLS), considerar como não Coach
+        console.warn('[useRequestToJoin] Erro ao verificar assinatura Coach:', error);
+      }
       
-      // APENAS Pro pode participar de grupos (Coach NÃO pode)
-      if (!userIsPro) {
+      // Qualquer assinante (Pro ou Coach) pode solicitar entrada em grupos públicos
+      // A validação de grupo público vs privado é feita no backend
+      if (!userIsPro && !userIsCoach) {
         toast({
-          title: 'Grupos disponíveis apenas no plano Pro',
-          description: 'Faça upgrade para Pro para participar de grupos de estudos.',
+          title: 'Grupos disponíveis apenas para assinantes',
+          description: 'Faça upgrade para participar de grupos de estudos.',
           variant: 'destructive',
         });
         setTimeout(() => {
           navigate('/planos');
         }, 2000);
-        throw new Error('Grupos de estudos estão disponíveis apenas no plano Pro.');
+        throw new Error('Grupos de estudos estão disponíveis apenas para assinantes.');
       }
 
       return studyGroupMembersService.requestToJoinGroup(groupId, user.id);
@@ -115,15 +130,21 @@ export const useRequestToJoin = () => {
         });
       } else {
         // Verificar se o erro requer upgrade
-        if (result.error?.includes('plano Pro') || result.error?.includes('Modo Coach') || result.error?.includes('upgrade') || result.requires_upgrade) {
+        if (result.error?.includes('assinante') || result.error?.includes('upgrade') || result.requires_upgrade) {
           toast({
-            title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
+            title: 'Grupos disponíveis apenas para assinantes',
             description: 'Faça upgrade para participar de grupos de estudos.',
             variant: 'destructive',
           });
           setTimeout(() => {
             navigate('/planos');
           }, 2000);
+        } else if (result.error?.includes('privado') || result.error?.includes('convite') || result.requires_invite) {
+          toast({
+            title: 'Grupo privado',
+            description: result.error || 'Este grupo é privado. Apenas membros convidados podem participar.',
+            variant: 'destructive',
+          });
         } else {
           toast({
             title: 'Aviso',
@@ -135,19 +156,25 @@ export const useRequestToJoin = () => {
     },
     onError: (error: any) => {
       const errorMessage = error?.message || '';
-      if (errorMessage.includes('plano Pro') || errorMessage.includes('Modo Coach') || errorMessage.includes('upgrade')) {
+      if (errorMessage.includes('assinante') || errorMessage.includes('upgrade')) {
         toast({
-          title: 'Grupos disponíveis apenas no plano Pro ou Modo Coach',
+          title: 'Grupos disponíveis apenas para assinantes',
           description: 'Faça upgrade para participar de grupos de estudos.',
           variant: 'destructive',
         });
         setTimeout(() => {
           navigate('/planos');
         }, 2000);
+      } else if (errorMessage.includes('privado') || errorMessage.includes('convite')) {
+        toast({
+          title: 'Grupo privado',
+          description: 'Este grupo é privado. Apenas membros convidados podem participar.',
+          variant: 'destructive',
+        });
       } else {
         toast({
           title: 'Erro ao solicitar entrada',
-          description: 'Não foi possível enviar o pedido.',
+          description: errorMessage || 'Não foi possível enviar o pedido.',
           variant: 'destructive',
         });
       }

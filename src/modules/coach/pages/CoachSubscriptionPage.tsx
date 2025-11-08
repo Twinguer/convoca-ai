@@ -39,11 +39,8 @@ const CoachSubscriptionPage = () => {
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
             
-            toast({
-              title: "Pagamento realizado com sucesso!",
-              description: `Seu plano Coach foi ativado. Bem-vindo ao Modo Coach!`
-            });
-            navigate("/coach/dashboard", { replace: true });
+            // Redirecionar para página de boas-vindas
+            navigate(`/welcome?plan=${plan}`, { replace: true });
           } else {
             console.warn("[CoachSubscriptionPage] Assinatura Coach não encontrada ainda, aguardando webhook...");
             
@@ -53,11 +50,8 @@ const CoachSubscriptionPage = () => {
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
             
-            toast({
-              title: "Pagamento realizado!",
-              description: "Estamos processando sua assinatura Coach. Você receberá acesso em instantes."
-            });
-            navigate("/coach/dashboard", { replace: true });
+            // Redirecionar para página de boas-vindas
+            navigate(`/welcome?plan=${plan}`, { replace: true });
           }
         } catch (error) {
           console.error("[CoachSubscriptionPage] Erro ao verificar assinatura Coach:", error);
@@ -68,11 +62,8 @@ const CoachSubscriptionPage = () => {
           await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
           await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
           
-          toast({
-            title: "Pagamento realizado!",
-            description: "Estamos processando sua assinatura Coach. Se o acesso não aparecer em alguns minutos, entre em contato com o suporte."
-          });
-          navigate("/coach/dashboard", { replace: true });
+          // Redirecionar para página de boas-vindas mesmo com erro
+          navigate(`/welcome?plan=${plan}`, { replace: true });
         }
       };
       

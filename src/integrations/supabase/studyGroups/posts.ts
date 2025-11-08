@@ -35,19 +35,34 @@ export const studyGroupPostsService = {
 
       // A função RPC retorna JSONB diretamente como array
       // Supabase pode retornar como string JSON ou como array já parseado
+      // Também pode retornar um objeto de erro para grupos privados
       let posts: any[] = [];
       
       if (typeof data === 'string') {
         try {
-          posts = JSON.parse(data);
+          const parsed = JSON.parse(data);
+          // Verificar se é um objeto de erro
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.error) {
+            console.warn('Access denied to group feed:', parsed.error);
+            throw new Error(parsed.error || 'Acesso negado ao conteúdo do grupo');
+          }
+          posts = parsed;
         } catch (e) {
+          if (e instanceof Error && e.message.includes('Acesso negado')) {
+            throw e;
+          }
           console.error('Error parsing JSON string:', e);
           return [];
         }
       } else if (Array.isArray(data)) {
         posts = data;
       } else if (data && typeof data === 'object') {
-        // Se retornou como objeto, pode estar em alguma propriedade
+        // Verificar se é um objeto de erro (grupo privado sem acesso)
+        if (data.error) {
+          console.warn('Access denied to group feed:', data.error);
+          throw new Error(data.error || 'Acesso negado ao conteúdo do grupo');
+        }
+        // Se retornou como objeto sem erro, pode estar em alguma propriedade
         console.warn('Unexpected data format from get_group_feed:', data);
         return [];
       }
