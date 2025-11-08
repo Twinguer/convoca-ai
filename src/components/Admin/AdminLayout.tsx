@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, ListChecks, LogOut, ArrowLeft, Users, Plus } from 'lucide-react';
+import { Home, ListChecks, LogOut, ArrowLeft, Users, Plus, Gift } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -83,6 +83,12 @@ const AdminLayout: React.FC = () => {
               <Link to="/project/admin/man/usuarios" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Listar Usuários
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link to="/project/admin/man/vouchers" className="flex items-center gap-2">
+                <Gift className="h-4 w-4" />
+                Gerenciar Vouchers
               </Link>
             </Button>
           </nav>

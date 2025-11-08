@@ -75,11 +75,11 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   
   return {
     "Access-Control-Allow-Origin": allowed && origin ? origin : PRODUCTION_ORIGINS[0],
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Max-Age": "86400"
-  };
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Max-Age": "86400"
+};
 }
 
 // ============================================
@@ -97,7 +97,7 @@ serve(async (req: Request): Promise<Response> => {
       headers: corsHeaders
     });
   }
-  
+
   // Validar método HTTP
   if (req.method !== "POST") {
     return new Response(
@@ -204,12 +204,12 @@ serve(async (req: Request): Promise<Response> => {
         }
       );
     }
-    
+
     const priceId = STRIPE_PRICES[requestData.planId as keyof typeof STRIPE_PRICES];
     if (!priceId) {
       throw new Error(`Price ID não encontrado para o plano: ${requestData.planId}`);
     }
-    
+
     // Determinar se é plano Coach
     const isCoachPlan = requestData.planId.startsWith("coach_");
     
@@ -310,10 +310,10 @@ serve(async (req: Request): Promise<Response> => {
         line_items: [
           {
             price: priceId,
-            quantity: 1,
-          },
-        ],
-        mode: "subscription",
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
         success_url: successUrl,
         cancel_url: cancelUrl,
         customer: customerId, // Usar customer_id ao invés de customer_email para Accounts V2
@@ -322,10 +322,10 @@ serve(async (req: Request): Promise<Response> => {
           plan_id: requestData.planId,
         },
         subscription_data: {
-          metadata: {
+      metadata: {
             user_id: user.id,
             plan_id: requestData.planId,
-          },
+      },
         },
         payment_method_types: ["card"],
         // Nota: installments não é suportado em subscription mode, apenas em payment mode
@@ -373,7 +373,7 @@ serve(async (req: Request): Promise<Response> => {
         session_id: session.id
       }),
       {
-        status: 200,
+      status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );

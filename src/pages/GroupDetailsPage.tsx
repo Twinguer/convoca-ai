@@ -59,17 +59,17 @@ export const GroupDetailsPage: React.FC = () => {
       const userIsPro = subscription?.plan === 'pro' 
         && subscription?.is_active === true
         && (!subscription?.expires_at || new Date(subscription.expires_at) > new Date());
-
+      
       // Verificar se tem assinatura Coach ativa
       let userIsCoach = false;
       try {
-        const { data: coachSubscription } = await supabase
-          .from('coach_subscriptions')
+      const { data: coachSubscription } = await supabase
+        .from('coach_subscriptions')
           .select('status, expires_at')
-          .eq('coach_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
-        
+        .eq('coach_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      
         userIsCoach = !!coachSubscription 
           && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
       } catch (error) {
@@ -371,18 +371,18 @@ export const GroupDetailsPage: React.FC = () => {
                       <>
                         {/* Grupos públicos: permitir solicitação */}
                         {group.privacy_level === 'public' && (
-                          <Button
-                            className="w-full"
-                            onClick={handleRequestJoin}
-                            disabled={requestToJoin.isPending}
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            {isInvited
-                              ? 'Aceitar Convite'
-                              : requestToJoin.isPending 
-                                ? 'Enviando...' 
-                                : 'Solicitar Entrada'}
-                          </Button>
+                      <Button
+                        className="w-full"
+                        onClick={handleRequestJoin}
+                        disabled={requestToJoin.isPending}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        {isInvited
+                          ? 'Aceitar Convite'
+                          : requestToJoin.isPending 
+                            ? 'Enviando...' 
+                            : 'Solicitar Entrada'}
+                      </Button>
                         )}
                         
                         {/* Grupos privados: apenas por convite */}
@@ -516,13 +516,13 @@ export const GroupDetailsPage: React.FC = () => {
                           : 'Erro ao carregar posts'}
                       </p>
                       {group.privacy_level !== 'private' && group.privacy_level !== 'invite_only' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => refetchPosts()}
-                        >
-                          Tentar novamente
-                        </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => refetchPosts()}
+                      >
+                        Tentar novamente
+                      </Button>
                       )}
                     </CardContent>
                   </Card>
