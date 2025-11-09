@@ -133,7 +133,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                   className="mt-0.5 mr-3 flex-shrink-0"
                 />
                 <div className="flex-1">
-                  <span className="font-medium text-foreground text-xs">
+                  <span className={`font-medium text-foreground text-xs ${discipline.isCompleted ? 'line-through opacity-60' : ''}`}>
                     {blockIndex + 1}.{disciplineIndex + 1}. {discipline.name}
                   </span>
                 </div>
