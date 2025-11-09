@@ -28,9 +28,6 @@ export const AuthContainer: React.FC = () => {
               className="h-16 w-auto object-contain animate-in fade-in zoom-in duration-500"
             />
           </div>
-          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Nomeia Aí
-          </CardTitle>
         </CardHeader>
         
         <CardContent>
