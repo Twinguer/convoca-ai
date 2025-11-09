@@ -37,7 +37,7 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
   if (!password) return null;
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-2 animate-in fade-in duration-300", className)}>
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">Força da senha:</span>
         <span className={cn(
@@ -53,8 +53,9 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
       <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
         <div
           className={cn(
-            "h-full transition-all duration-300",
-            strengthInfo.color
+            "h-full transition-all duration-500 ease-out",
+            strengthInfo.color,
+            "animate-in slide-in-from-left"
           )}
           style={{ width: `${strength}%` }}
         />

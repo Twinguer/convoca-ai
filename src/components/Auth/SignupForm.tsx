@@ -115,7 +115,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in duration-300">
       <div className="space-y-2">
         <Label htmlFor="signup-name">Nome Completo</Label>
         <div className="relative">
@@ -131,14 +131,14 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
             className={errors.name ? 'border-destructive' : ''}
           />
           {name && !errors.name && (
-            <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-600" />
+            <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-600 animate-in fade-in zoom-in duration-200" />
           )}
           {errors.name && (
-            <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-destructive" />
+            <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-destructive animate-in fade-in zoom-in duration-200" />
           )}
         </div>
         {errors.name && (
-          <p className="text-xs text-destructive">{errors.name}</p>
+          <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.name}</p>
         )}
       </div>
       
@@ -157,14 +157,20 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
             className={errors.email ? 'border-destructive' : ''}
           />
           {email && !errors.email && validateEmail(email) && (
-            <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-600" />
+            <CheckCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-600 animate-in fade-in duration-200" />
           )}
           {errors.email && (
-            <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-destructive" />
+            <AlertCircle className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-destructive animate-in fade-in duration-200" />
           )}
         </div>
         {errors.email && (
-          <p className="text-xs text-destructive">{errors.email}</p>
+          <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.email}</p>
+        )}
+        {email && !errors.email && validateEmail(email) && (
+          <p className="text-xs text-green-600 flex items-center gap-1 animate-in fade-in duration-200">
+            <CheckCircle className="h-3 w-3" />
+            Formato de email válido
+          </p>
         )}
       </div>
       
@@ -192,7 +198,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
           </button>
         </div>
         {errors.password && (
-          <p className="text-xs text-destructive">{errors.password}</p>
+          <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.password}</p>
         )}
         <PasswordStrengthIndicator password={password} />
       </div>
@@ -221,10 +227,10 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
           </button>
         </div>
         {errors.confirmPassword && (
-          <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+          <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.confirmPassword}</p>
         )}
         {confirmPassword && !errors.confirmPassword && password === confirmPassword && (
-          <div className="flex items-center gap-1 text-xs text-green-600">
+          <div className="flex items-center gap-1 text-xs text-green-600 animate-in fade-in duration-200">
             <CheckCircle className="h-3 w-3" />
             Senhas conferem
           </div>
@@ -264,7 +270,11 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
         </p>
       </div>
       
-      <Button type="submit" className="w-full" disabled={isLoading || Object.keys(errors).some(key => errors[key])}>
+      <Button 
+        type="submit" 
+        className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]" 
+        disabled={isLoading || Object.keys(errors).some(key => errors[key])}
+      >
         {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />

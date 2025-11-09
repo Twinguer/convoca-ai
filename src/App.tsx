@@ -17,6 +17,9 @@ import NotFound from "./pages/NotFound";
 import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import ConfirmacaoSucesso from "./pages/Auth/ConfirmacaoSucesso";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
+import AuthCallback from "./pages/Auth/AuthCallback";
 import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import Notifications from "./pages/Notifications";
@@ -107,6 +110,9 @@ const AppContent = () => {
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirmacao-sucesso" element={<ConfirmacaoSucesso />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/perfil" element={<>
                         <Menu />
                         <UserProfile />

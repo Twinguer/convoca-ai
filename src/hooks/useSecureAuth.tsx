@@ -70,23 +70,23 @@ export const useSecureAuth = () => {
     return true;
   }, []);
 
-  const handleLogin = useCallback(async (email: string, password: string) => {
+  const handleLogin = useCallback(async (email: string, password: string): Promise<{ success: boolean; emailNotConfirmed?: boolean }> => {
     if (!checkRateLimit(email)) {
       const remainingTime = Math.ceil((lockoutEnd! - Date.now()) / 60000);
       showErrorToast('Conta temporariamente bloqueada', `Muitas tentativas de login. Tente novamente em ${remainingTime} minutos.`);
-      return;
+      return { success: false };
     }
 
     const sanitizedEmail = sanitizeInput(email);
     
     if (!isEmailValid(sanitizedEmail)) {
       showErrorToast('Email inválido', 'Por favor, forneça um email válido.');
-      return;
+      return { success: false };
     }
 
     if (!password || password.length < 6) {
       showErrorToast('Senha inválida', 'A senha deve ter pelo menos 6 caracteres.');
-      return;
+      return { success: false };
     }
 
     setIsLoading(true);
@@ -101,6 +101,16 @@ export const useSecureAuth = () => {
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
 
+        // Verificar se o erro é de email não confirmado
+        const isEmailNotConfirmed = error.message?.includes('email_not_confirmed') || 
+                                     error.message?.includes('Email not confirmed') ||
+                                     error.message?.includes('not confirmed');
+
+        if (isEmailNotConfirmed) {
+          setIsLoading(false);
+          return { success: false, emailNotConfirmed: true };
+        }
+
         if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
           const lockEndTime = Date.now() + LOCKOUT_TIME;
           setIsLocked(true);
@@ -110,17 +120,19 @@ export const useSecureAuth = () => {
         } else {
           showErrorToast('Erro ao fazer login', 'Credenciais inválidas. Por favor, tente novamente.');
         }
-        return;
+        return { success: false };
       }
 
       // Reset attempts on successful login
       setLoginAttempts(0);
       localStorage.removeItem('auth_lockout_end');
       navigate('/');
+      return { success: true };
     } catch (error: any) {
       logError('Login failed', { error: error.message }, 'AUTH');
       logSecurity('Login attempt failed', { email: sanitizedEmail }, 'AUTH');
       showErrorToast('Erro interno', 'Ocorreu um erro interno. Tente novamente.');
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -206,12 +218,76 @@ export const useSecureAuth = () => {
     }
   }, [sanitizeInput, isEmailValid, isPasswordValid]);
 
+  // Resend confirmation email
+  const resendConfirmationEmail = useCallback(async (email: string): Promise<boolean> => {
+    const sanitizedEmail = sanitizeInput(email);
+
+    if (!isEmailValid(sanitizedEmail)) {
+      showErrorToast('Email inválido', 'Por favor, forneça um email válido.');
+      return false;
+    }
+
+    // Check rate limiting for email resend (3 per hour)
+    const rateLimitResult = RateLimiters.passwordReset.check(sanitizedEmail, false);
+    if (!rateLimitResult.allowed) {
+      const retryAfter = Math.ceil((rateLimitResult.retryAfter || 3600) / 60);
+      showErrorToast(
+        'Limite de tentativas excedido',
+        `Você já solicitou o reenvio recentemente. Tente novamente em ${retryAfter} minutos.`
+      );
+      return false;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: sanitizedEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirmacao-sucesso#`
+        }
+      });
+
+      if (error) {
+        logError('Resend confirmation email failed', { error: error.message }, 'AUTH');
+        
+        if (error.message?.includes('already confirmed')) {
+          showErrorToast('Email já confirmado', 'Este email já foi confirmado. Você pode fazer login normalmente.');
+        } else if (error.message?.includes('not found')) {
+          showErrorToast('Email não encontrado', 'Este email não está cadastrado. Verifique o email ou crie uma nova conta.');
+        } else {
+          showErrorToast('Erro ao reenviar email', 'Não foi possível reenviar o email. Tente novamente mais tarde.');
+        }
+        return false;
+      }
+
+      // Registrar tentativa bem-sucedida
+      RateLimiters.passwordReset.check(sanitizedEmail, true);
+      
+      showSuccessToast(
+        'Email reenviado',
+        'Verifique sua caixa de entrada e spam. O email pode levar alguns minutos para chegar.'
+      );
+      
+      logSecurity('Confirmation email resent', { email: sanitizedEmail }, 'AUTH');
+      return true;
+    } catch (error: any) {
+      logError('Resend confirmation email error', { error: error.message }, 'AUTH');
+      showErrorToast('Erro interno', 'Ocorreu um erro ao processar sua solicitação. Tente novamente.');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sanitizeInput, isEmailValid]);
+
   return {
     isLoading,
     isLocked,
     lockoutEnd,
     handleLogin,
     handleSignup,
+    resendConfirmationEmail,
     checkRateLimit
   };
 };

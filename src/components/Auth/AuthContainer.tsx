@@ -5,22 +5,25 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { LoginForm } from './LoginForm';
 import { SignupForm } from './SignupForm';
+import { SocialAuthButtons } from './SocialAuthButtons';
 import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const AuthContainer: React.FC = () => {
   const navigate = useNavigate();
-  const { isLoading, isLocked, lockoutEnd, handleLogin, handleSignup } = useSecureAuth();
+  const { isLoading, isLocked, lockoutEnd, handleLogin, handleSignup, resendConfirmationEmail } = useSecureAuth();
 
   const handleReturnHome = () => {
     navigate('/');
   };
 
   return (
-    <div className="container flex h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
+    <div className="container flex h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <Card className="w-full max-w-md shadow-xl border-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Nomeia Aí</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Nomeia Aí
+          </CardTitle>
         </CardHeader>
         
         <CardContent>
@@ -32,7 +35,8 @@ export const AuthContainer: React.FC = () => {
             
             <TabsContent value="login">
               <LoginForm
-                onSubmit={handleLogin}
+                onSubmit={handleLogin as any}
+                onResendConfirmation={resendConfirmationEmail}
                 isLoading={isLoading}
                 isLocked={isLocked}
                 lockoutEnd={lockoutEnd}
@@ -46,6 +50,10 @@ export const AuthContainer: React.FC = () => {
               />
             </TabsContent>
           </Tabs>
+          
+          <div className="mt-6">
+            <SocialAuthButtons />
+          </div>
         </CardContent>
         
         <CardFooter className="flex flex-col space-y-4">

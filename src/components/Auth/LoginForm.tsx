@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => Promise<void>;
+  onSubmit: (email: string, password: string) => Promise<{ success: boolean; emailNotConfirmed?: boolean }>;
+  onResendConfirmation?: (email: string) => Promise<void>;
   isLoading: boolean;
   isLocked: boolean;
   lockoutEnd: number | null;
@@ -15,6 +17,7 @@ interface LoginFormProps {
 
 export const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
+  onResendConfirmation,
   isLoading,
   isLocked,
   lockoutEnd
@@ -22,10 +25,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(email, password);
+    const result = await onSubmit(email, password);
+    // Se o login falhou por email não confirmado, mostrar opção de reenvio
+    if (result && 'emailNotConfirmed' in result && result.emailNotConfirmed) {
+      setShowResendOption(true);
+    } else {
+      setShowResendOption(false);
+    }
   };
 
   const getRemainingLockoutTime = () => {
@@ -36,7 +46,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {isLocked && lockoutEnd && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2 duration-300">
           <AlertDescription>
             <p className="font-medium">Conta temporariamente bloqueada</p>
             <p>Muitas tentativas de login. Tente novamente em {getRemainingLockoutTime()} minutos.</p>
@@ -81,9 +91,45 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <div className="flex items-center justify-between">
+          <Link
+            to="/auth/forgot-password"
+            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
       </div>
+
+      {showResendOption && onResendConfirmation && (
+        <Alert className="animate-in fade-in slide-in-from-top-2 duration-300">
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-sm">Email não confirmado. Deseja reenviar o email de confirmação?</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                if (email && onResendConfirmation) {
+                  const success = await onResendConfirmation(email);
+                  if (success) {
+                    setShowResendOption(false);
+                  }
+                }
+              }}
+              disabled={isLoading || !email}
+            >
+              Reenviar
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
-      <Button type="submit" className="w-full" disabled={isLocked || isLoading}>
+      <Button 
+        type="submit" 
+        className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]" 
+        disabled={isLocked || isLoading}
+      >
         {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
