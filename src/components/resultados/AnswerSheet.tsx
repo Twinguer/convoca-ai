@@ -717,7 +717,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                 <span>Edições ilimitadas (Plano Pro)</span>
               ) : (
                 <>
-                  Edições disponíveis: {editsLeft === Infinity ? 'Ilimitadas' : `${editsLeft} de 5`}
+                  Edições disponíveis: {editsLeft === Infinity ? 'Ilimitadas' : `${editsLeft} de 3`}
                   {!canEdit && (
                     <span className="text-destructive ml-2">
                       (Você atingiu o limite de edições permitidas)

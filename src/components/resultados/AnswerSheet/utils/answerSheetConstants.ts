@@ -3,7 +3,7 @@ import { SectionType } from '@/types/concursos';
 // Constantes do AnswerSheet
 export const ANSWER_SHEET_CONSTANTS = {
   // Limites e validações
-  MAX_EDIT_COUNT: 5,
+  MAX_EDIT_COUNT: 3,
   MIN_SCORE: 0,
   MAX_SCORE: 100,
   

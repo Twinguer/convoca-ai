@@ -52,7 +52,7 @@ export const useSubscription = () => {
   const isFree = !isPro; // Se não atender TODAS as condições, é Free
 
   // Limite de edições baseado no plano
-  const maxEditCount = isPro ? Infinity : 5; // Pro = ilimitado, Free = 5
+  const maxEditCount = isPro ? Infinity : 3; // Pro = ilimitado, Free = 3
 
   const applyVoucher = async (code: string) => {
     const { data, error } = await supabase.rpc('apply_voucher', {
