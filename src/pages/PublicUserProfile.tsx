@@ -330,7 +330,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
   return <div className="container mx-auto p-6 max-w-7xl">
       
       
-      <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Coluna Esquerda - Perfil do Usuário */}
         <div className="lg:col-span-3 space-y-4">
           <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
@@ -406,7 +406,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         </div>
         
         {/* Coluna Central - Conteúdo Principal */}
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-6 space-y-4">
           <div>
             
             
