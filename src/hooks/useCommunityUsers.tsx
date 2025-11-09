@@ -54,12 +54,76 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
             if (postError) console.error('Error counting posts:', postError);
 
-            // Check if user is a coach
-            const { data: coachData } = await supabase
-              .from('coach_profiles')
-              .select('id')
-              .eq('coach_id', profile.id)
-              .maybeSingle();
+            // Check if user is a coach using RPC function (bypasses RLS issues)
+            let isCoach = false;
+            try {
+              const { data: coachCheck, error: coachError } = await supabase.rpc('is_user_coach', {
+                p_user_id: profile.id
+              });
+              
+              // RPC returns boolean directly (but check for truthy value)
+              if (!coachError && (coachCheck === true || coachCheck === 1)) {
+                isCoach = true;
+              } else if (coachError) {
+                // If RPC fails, try direct query as fallback
+                const { data: coachSubscription, error: subError } = await supabase
+                  .from('coach_subscriptions')
+                  .select('id, status, expires_at')
+                  .eq('coach_id', profile.id)
+                  .eq('status', 'active')
+                  .maybeSingle();
+                
+                if (!subError && coachSubscription) {
+                  isCoach = !coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date();
+                }
+              }
+            } catch (error) {
+              // If both fail, try direct query as last resort
+              try {
+                const { data: coachSubscription } = await supabase
+                  .from('coach_subscriptions')
+                  .select('id, status, expires_at')
+                  .eq('coach_id', profile.id)
+                  .eq('status', 'active')
+                  .maybeSingle();
+                
+                if (coachSubscription) {
+                  isCoach = !coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date();
+                }
+              } catch (fallbackError) {
+                // If all fail, assume not coach
+                isCoach = false;
+              }
+            }
+            
+            // Check if user is Pro using RPC function
+            let isPro = false;
+            try {
+              const { data: proCheck, error: proError } = await supabase.rpc('is_user_pro', {
+                p_user_id: profile.id
+              });
+              
+              // RPC returns boolean directly (but check for truthy value)
+              if (!proError && (proCheck === true || proCheck === 1)) {
+                isPro = true;
+              } else if (proError) {
+                // If RPC fails, try direct query as fallback
+                const { data: subscription, error: subError } = await supabase
+                  .from('user_subscriptions')
+                  .select('plan, is_active, expires_at')
+                  .eq('user_id', profile.id)
+                  .maybeSingle();
+                
+                if (!subError && subscription) {
+                  isPro = subscription.plan === 'pro' 
+                    && subscription.is_active === true
+                    && (!subscription.expires_at || new Date(subscription.expires_at) > new Date());
+                }
+              }
+            } catch (error) {
+              // If both fail, assume not Pro
+              isPro = false;
+            }
 
             // Generate basic info from available data
             const usernameFromName = profile.name 
@@ -91,7 +155,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               curso_preparatorio: '',
               rotina_estudos: '',
               is_studying: profile.is_studying || false,
-              isCoach: !!coachData
+              isCoach: isCoach,
+              isPro: isPro
             };
           })
         );
@@ -102,7 +167,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
         throw error;
       }
     },
-    staleTime: 60000 // Cache for 1 minute to reduce repeated fetches
+    staleTime: 0, // Sempre buscar dados frescos para garantir badge Coach atualizado
+    cacheTime: 0 // Não cachear dados
   });
 
   return {

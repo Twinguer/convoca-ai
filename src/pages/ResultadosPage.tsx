@@ -204,7 +204,7 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
 
   // ✅ REMOVIDO: Não há mais bloqueio de acesso - rankings são públicos para visualização
 
-  return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
+  return <div className="page-content-container">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         
         

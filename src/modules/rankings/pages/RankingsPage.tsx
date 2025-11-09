@@ -175,7 +175,7 @@ const RankingsPage = () => {
   const totalParticipants = concursos.reduce((sum, c) => sum + (c.participant_count || 0), 0);
   const activeConcursos = concursos.filter(c => c.status === 'Em andamento').length;
   if (loading) {
-    return <div className="container mx-auto p-6">
+    return <div className="page-content-container">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Trophy className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
@@ -184,7 +184,8 @@ const RankingsPage = () => {
         </div>
       </div>;
   }
-  return <div className="min-h-screen p-6">
+  return <div className="min-h-screen">
+      <div className="page-content-container">
       <div className="mb-8 flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Rankings</h1>
@@ -376,6 +377,7 @@ const RankingsPage = () => {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>;
 };
 export default RankingsPage;

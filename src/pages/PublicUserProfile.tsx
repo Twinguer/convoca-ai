@@ -93,19 +93,36 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           data: extendedData
         } = await supabase.from('users_profiles').select('*').eq('id', id).maybeSingle();
         
-        // Check if user is a coach
-        const {
-          data: coachData
-        } = await supabase
-          .from('coach_profiles')
-          .select('id')
-          .eq('coach_id', id)
-          .maybeSingle();
+        // Check if user is a coach using RPC function (has active coach subscription)
+        let isCoach = false;
+        try {
+          const { data: coachCheck, error: coachError } = await supabase.rpc('is_user_coach', {
+            p_user_id: id
+          });
+          
+          if (!coachError && coachCheck === true) {
+            isCoach = true;
+          } else {
+            // Fallback: try direct query
+            const { data: coachSubscription } = await supabase
+              .from('coach_subscriptions')
+              .select('id, status, expires_at')
+              .eq('coach_id', id)
+              .eq('status', 'active')
+              .maybeSingle();
+            
+            isCoach = !!coachSubscription && 
+              (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
+          }
+        } catch (error) {
+          // If both fail, assume not coach
+          isCoach = false;
+        }
         
         return {
           ...profileData,
           postCount: postCount || 0,
-          isCoach: !!coachData,
+          isCoach: isCoach,
           // Merge extended data if available
           bio: extendedData?.bio || 'Informações privadas',
           email: extendedData?.email ? maskEmail(extendedData.email) : '',

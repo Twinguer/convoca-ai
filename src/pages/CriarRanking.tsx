@@ -527,7 +527,7 @@ const CriarRanking = () => {
     );
   }
 
-  return <div className="container mx-auto p-4">
+  return <div className="page-content-container">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">

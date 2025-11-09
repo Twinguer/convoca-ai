@@ -25,7 +25,7 @@ const CommunityPage = () => {
     generateSecureUserUrl
   } = useSecureUserUrls();
   const [searchQuery, setSearchQuery] = useState('');
-  const [visibleUsers, setVisibleUsers] = useState(16); // 2 linhas x 8 cards (xl:grid-cols-8)
+  const [visibleUsers, setVisibleUsers] = useState(12); // 2 linhas x 6 cards (lg:grid-cols-6)
   const {
     users,
     isLoading,
@@ -36,33 +36,59 @@ const CommunityPage = () => {
     isOnline
   } = usePresence();
 
-  // Sort users to put online users first, then by name
+  // Sort users by priority: Coach > Pro > Free, then by online status
   const sortedUsers = useMemo(() => {
     if (!users.length) return users;
     return [...users].sort((a, b) => {
       const aOnline = isOnline(a.id);
       const bOnline = isOnline(b.id);
+      const aIsCoach = a.isCoach || false;
+      const bIsCoach = b.isCoach || false;
+      const aIsPro = a.isPro || false;
+      const bIsPro = b.isPro || false;
 
-      // Online users first
-      if (aOnline && !bOnline) return -1;
-      if (!aOnline && bOnline) return 1;
+      // Priority order:
+      // 1. Coach online
+      // 2. Coach offline
+      // 3. Pro online
+      // 4. Pro offline
+      // 5. Free online
+      // 6. Free offline
 
-      // If both have same online status, sort alphabetically by name
+      // Calculate priority score (higher = better position)
+      const getPriority = (isCoach: boolean, isPro: boolean, isOnline: boolean) => {
+        if (isCoach && isOnline) return 6; // Coach online
+        if (isCoach && !isOnline) return 5; // Coach offline
+        if (isPro && isOnline) return 4; // Pro online
+        if (isPro && !isOnline) return 3; // Pro offline
+        if (!isCoach && !isPro && isOnline) return 2; // Free online
+        return 1; // Free offline
+      };
+
+      const aPriority = getPriority(aIsCoach, aIsPro, aOnline);
+      const bPriority = getPriority(bIsCoach, bIsPro, bOnline);
+
+      // Sort by priority (descending)
+      if (aPriority !== bPriority) {
+        return bPriority - aPriority;
+      }
+
+      // If same priority, sort alphabetically by name
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [users, isOnline]);
 
-  // Limit visible users to 3 rows
+  // Limit visible users (starts with 2 rows = 12 cards)
   const displayedUsers = sortedUsers.slice(0, visibleUsers);
   const hasMoreUsers = sortedUsers.length > visibleUsers;
 
   // Reset visible users when search changes
   useEffect(() => {
-    setVisibleUsers(16);
+    setVisibleUsers(12); // Reset to 2 rows (12 cards)
   }, [searchQuery]);
 
   const loadMoreUsers = () => {
-    setVisibleUsers(prev => prev + 16); // Load 2 more rows
+    setVisibleUsers(prev => prev + 12); // Load 1 more page (2 more rows = 12 cards)
   };
   const handleUserClick = async (userId: string) => {
     if (!user) {
@@ -82,8 +108,9 @@ const CommunityPage = () => {
   if (isError) return <CommunityErrorState />;
   
   return (
-    <div className="min-h-screen p-6 bg-page-background">
-      <Tabs defaultValue="usuarios" className="space-y-6">
+    <div className="min-h-screen bg-page-background">
+      <div className="page-content-container">
+        <Tabs defaultValue="usuarios" className="space-y-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
           {/* Community Stats - moved to the left */}
           <div className="hidden md:grid grid-cols-4 gap-2" style={{ width: '48%' }}>
@@ -187,7 +214,8 @@ const CommunityPage = () => {
         <TabsContent value="grupos">
           <GroupsTab />
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 };

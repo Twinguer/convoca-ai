@@ -115,27 +115,43 @@ const UserProfile = () => {
 
 
 
-  // Verificar se o usuário é coach
+  // Verificar se o usuário é coach (has active coach subscription)
   const {
     data: isCoach
   } = useQuery({
     queryKey: ['user-is-coach', user?.id],
     queryFn: async () => {
       if (!user) return false;
-      const {
-        data,
-        error
-      } = await supabase
-        .from('coach_profiles')
-        .select('id')
-        .eq('coach_id', user.id)
-        .maybeSingle();
       
-      if (error) {
+      try {
+        // Try RPC function first (bypasses RLS issues)
+        const { data: coachCheck, error: coachError } = await supabase.rpc('is_user_coach', {
+          p_user_id: user.id
+        });
+        
+        if (!coachError && coachCheck === true) {
+          return true;
+        }
+        
+        // Fallback: try direct query
+        const { data: coachSubscription, error: subError } = await supabase
+          .from('coach_subscriptions')
+          .select('id, status, expires_at')
+          .eq('coach_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        if (subError && subError.code !== 'PGRST116' && subError.code !== 'PGRST406') {
+          console.error('Error checking coach status:', subError);
+          return false;
+        }
+        
+        return !!coachSubscription && 
+          (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
+      } catch (error) {
         console.error('Error checking coach status:', error);
         return false;
       }
-      return !!data;
     },
     enabled: !!user
   });
