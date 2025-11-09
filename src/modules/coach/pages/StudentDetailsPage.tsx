@@ -420,8 +420,16 @@ const StudentDetailsPage = () => {
 
         {/* Tabs: Estudos e Estatísticas */}
         <Tabs defaultValue="study" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <TabsList className="bg-purple-100 dark:bg-purple-900/30">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Button 
+              onClick={() => navigate(`/coach/student/${studentId}/create-cycle`)}
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600 md:order-2"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Ciclo para Aluno
+            </Button>
+            <TabsList className="bg-purple-100 dark:bg-purple-900/30 md:order-1">
               <TabsTrigger value="study" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md">
                 <BookOpen className="mr-2 h-4 w-4" />
                 Módulo de Estudos
@@ -431,14 +439,6 @@ const StudentDetailsPage = () => {
                 Estatísticas
               </TabsTrigger>
             </TabsList>
-            <Button 
-              onClick={() => navigate(`/coach/student/${studentId}/create-cycle`)}
-              size="sm"
-              className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Ciclo para Aluno
-            </Button>
           </div>
 
         {/* Aba: Módulo de Estudos (Read-Only) */}
@@ -471,14 +471,14 @@ const StudentDetailsPage = () => {
                       .filter((cycle: any) => cycle.is_active)
                       .map((cycle: any) => (
                         <Card key={cycle.id} className="p-3">
-                          <div className="flex items-center justify-between gap-4">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div className="flex-1">
                               <p className="font-medium">{cycle.cycle_name}</p>
                               <p className="text-sm text-muted-foreground">
                                 Prova: {new Date(cycle.exam_date).toLocaleDateString('pt-BR')}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
