@@ -70,10 +70,6 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
         throw new Error('Você precisa estar logado para aceitar convites');
       }
       
-      console.log('Usuário atual:', currentUser.id);
-      console.log('Email do usuário:', currentUser.email);
-      console.log('Invitation ID a ser aceito:', invitationId);
-      
       // Não precisamos verificar o convite antes - a função RPC já faz isso
       // Se o convite não for para o usuário ou não existir, a função RPC retornará erro
       

@@ -48,11 +48,9 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
 
 export const getAllBookletsAnswerKeys = async (concursoId: string) => {
   try {
-    console.log('[getAllBookletsAnswerKeys] Fetching for concurso:', concursoId);
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData) {
-      console.log('[getAllBookletsAnswerKeys] No consolidated data found');
       return { success: true, data: null };
     }
 

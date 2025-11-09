@@ -26,9 +26,9 @@ export class CSRFProtection {
   private static config: CSRFConfig = CSRFProtection.DEFAULT_CONFIG;
 
   /**
-   * Generate a secure random token
+   * Generate a secure random token string
    */
-  private static generateToken(): string {
+  private static generateTokenString(): string {
     const array = new Uint8Array(this.config.tokenLength);
     crypto.getRandomValues(array);
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
@@ -38,7 +38,7 @@ export class CSRFProtection {
    * Generate a new CSRF token
    */
   public static generateToken(): CSRFToken {
-    const token = this.generateToken();
+    const token = this.generateTokenString();
     const expiresAt = Date.now() + this.config.tokenExpiry;
 
     const tokenData: CSRFToken = {

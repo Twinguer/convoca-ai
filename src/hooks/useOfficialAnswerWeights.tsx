@@ -6,8 +6,6 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
   return useQuery({
     queryKey: ['official-answers-weights', concursoId, bookletId],
     queryFn: async () => {
-      console.log('[useOfficialAnswerWeights] Fetching for concurso:', concursoId, 'booklet:', bookletId);
-      
       const consolidatedData = await getConsolidatedAnswerKey(concursoId);
       
       if (!consolidatedData) {

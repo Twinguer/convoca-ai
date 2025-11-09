@@ -24,8 +24,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       return Object.values(rankings).some((ranking: any) => ranking.concurso_id === concursoId);
     });
 
-    console.log(`[recalculateAllUserScores] ${usersInConcurso.length} usuários participam do concurso ${concursoId}`);
-
     // Executar recálculo para cada usuário
     for (const userRanking of usersInConcurso) {
       try {
@@ -37,11 +35,9 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           console.error(`[recalculateAllUserScores] ❌ Erro no recálculo:`, result.message);
         }
       } catch (error) {
-        console.error(`[recalculateAllUserScores] ❌ Erro ao recalcular usuário ${userRanking.user_id}:`, error);
+        console.error(`[recalculateAllUserScores] Erro ao recalcular usuário:`, error);
       }
     }
-
-    console.log(`[recalculateAllUserScores] Recálculo concluído para concurso ${concursoId}`);
   } catch (error) {
     console.error('[recalculateAllUserScores] Erro geral:', error);
   }

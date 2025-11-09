@@ -90,8 +90,6 @@ export const fetchUserRankings = async (
     // Filter and format rankings for the specific concurso
     const rankingData = [];
     if (allUserRankings) {
-      // Debug logs removed for security
-      
       // Get user IDs for profile lookup
       const userIds = allUserRankings.map(ur => ur.user_id);
       
@@ -382,7 +380,6 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     if (data.has_indigenas) types.push('Indígenas');
     if (data.has_transsexuais) types.push('Pessoas Trans');
     
-    console.log('Available reservation types for concurso', concursoId, ':', types);
     return types;
   } catch (error) {
     console.error('Error determining available reservation types:', error);

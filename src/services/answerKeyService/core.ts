@@ -18,7 +18,6 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
     }
 
     if (!data?.official_answers) {
-      console.log('[getConsolidatedAnswerKey] No official answers found for concurso:', concursoId);
       return null;
     }
 
@@ -46,8 +45,6 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
 
 export const getBookletAnswers = async (concursoId: string, bookletId: string) => {
   try {
-    console.log('[getBookletAnswers] Getting answers for concurso:', concursoId, 'booklet:', bookletId);
-    
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets?.[bookletId]) {

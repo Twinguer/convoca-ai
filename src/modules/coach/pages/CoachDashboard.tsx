@@ -372,10 +372,7 @@ const CoachDashboard = () => {
 
   const handleRemoveStudent = (studentId: string, studentEmail: string) => {
     if (window.confirm(`Tem certeza que deseja remover ${studentEmail} da sua equipe?`)) {
-      console.log('Confirmado remoção de:', { studentEmail, studentId });
       removeStudentMutation.mutate(studentId);
-    } else {
-      console.log('Remoção cancelada');
     }
   };
 

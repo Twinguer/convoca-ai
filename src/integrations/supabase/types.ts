@@ -107,6 +107,171 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_access_logs: {
+        Row: {
+          accessed_data_category: string | null
+          action_type: string
+          coach_id: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          student_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_data_category?: string | null
+          action_type: string
+          coach_id: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          student_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_data_category?: string | null
+          action_type?: string
+          coach_id?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          student_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      coach_invitations_history: {
+        Row: {
+          coach_id: string
+          consent_data: Json | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          invitation_message: string | null
+          invited_at: string | null
+          relationship_id: string | null
+          responded_at: string | null
+          status: string
+          student_email: string
+          student_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          consent_data?: Json | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          invitation_message?: string | null
+          invited_at?: string | null
+          relationship_id?: string | null
+          responded_at?: string | null
+          status: string
+          student_email: string
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          consent_data?: Json | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          invitation_message?: string | null
+          invited_at?: string | null
+          relationship_id?: string | null
+          responded_at?: string | null
+          status?: string
+          student_email?: string
+          student_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      coach_profiles: {
+        Row: {
+          alerts: Json
+          coach_id: string
+          coach_settings: Json
+          coach_tasks: Json
+          created_at: string | null
+          id: string
+          last_activity_date: string | null
+          pending_invitations: Json
+          student_relationships: Json
+          team_statistics: Json
+          updated_at: string | null
+        }
+        Insert: {
+          alerts?: Json
+          coach_id: string
+          coach_settings?: Json
+          coach_tasks?: Json
+          created_at?: string | null
+          id?: string
+          last_activity_date?: string | null
+          pending_invitations?: Json
+          student_relationships?: Json
+          team_statistics?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          alerts?: Json
+          coach_id?: string
+          coach_settings?: Json
+          coach_tasks?: Json
+          created_at?: string | null
+          id?: string
+          last_activity_date?: string | null
+          pending_invitations?: Json
+          student_relationships?: Json
+          team_statistics?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      coach_subscriptions: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          current_students: number | null
+          expires_at: string | null
+          id: string
+          max_students: number
+          plan_type: string
+          price: number
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          current_students?: number | null
+          expires_at?: string | null
+          id?: string
+          max_students: number
+          plan_type: string
+          price: number
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          current_students?: number | null
+          expires_at?: string | null
+          id?: string
+          max_students?: number
+          plan_type?: string
+          price?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       concursos: {
         Row: {
           alternatives_count: number | null
@@ -144,6 +309,7 @@ export type Database = {
           total_participants: number | null
           updated_at: string
           vagas: number | null
+          watermark_image_url: string | null
         }
         Insert: {
           alternatives_count?: number | null
@@ -181,6 +347,7 @@ export type Database = {
           total_participants?: number | null
           updated_at?: string
           vagas?: number | null
+          watermark_image_url?: string | null
         }
         Update: {
           alternatives_count?: number | null
@@ -218,6 +385,7 @@ export type Database = {
           total_participants?: number | null
           updated_at?: string
           vagas?: number | null
+          watermark_image_url?: string | null
         }
         Relationships: []
       }
@@ -345,6 +513,48 @@ export type Database = {
           metadata?: Json | null
           title?: string
           type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_preferences: {
+        Row: {
+          amount: number
+          created_at: string
+          external_reference: string
+          id: string
+          mercado_pago_payment_data: Json | null
+          payment_id: string | null
+          plan_id: string
+          preference_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          external_reference: string
+          id?: string
+          mercado_pago_payment_data?: Json | null
+          payment_id?: string | null
+          plan_id: string
+          preference_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          external_reference?: string
+          id?: string
+          mercado_pago_payment_data?: Json | null
+          payment_id?: string | null
+          plan_id?: string
+          preference_id?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -569,6 +779,112 @@ export type Database = {
         }
         Relationships: []
       }
+      study_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_groups: {
+        Row: {
+          archived: boolean | null
+          coach_id: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string
+          current_members: number | null
+          description: string | null
+          focus_area: string | null
+          group_settings: Json | null
+          id: string
+          max_members: number | null
+          name: string
+          post_retention_days: number | null
+          posts_data: Json | null
+          privacy_level: string
+          target_concurso_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archived?: boolean | null
+          coach_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by: string
+          current_members?: number | null
+          description?: string | null
+          focus_area?: string | null
+          group_settings?: Json | null
+          id?: string
+          max_members?: number | null
+          name: string
+          post_retention_days?: number | null
+          posts_data?: Json | null
+          privacy_level?: string
+          target_concurso_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          archived?: boolean | null
+          coach_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string
+          current_members?: number | null
+          description?: string | null
+          focus_area?: string | null
+          group_settings?: Json | null
+          id?: string
+          max_members?: number | null
+          name?: string
+          post_retention_days?: number | null
+          posts_data?: Json | null
+          privacy_level?: string
+          target_concurso_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_groups_target_concurso_id_fkey"
+            columns: ["target_concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_rankings: {
         Row: {
           consolidated_data: Json | null
@@ -716,7 +1032,7 @@ export type Database = {
           is_online: boolean | null
           is_studying: boolean | null
           name: string
-          nickname: string | null
+          nickname: string
           privacy_settings: Json | null
           profile_text: string | null
           rotina_estudos: string | null
@@ -741,7 +1057,7 @@ export type Database = {
           is_online?: boolean | null
           is_studying?: boolean | null
           name: string
-          nickname?: string | null
+          nickname: string
           privacy_settings?: Json | null
           profile_text?: string | null
           rotina_estudos?: string | null
@@ -766,7 +1082,7 @@ export type Database = {
           is_online?: boolean | null
           is_studying?: boolean | null
           name?: string
-          nickname?: string | null
+          nickname?: string
           privacy_settings?: Json | null
           profile_text?: string | null
           rotina_estudos?: string | null
@@ -779,47 +1095,115 @@ export type Database = {
       vouchers: {
         Row: {
           code: string
+          cooldown_hours: number | null
           created_at: string
           created_by: string | null
-          current_uses: number
           description: string | null
+          discount_type: string | null
+          discount_value: number | null
           duration_months: number
           expires_at: string | null
           id: string
           is_active: boolean
           max_uses: number
+          max_uses_per_user: number | null
           plan: Database["public"]["Enums"]["subscription_plan"]
           updated_at: string
+          usage_limit_per_ip: number | null
+          uses_count: number
+          valid_from: string | null
+          voucher_type: string
         }
         Insert: {
           code: string
+          cooldown_hours?: number | null
           created_at?: string
           created_by?: string | null
-          current_uses?: number
           description?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
           duration_months?: number
           expires_at?: string | null
           id?: string
           is_active?: boolean
           max_uses?: number
+          max_uses_per_user?: number | null
           plan: Database["public"]["Enums"]["subscription_plan"]
           updated_at?: string
+          usage_limit_per_ip?: number | null
+          uses_count?: number
+          valid_from?: string | null
+          voucher_type?: string
         }
         Update: {
           code?: string
+          cooldown_hours?: number | null
           created_at?: string
           created_by?: string | null
-          current_uses?: number
           description?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
           duration_months?: number
           expires_at?: string | null
           id?: string
           is_active?: boolean
           max_uses?: number
+          max_uses_per_user?: number | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           updated_at?: string
+          usage_limit_per_ip?: number | null
+          uses_count?: number
+          valid_from?: string | null
+          voucher_type?: string
         }
         Relationships: []
+      }
+      vouchers_applied: {
+        Row: {
+          applied_at: string
+          created_at: string
+          discount_applied: number | null
+          duration_months: number | null
+          id: string
+          ip_address: string | null
+          plan: string
+          user_agent: string | null
+          user_id: string
+          voucher_id: string
+        }
+        Insert: {
+          applied_at?: string
+          created_at?: string
+          discount_applied?: number | null
+          duration_months?: number | null
+          id?: string
+          ip_address?: string | null
+          plan: string
+          user_agent?: string | null
+          user_id: string
+          voucher_id: string
+        }
+        Update: {
+          applied_at?: string
+          created_at?: string
+          discount_applied?: number | null
+          duration_months?: number | null
+          id?: string
+          ip_address?: string | null
+          plan?: string
+          user_agent?: string | null
+          user_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_applied_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -956,10 +1340,53 @@ export type Database = {
           },
         ]
       }
+      vouchers_applied_with_users: {
+        Row: {
+          applied_at: string | null
+          auth_email: string | null
+          duration_months: number | null
+          subscription_active: boolean | null
+          subscription_expires_at: string | null
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+          user_plan: Database["public"]["Enums"]["subscription_plan"] | null
+          voucher_code: string | null
+          voucher_created_at: string | null
+          voucher_description: string | null
+          voucher_expires_at: string | null
+          voucher_plan: Database["public"]["Enums"]["subscription_plan"] | null
+          voucher_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      accept_coach_invitation: {
+        Args: { p_consent_data?: Json; p_invitation_id: string }
+        Returns: Json
+      }
       add_completed_study_session: {
         Args: { session_data: Json; user_uuid: string }
+        Returns: Json
+      }
+      add_group_post: {
+        Args: {
+          p_attachments?: Json
+          p_author_id: string
+          p_content: string
+          p_group_id: string
+        }
+        Returns: Json
+      }
+      add_post_comment: {
+        Args: {
+          p_author_id: string
+          p_content: string
+          p_group_id: string
+          p_parent_comment_id?: string
+          p_post_id: string
+        }
         Returns: Json
       }
       add_schedule_session: {
@@ -967,6 +1394,14 @@ export type Database = {
           p_cycle_id: string
           p_day_of_week: number
           p_session_data: Json
+        }
+        Returns: Json
+      }
+      add_student_to_coach: {
+        Args: {
+          p_coach_id: string
+          p_consent_data?: Json
+          p_student_id: string
         }
         Returns: Json
       }
@@ -991,7 +1426,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      apply_subscription_voucher: {
+        Args: { voucher_code: string }
+        Returns: Json
+      }
       apply_voucher: { Args: { voucher_code_param: string }; Returns: Json }
+      calculate_post_expires_at: {
+        Args: { p_group_id: string }
+        Returns: string
+      }
+      calculate_ranking_positions: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       calculate_secure_score: {
         Args: {
           p_discipline_weight?: number
@@ -1023,19 +1470,21 @@ export type Database = {
         Args: { v_sessions: Json }
         Returns: Json
       }
-      calculate_user_score_realtime:
-        | {
-            Args: {
-              p_concurso_id: string
-              p_ranking_id: string
-              p_selected_booklet: string
-              p_user_id: string
-            }
-            Returns: number
-          }
-        | { Args: { p_ranking_id: string }; Returns: number }
+      calculate_user_score_realtime: {
+        Args: {
+          p_concurso_id: string
+          p_ranking_id: string
+          p_selected_booklet: string
+          p_user_id: string
+        }
+        Returns: number
+      }
       calculate_weighted_scores: {
         Args: { p_concurso_id: string; p_scores: Json; p_user_id?: string }
+        Returns: Json
+      }
+      cancel_coach_invitation: {
+        Args: { p_coach_id: string; p_invitation_id: string }
         Returns: Json
       }
       check_advanced_performance_alerts: {
@@ -1050,6 +1499,27 @@ export type Database = {
           severity: string
           threshold_value: number
         }[]
+      }
+      check_can_edit_answers:
+        | {
+            Args: { p_ranking_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.check_can_edit_answers(p_ranking_id => text), public.check_can_edit_answers(p_ranking_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { p_ranking_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.check_can_edit_answers(p_ranking_id => text), public.check_can_edit_answers(p_ranking_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+      check_can_participate_ranking: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      check_if_can_invite_student: {
+        Args: { p_coach_id: string }
+        Returns: Json
       }
       check_performance_alerts: { Args: never; Returns: undefined }
       check_rate_limit: {
@@ -1076,13 +1546,13 @@ export type Database = {
       }
       cleanup_expired_tokens: { Args: never; Returns: number }
       cleanup_old_alerts: { Args: never; Returns: number }
-      cleanup_old_audit_logs: {
-        Args: { p_retention_days?: number }
-        Returns: number
-      }
+      cleanup_old_audit_logs:
+        | { Args: { p_retention_days?: number }; Returns: number }
+        | { Args: never; Returns: number }
       cleanup_old_logs:
         | { Args: { days_to_keep?: number }; Returns: Json }
         | { Args: never; Returns: undefined }
+      cleanup_old_score_logs: { Args: never; Returns: number }
       collect_performance_metrics: { Args: never; Returns: undefined }
       count_concurso_participants: {
         Args: { concurso_id: string }
@@ -1104,6 +1574,11 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_group_post: {
+        Args: { p_group_id: string; p_post_id: string }
+        Returns: Json
+      }
+      delete_study_group: { Args: { p_group_id: string }; Returns: Json }
       delete_user_profile: { Args: { user_id_param: string }; Returns: boolean }
       extract_sessions_to_schedule: {
         Args: never
@@ -1113,6 +1588,7 @@ export type Database = {
           users_migrated: number
         }[]
       }
+      generate_unique_nickname: { Args: { base_name: string }; Returns: string }
       get_alert_statistics: {
         Args: never
         Returns: {
@@ -1159,6 +1635,32 @@ export type Database = {
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_group_feed: {
+        Args: { p_group_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_group_members: {
+        Args: { p_group_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          joined_at: string
+          name: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_group_pending_requests: {
+        Args: { p_group_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          name: string
+          requested_at: string
+          user_id: string
+        }[]
       }
       get_jsonb_analysis: {
         Args: never
@@ -1236,6 +1738,18 @@ export type Database = {
           total_score: number
           user_id: string
           user_name: string
+        }[]
+      }
+      get_rankings_for_concurso: {
+        Args: {
+          p_concurso_id: string
+          p_limit?: number
+          p_offset?: number
+          p_reservation_type?: string
+        }
+        Returns: {
+          consolidated_data: Json
+          user_id: string
         }[]
       }
       get_realtime_rankings: {
@@ -1317,11 +1831,45 @@ export type Database = {
         Args: { user_name: string; user_nickname: string }
         Returns: string
       }
+      get_user_edit_limit: { Args: { p_user_id: string }; Returns: number }
+      get_user_group_status: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: {
+          has_requested: boolean
+          is_invited: boolean
+          is_member: boolean
+          role: string
+          status: string
+        }[]
+      }
+      get_user_groups: {
+        Args: { p_user_id: string }
+        Returns: {
+          coach_id: string
+          cover_image_url: string
+          created_at: string
+          current_members: number
+          description: string
+          focus_area: string
+          id: string
+          joined_at: string
+          max_members: number
+          name: string
+          posts_data: Json
+          privacy_level: string
+          role: string
+        }[]
+      }
       get_user_ranking_by_concurso: {
         Args: { p_concurso_id: string; p_user_id: string }
         Returns: Json
       }
       get_user_study_data: { Args: { user_uuid: string }; Returns: Json }
+      get_user_subscription_plan: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Enums"]["subscription_plan"]
+      }
+      has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1329,10 +1877,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      invite_user_to_group: {
+        Args: { p_group_id: string; p_inviter_id: string; p_user_id: string }
+        Returns: Json
+      }
       is_candidate_classified: {
         Args: { p_concurso_id: string; p_ranking_id: string }
         Returns: boolean
       }
+      is_group_admin: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_user_coach: { Args: { p_user_id: string }; Returns: boolean }
+      is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
       log_admin_operation: {
         Args: { operation_details?: Json; operation_type: string }
         Returns: undefined
@@ -1379,6 +1937,16 @@ export type Database = {
           p_user_id?: string
         }
         Returns: string
+      }
+      log_sensitive_action: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_resource_id: string
+          p_resource_type: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       manage_exam_booklets_v2: {
         Args: {
@@ -1431,6 +1999,10 @@ export type Database = {
           total_records: number
         }[]
       }
+      recalc_concurso_scores_public: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
         Returns: undefined
@@ -1439,22 +2011,17 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
-      recalculate_all_scores_with_weights:
-        | {
-            Args: { p_concurso_id: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.recalculate_all_scores_with_weights(p_concurso_id => text), public.recalculate_all_scores_with_weights(p_concurso_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
-          }
-        | {
-            Args: { p_concurso_id: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.recalculate_all_scores_with_weights(p_concurso_id => text), public.recalculate_all_scores_with_weights(p_concurso_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
-          }
+      recalculate_all_scores_with_weights: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       recalculate_all_users_scores_realtime: {
         Args: { p_concurso_id: string }
         Returns: Json
+      }
+      recalculate_concurso_scores: {
+        Args: { p_concurso_id: string }
+        Returns: number
       }
       recalculate_specific_users_scores: {
         Args: { p_concurso_id: string; p_user_ids: string[] }
@@ -1470,6 +2037,14 @@ export type Database = {
         Returns: Json
       }
       refresh_public_rankings_cache: { Args: never; Returns: undefined }
+      remove_group_member: {
+        Args: { p_admin_id: string; p_group_id: string; p_member_id: string }
+        Returns: Json
+      }
+      remove_student_from_coach: {
+        Args: { p_coach_id: string; p_student_id: string }
+        Returns: undefined
+      }
       remove_study_cycle: {
         Args: { cycle_id: string; user_uuid: string }
         Returns: Json
@@ -1478,9 +2053,22 @@ export type Database = {
         Args: { p_ranking_id: string }
         Returns: Json
       }
+      request_to_join_group: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: Json
+      }
       resolve_performance_alert: {
         Args: { alert_uuid: string }
         Returns: boolean
+      }
+      respond_to_join_request: {
+        Args: {
+          p_accept: boolean
+          p_admin_id: string
+          p_group_id: string
+          p_member_id: string
+        }
+        Returns: Json
       }
       restructure_user_answers_by_concurso: { Args: never; Returns: undefined }
       rollback_optimizations: { Args: never; Returns: string }
@@ -1572,31 +2160,28 @@ export type Database = {
         }
         Returns: Json
       }
-      save_user_answers_with_booklet:
-        | {
-            Args: {
-              p_answers_data: Json
-              p_concurso_id: string
-              p_reservation_type?: string
-              p_selected_booklet?: string
-              p_user_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_answers: Json
-              p_booklet_id: string
-              p_case_study_1_score?: number
-              p_case_study_2_score?: number
-              p_case_study_3_score?: number
-              p_concurso_id: string
-              p_current_edit_count?: number
-              p_discursive_score?: number
-              p_ranking_id: string
-            }
-            Returns: Json
-          }
+      save_user_answers_with_booklet: {
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_case_study_1_score?: number
+          p_case_study_2_score?: number
+          p_case_study_3_score?: number
+          p_concurso_id: string
+          p_current_edit_count?: number
+          p_discursive_score?: number
+          p_ranking_id: string
+        }
+        Returns: Json
+      }
+      send_coach_invitation: {
+        Args: {
+          p_coach_id: string
+          p_invitation_message?: string
+          p_student_nickname: string
+        }
+        Returns: Json
+      }
       start_continuous_monitoring: { Args: never; Returns: undefined }
       switch_user_booklet: {
         Args: { p_booklet_id: string; p_ranking_id: string }
@@ -1632,6 +2217,15 @@ export type Database = {
         }
         Returns: Json
       }
+      update_consolidated_data_and_recalculate: {
+        Args: {
+          p_concurso_id: string
+          p_ranking_id: string
+          p_updated_data: Json
+          p_user_id: string
+        }
+        Returns: Json
+      }
       update_consolidated_data_with_reorganized_answers: {
         Args: { p_ranking_id: string }
         Returns: Json
@@ -1650,6 +2244,18 @@ export type Database = {
       }
       upsert_user_study_data: {
         Args: { study_data: Json; user_uuid: string }
+        Returns: Json
+      }
+      user_is_group_member: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      user_participates_in_concurso: {
+        Args: { p_concurso_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      validate_discount_voucher: {
+        Args: { voucher_code_param: string }
         Returns: Json
       }
       validate_input_security: {
