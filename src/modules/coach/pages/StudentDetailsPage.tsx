@@ -594,15 +594,15 @@ const StudentDetailsPage = () => {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
                         <p className="text-sm text-muted-foreground">Acertos</p>
-                        <p className="text-xl font-bold text-green-600 dark:text-green-400">{fullStatistics.correctAnswers}</p>
+                        <p className="text-xl font-bold">{fullStatistics.correctAnswers}</p>
                       </div>
                       <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                         <p className="text-sm text-muted-foreground">Erros</p>
-                        <p className="text-xl font-bold text-red-600 dark:text-red-400">{fullStatistics.wrongAnswers}</p>
+                        <p className="text-xl font-bold">{fullStatistics.wrongAnswers}</p>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
                         <p className="text-sm text-muted-foreground">Total</p>
-                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{fullStatistics.questionsAnswered}</p>
+                        <p className="text-xl font-bold">{fullStatistics.questionsAnswered}</p>
                       </div>
                     </div>
                   </div>
@@ -614,11 +614,11 @@ const StudentDetailsPage = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
                           <p className="text-sm text-muted-foreground">Sequência Atual</p>
-                          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{fullStatistics.currentStreak} dias</p>
+                          <p className="text-2xl font-bold">{fullStatistics.currentStreak} dias</p>
                         </div>
                         <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
                           <p className="text-sm text-muted-foreground">Maior Sequência</p>
-                          <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{fullStatistics.longestStreak} dias</p>
+                          <p className="text-2xl font-bold">{fullStatistics.longestStreak} dias</p>
                         </div>
                       </div>
                     </div>
