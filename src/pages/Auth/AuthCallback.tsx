@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
 
@@ -93,6 +93,15 @@ const AuthCallback: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
       <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <img 
+              src="/images/footer-logo.png" 
+              alt="Nomeia Aí" 
+              className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+            />
+          </div>
+        </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center space-y-4">
             {status === 'loading' && (

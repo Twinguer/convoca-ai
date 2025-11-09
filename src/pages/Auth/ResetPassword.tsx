@@ -92,6 +92,15 @@ const ResetPassword: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
         <Card className="w-full max-w-md">
+          <CardHeader className="space-y-4">
+            <div className="flex justify-center">
+              <img 
+                src="/images/footer-logo.png" 
+                alt="Nomeia Aí" 
+                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              />
+            </div>
+          </CardHeader>
           <CardContent className="pt-6">
             <div className="flex justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -107,6 +116,13 @@ const ResetPassword: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
         <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
+              <img 
+                src="/images/footer-logo.png" 
+                alt="Nomeia Aí" 
+                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              />
+            </div>
             <div className="flex justify-center">
               <div className="rounded-full bg-destructive/10 p-4">
                 <AlertCircle className="h-12 w-12 text-destructive" />
@@ -131,15 +147,22 @@ const ResetPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
-      <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Lock className="h-8 w-8 text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
+        <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <CardHeader className="space-y-4">
+            <div className="flex justify-center">
+              <img 
+                src="/images/footer-logo.png" 
+                alt="Nomeia Aí" 
+                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              />
             </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">Redefinir senha</CardTitle>
+            <div className="flex justify-center">
+              <div className="rounded-full bg-primary/10 p-3">
+                <Lock className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">Redefinir senha</CardTitle>
           <CardDescription className="text-center">
             Digite sua nova senha abaixo
           </CardDescription>

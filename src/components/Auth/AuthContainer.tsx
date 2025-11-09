@@ -20,7 +20,14 @@ export const AuthContainer: React.FC = () => {
   return (
     <div className="container flex h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       <Card className="w-full max-w-md shadow-xl border-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <img 
+              src="/images/footer-logo.png" 
+              alt="Nomeia Aí" 
+              className="h-16 w-auto object-contain animate-in fade-in zoom-in duration-500"
+            />
+          </div>
           <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Nomeia Aí
           </CardTitle>

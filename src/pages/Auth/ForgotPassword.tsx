@@ -27,6 +27,13 @@ const ForgotPassword: React.FC = () => {
         <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="text-center space-y-4">
             <div className="flex justify-center">
+              <img 
+                src="/images/footer-logo.png" 
+                alt="Nomeia Aí" 
+                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              />
+            </div>
+            <div className="flex justify-center">
               <div className="rounded-full bg-primary/10 p-4">
                 <Mail className="h-12 w-12 text-primary" />
               </div>
@@ -71,10 +78,17 @@ const ForgotPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
-      <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Recuperar senha</CardTitle>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
+        <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <CardHeader className="space-y-4">
+            <div className="flex justify-center">
+              <img 
+                src="/images/footer-logo.png" 
+                alt="Nomeia Aí" 
+                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              />
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">Recuperar senha</CardTitle>
           <CardDescription className="text-center">
             Digite seu email e enviaremos um link para redefinir sua senha
           </CardDescription>
