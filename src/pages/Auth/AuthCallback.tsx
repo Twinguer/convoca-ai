@@ -21,8 +21,17 @@ const AuthCallback: React.FC = () => {
 
         if (error) {
           setStatus('error');
-          setMessage(errorDescription || 'Erro ao autenticar. Tente novamente.');
-          showErrorToast('Erro na autenticação', errorDescription || 'Não foi possível completar a autenticação.');
+          let errorMsg = errorDescription || 'Erro ao autenticar. Tente novamente.';
+          
+          // Verificar se o erro é de provedor não habilitado
+          if (errorDescription?.includes('not enabled') || 
+              errorDescription?.includes('Unsupported provider') ||
+              error?.includes('validation_failed')) {
+            errorMsg = 'A autenticação social não está configurada. Por favor, use email e senha para fazer login.';
+          }
+          
+          setMessage(errorMsg);
+          showErrorToast('Erro na autenticação', errorMsg);
           
           setTimeout(() => {
             navigate('/auth');

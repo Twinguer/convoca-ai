@@ -30,7 +30,18 @@ export const useSocialAuth = () => {
       if (error) {
         logError(`Social auth failed (${provider})`, { error: error.message }, 'AUTH');
         logSecurity(`Social auth attempt failed`, { provider }, 'AUTH');
-        showErrorToast('Erro ao autenticar', `Não foi possível autenticar com ${provider}. Tente novamente.`);
+        
+        // Verificar se o erro é de provedor não habilitado
+        if (error.message?.includes('not enabled') || 
+            error.message?.includes('Unsupported provider') ||
+            error.message?.includes('validation_failed')) {
+          showErrorToast(
+            'Provedor não configurado',
+            `A autenticação via ${provider} não está disponível no momento. Por favor, use email e senha para fazer login.`
+          );
+        } else {
+          showErrorToast('Erro ao autenticar', `Não foi possível autenticar com ${provider}. Tente novamente.`);
+        }
         return false;
       }
 
