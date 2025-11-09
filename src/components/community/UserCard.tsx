@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -77,22 +78,22 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div 
-      className="rounded-xl border border-border bg-card text-card-foreground shadow-lg overflow-hidden cursor-pointer" 
+    <Card 
+      className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all duration-200 cursor-pointer h-full flex flex-col" 
       style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}
       onClick={handleCardClick}
     >
-      <div className="relative p-5 flex flex-col">
-        <div className="flex flex-col items-center mb-4">
+      <CardContent className="p-5 flex flex-col flex-1">
+        <div className="flex flex-col items-center mb-4 flex-shrink-0">
           <div className="relative mb-3">
-            <Avatar className="h-20 w-20" style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+            <Avatar className="h-20 w-20" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
               <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
             </Avatar>
             <OnlineIndicator userId={userProfile.id} />
           </div>
           
-          <h3 className="font-semibold text-base text-center leading-tight">
+          <h3 className="font-semibold text-base text-center leading-tight min-h-[2.5rem] flex items-center justify-center">
             {userProfile.name ? 
               userProfile.name.split(' ').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
@@ -100,14 +101,18 @@ export const UserCard: React.FC<UserCardProps> = ({
               : 'Usuário'
             }
           </h3>
-          {userProfile.isCoach && (
-            <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200 mt-1">
-              Coach
-            </Badge>
-          )}
+          
+          {/* Espaço reservado para badge do coach - sempre presente para manter altura consistente */}
+          <div className="min-h-[1.5rem] mt-1 flex items-center justify-center">
+            {userProfile.isCoach && (
+              <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200">
+                Coach
+              </Badge>
+            )}
+          </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3 mb-4 border-t border-b py-3">
+        <div className="grid grid-cols-2 gap-3 border-t border-b py-3 flex-shrink-0">
           <div className="flex flex-col items-center">
             <span className="text-lg font-bold text-primary">{userProfile.postCount}</span>
             <span className="text-xs text-muted-foreground text-center">Rankings</span>
@@ -118,7 +123,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           </div>
         </div>
         
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

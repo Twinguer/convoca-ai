@@ -25,7 +25,7 @@ const CommunityPage = () => {
     generateSecureUserUrl
   } = useSecureUserUrls();
   const [searchQuery, setSearchQuery] = useState('');
-  const [visibleUsers, setVisibleUsers] = useState(18); // 3 linhas x 6 cards (xl:grid-cols-6)
+  const [visibleUsers, setVisibleUsers] = useState(16); // 2 linhas x 8 cards (xl:grid-cols-8)
   const {
     users,
     isLoading,
@@ -58,11 +58,11 @@ const CommunityPage = () => {
 
   // Reset visible users when search changes
   useEffect(() => {
-    setVisibleUsers(18);
+    setVisibleUsers(16);
   }, [searchQuery]);
 
   const loadMoreUsers = () => {
-    setVisibleUsers(prev => prev + 18); // Load 3 more rows
+    setVisibleUsers(prev => prev + 16); // Load 2 more rows
   };
   const handleUserClick = async (userId: string) => {
     if (!user) {
@@ -172,7 +172,7 @@ const CommunityPage = () => {
                       variant="outline"
                       className="px-8 py-2"
                     >
-                      Carregar mais usuários
+                      Carregar mais
                     </Button>
                   </div>
                 )}
