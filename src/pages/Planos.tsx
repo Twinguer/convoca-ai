@@ -116,11 +116,11 @@ const Planos = () => {
     descricao: "Para começar seus estudos",
     periodo: "Livre",
     popular: false,
-    features: ["Apenas 1 ranking", "Sem acesso a estatísticas", "Sem ciclo de estudos", "Sem edital verticalizado", "Não pode criar rankings", "Máximo de 5 edições por cartão de respostas", "Com propagandas"]
+    features: ["Pode criar Rankings", "Participa de todo o ranking que criar", "Máximo de 5 edições por cartão de respostas", "Com propagandas"]
   }, {
     id: "pro",
     nome: "Pro",
-    preco: 21.9,
+    preco: 14.9,
     descricao: "Acesso completo",
     periodo: "Mês",
     popular: true,

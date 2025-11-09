@@ -31,10 +31,10 @@ const LOCAL_IP_PATTERN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])
 // ============================================
 // Price IDs do Stripe
 const STRIPE_PRICES = {
-  pro: "price_1SQwL6QOI1Sr9J1A87vPtQs5", // R$ 21,90/mês - Aluno Pro
+  pro: "price_1SQwL6QOI1Sr9J1A87vPtQs5", // R$ 14,90/mês - Aluno Pro
   coach_starter: "price_1SQwLwQOI1Sr9J1AnLYAo0JD", // R$ 49,90/mês - Modo Coach Starter
-  coach_professional: "price_1SQwMqQOI1Sr9J1Aagx6iQoE", // R$ 149,90/mês - Modo Coach Professional
-  coach_enterprise: "price_1SQwNTQOI1Sr9J1AOTPomBNh", // R$ 249,90/mês - Modo Coach Enterprise
+  coach_professional: "price_1SQwMqQOI1Sr9J1Aagx6iQoE", // R$ 89,90/mês - Modo Coach Professional
+  coach_enterprise: "price_1SQwNTQOI1Sr9J1AOTPomBNh", // R$ 149,90/mês - Modo Coach Enterprise
 };
 
 // Configuração de planos Coach
@@ -46,13 +46,13 @@ const COACH_PLANS = {
   },
   coach_professional: {
     plan_type: "professional",
-    price: 149.90,
-    max_students: 25
+    price: 89.90,
+    max_students: 10
   },
   coach_enterprise: {
     plan_type: "enterprise",
-    price: 249.90,
-    max_students: 50
+    price: 149.90,
+    max_students: 25
   }
 };
 

@@ -217,11 +217,11 @@ const CoachSubscriptionPage = () => {
     },
     {
       name: 'Professional',
-      price: 149.90,
-      max_students: 25,
+      price: 89.90,
+      max_students: 10,
       popular: true,
       features: [
-        'Até 25 alunos',
+        'Até 10 alunos',
         'Acesso completo ao dashboard',
         'Estatísticas detalhadas',
         'Sistema de tarefas avançado',
@@ -231,10 +231,10 @@ const CoachSubscriptionPage = () => {
     },
     {
       name: 'Enterprise',
-      price: 249.90,
-      max_students: 50,
+      price: 149.90,
+      max_students: 25,
       features: [
-        'Até 50 alunos',
+        'Até 25 alunos',
         'Todos os recursos do Professional',
         'API personalizada',
         'Suporte dedicado',
@@ -429,7 +429,7 @@ const CoachSubscriptionPage = () => {
             <h4 className="font-semibold mb-2">Como funciona o Modo Coach?</h4>
             <p className="text-sm text-muted-foreground">
               Você convida alunos para sua equipe e acompanha seus estudos, estatísticas e progresso. 
-              Os alunos pagam o plano Pro da plataforma (R$ 21,90/mês) e você pode cobrar valores 
+              Os alunos pagam o plano Pro da plataforma (R$ 14,90/mês) e você pode cobrar valores 
               adicionais fora da plataforma.
             </p>
           </div>

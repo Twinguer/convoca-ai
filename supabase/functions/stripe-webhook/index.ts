@@ -24,13 +24,13 @@ const COACH_PLANS = {
   },
   coach_professional: {
     plan_type: "professional",
-    price: 149.90,
-    max_students: 25
+    price: 89.90,
+    max_students: 10
   },
   coach_enterprise: {
     plan_type: "enterprise",
-    price: 249.90,
-    max_students: 50
+    price: 149.90,
+    max_students: 25
   }
 };
 
