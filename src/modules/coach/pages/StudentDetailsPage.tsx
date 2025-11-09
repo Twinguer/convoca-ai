@@ -448,7 +448,6 @@ const StudentDetailsPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Atividade de Estudos</CardTitle>
-                  <CardDescription>Acesso read-only ao módulo de estudos</CardDescription>
                 </div>
                 <Button
                   onClick={() => setMessageModalOpen(true)}
