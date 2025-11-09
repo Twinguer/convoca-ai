@@ -42,7 +42,6 @@ import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
-import WelcomePage from "./pages/WelcomePage";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import { GroupDetailsPage } from "./pages/GroupDetailsPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
@@ -67,7 +66,6 @@ import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import EmailPreview from "./pages/EmailPreview";
 import RecalculateScores from "./pages/RecalculateScores";
-import DebugPage from "./pages/DebugPage";
 // Wrapper components for passing URL parameters
 const ConcursoResultadosWrapper = () => {
   const { token } = useParams<{ token: string }>();
@@ -267,7 +265,6 @@ const AppContent = () => {
                           <Menu />
                           <Planos />
                         </>} />
-                     <Route path="/welcome" element={<WelcomePage />} />
                     {/* Rotas do Coach Mode */}
                     <Route path="/coach" element={<>
                         <Menu />
@@ -382,10 +379,6 @@ const AppContent = () => {
                     {/* Rotas legadas - redirecionar para versão segura */}
                     <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />
-                    <Route path="/debug" element={<>
-                        <Menu />
-                        <DebugPage />
-                      </>} />
                     <Route path="/recalculate" element={<>
                         <Menu />
                         <RecalculateScores />

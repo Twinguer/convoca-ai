@@ -272,12 +272,12 @@ serve(async (req: Request): Promise<Response> => {
         const priceId = subscription.items.data[0]?.price?.id;
         console.log(`[verify-stripe-subscription] Plan ID não encontrado no metadata, tentando identificar pelo price_id: ${priceId}`);
         
-        // Mapear price_id para planId
+        // Mapear price_id para planId (Nova Conta - Modo Teste)
         const priceToPlan: Record<string, string> = {
-          "price_1SQwL6QOI1Sr9J1A87vPtQs5": "pro",
-          "price_1SQwLwQOI1Sr9J1AnLYAo0JD": "coach_starter",
-          "price_1SQwMqQOI1Sr9J1Aagx6iQoE": "coach_professional",
-          "price_1SQwNTQOI1Sr9J1AOTPomBNh": "coach_enterprise"
+          "price_1SRagSFBsZSweLR7D5kE6D7h": "pro",
+          "price_1SRaimFBsZSweLR714Du0mqE": "coach_starter",
+          "price_1SRah0FBsZSweLR7DI1hiPsv": "coach_professional",
+          "price_1SRai8FBsZSweLR7A93PGay8": "coach_enterprise"
         };
         
         planId = priceToPlan[priceId || ""] || "pro";

@@ -7,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
+import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Footer from "@/components/Footer";
@@ -17,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Planos = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     isPro,
     isFree,
@@ -24,6 +28,14 @@ const Planos = () => {
     validateDiscountVoucher,
     applyVoucher
   } = useSubscription();
+  
+  // Buscar assinatura Coach ativa para verificar hierarquia de planos
+  const { data: coachSubscription } = useQuery({
+    queryKey: ['coach-subscription-planos', user?.id],
+    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
+    enabled: !!user,
+  });
+  
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedDiscountVoucher, setAppliedDiscountVoucher] = useState<{
@@ -64,13 +76,11 @@ const Planos = () => {
           
           // Sempre fazer refetch para atualizar o estado
           await refetch();
-          // Redirecionar para página de boas-vindas
-          navigate(`/welcome?plan=${plan}`, { replace: true });
+          // Não redirecionar, permanecer na página de planos
         } catch (error) {
           console.error("[Planos] Erro ao verificar assinatura:", error);
-          // Mesmo com erro, redirecionar para página de boas-vindas
+          // Mesmo com erro, fazer refetch
           await refetch();
-          navigate(`/welcome?plan=${plan}`, { replace: true });
         }
       };
       
@@ -113,18 +123,18 @@ const Planos = () => {
     id: "free",
     nome: "Gratuito",
     preco: 0,
-    descricao: "Para começar seus estudos",
+    descricao: "Para comparar o desempenho",
     periodo: "Livre",
     popular: false,
-    features: ["Pode criar Rankings", "Participa de todo o ranking que criar", "Máximo de 5 edições por cartão de respostas", "Com propagandas"]
+    features: ["Pode criar Rankings;", "Participa de todo o ranking que criar;", "Participa de até 2 rankings que não criou;", "Visualisa os rankings que participa;", "Máximo de 3 edições por cartão de respostas;", "Não pode criar Grupos de estudos;", "Não pode ser aluno no Modo Coach;", "Com propagandas;"]
   }, {
     id: "pro",
-    nome: "Pro",
+    nome: "Aluno Pro",
     preco: 14.9,
-    descricao: "Acesso completo",
+    descricao: "Acesso Amplo",
     periodo: "Mês",
     popular: true,
-    features: ["Participa de até 5 Rankings simultâneos", "Visualização de todos os Rankings", "Estatísticas completas", "Ciclos de estudos", "Editais verticalizados", "Acesso aos perfis da comunidade", "Criação de Rankings", "Edições ilimitadas nos cartões de respostas", "Suporte prioritário", "Sem propaganda"]
+    features: ["Participa de até 5 Rankings simultâneos;", "Visualização de todos os Rankings;", "Criação de Rankings;", "Criação de Grupos de Estudos;", "Estatísticas completas;", "Ciclos de estudos;", "Editais verticalizados;", "Acesso aos perfis da comunidade;", "Edições ilimitadas nos cartões de respostas;", "Pode ser aluno no Modo Coach;", "Sem propaganda;"]
   }];
   const handleSubscribe = async (planoId: string) => {
     if (planoId === "free") {
@@ -346,12 +356,63 @@ const Planos = () => {
                     </li>)}
                 </ul>
 
-                <Button className="w-full mt-6" variant={plano.popular ? "default" : "outline"} onClick={() => handleSubscribe(plano.id)} disabled={loadingPlan === plano.id || plano.id === "free" && isFree || plano.id === "pro" && isPro}>
-                  {loadingPlan === plano.id ? <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processando...
-                    </> : plano.id === "pro" && isPro ? "Plano Atual" : plano.id === "free" && isFree ? "Plano Atual" : "Assinar"}
-                </Button>
+                {(() => {
+                  // Hierarquia de planos: free (0) < pro (1) < coach_starter (2) < coach_professional (3) < coach_enterprise (4)
+                  const planLevels: Record<string, number> = {
+                    'free': 0,
+                    'pro': 1,
+                    'coach_starter': 2,
+                    'coach_professional': 3,
+                    'coach_enterprise': 4
+                  };
+
+                  // Determinar nível máximo do plano ativo
+                  let maxActiveLevel = 0;
+                  
+                  // Verificar Pro
+                  if (isPro) {
+                    maxActiveLevel = Math.max(maxActiveLevel, planLevels['pro']);
+                  }
+                  
+                  // Verificar Coach
+                  if (coachSubscription?.status === 'active' && 
+                      (!coachSubscription?.expires_at || new Date(coachSubscription.expires_at) > new Date())) {
+                    const coachPlanId = `coach_${coachSubscription.plan_type}`;
+                    maxActiveLevel = Math.max(maxActiveLevel, planLevels[coachPlanId] || 0);
+                  }
+
+                  const currentPlanLevel = planLevels[plano.id] || 0;
+                  const isCurrentPlan = (plano.id === 'free' && isFree && maxActiveLevel === 0) ||
+                                       (plano.id === 'pro' && isPro && maxActiveLevel === 1) ||
+                                       (plano.id === 'coach_starter' && coachSubscription?.plan_type === 'starter' && maxActiveLevel === 2) ||
+                                       (plano.id === 'coach_professional' && coachSubscription?.plan_type === 'professional' && maxActiveLevel === 3) ||
+                                       (plano.id === 'coach_enterprise' && coachSubscription?.plan_type === 'enterprise' && maxActiveLevel === 4);
+                  
+                  const shouldDisable = currentPlanLevel <= maxActiveLevel;
+                  const isLoading = loadingPlan === plano.id;
+
+                  return (
+                    <Button 
+                      className="w-full mt-6" 
+                      variant={plano.popular ? "default" : "outline"} 
+                      onClick={() => handleSubscribe(plano.id)} 
+                      disabled={isLoading || shouldDisable}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processando...
+                        </>
+                      ) : isCurrentPlan ? (
+                        "Plano Atual"
+                      ) : shouldDisable ? (
+                        "Plano Atual"
+                      ) : (
+                        "Assinar"
+                      )}
+                    </Button>
+                  );
+                })()}
               </CardContent>
             </Card>)}
         </div>

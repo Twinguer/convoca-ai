@@ -29,12 +29,12 @@ const LOCAL_IP_PATTERN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])
 // ============================================
 // CONFIGURAÇÃO DE PLANOS E PRICES DO STRIPE
 // ============================================
-// Price IDs do Stripe
+// Price IDs do Stripe (Nova Conta - Modo Teste)
 const STRIPE_PRICES = {
-  pro: "price_1SQwL6QOI1Sr9J1A87vPtQs5", // R$ 14,90/mês - Aluno Pro
-  coach_starter: "price_1SQwLwQOI1Sr9J1AnLYAo0JD", // R$ 49,90/mês - Modo Coach Starter
-  coach_professional: "price_1SQwMqQOI1Sr9J1Aagx6iQoE", // R$ 89,90/mês - Modo Coach Professional
-  coach_enterprise: "price_1SQwNTQOI1Sr9J1AOTPomBNh", // R$ 149,90/mês - Modo Coach Enterprise
+  pro: "price_1SRagSFBsZSweLR7D5kE6D7h", // R$ 14,90/mês - Aluno Pro
+  coach_starter: "price_1SRaimFBsZSweLR714Du0mqE", // R$ 49,90/mês - Modo Coach Inicial (5 alunos)
+  coach_professional: "price_1SRah0FBsZSweLR7DI1hiPsv", // R$ 89,90/mês - Modo Coach Intermediário (10 alunos)
+  coach_enterprise: "price_1SRai8FBsZSweLR7A93PGay8", // R$ 149,90/mês - Modo Coach Avançado (25 alunos)
 };
 
 // Configuração de planos Coach
@@ -247,9 +247,10 @@ serve(async (req: Request): Promise<Response> => {
     // Construir URL base
     const baseUrl = (origin && origin.trim()) ? origin : PRODUCTION_ORIGINS[0];
     
-    // Redirecionar para página de boas-vindas após pagamento bem-sucedido
-    // (isCoachPlan já foi declarado acima na linha 214)
-    const successUrl = `${baseUrl}/welcome?plan=${requestData.planId}`;
+    // Redirecionar para página apropriada após pagamento bem-sucedido
+    const successUrl = isCoachPlan
+      ? `${baseUrl}/coach/subscription?status=success&plan=${requestData.planId}`
+      : `${baseUrl}/planos?status=success&plan=${requestData.planId}`;
     const cancelUrl = isCoachPlan
       ? `${baseUrl}/coach/subscription?status=canceled`
       : `${baseUrl}/planos?status=canceled`;
@@ -295,6 +296,121 @@ serve(async (req: Request): Promise<Response> => {
     } catch (customerError: any) {
       console.error("[create-checkout] Erro ao criar/buscar customer:", customerError);
       throw new Error(`Erro ao criar customer no Stripe: ${customerError?.message || "Erro desconhecido"}`);
+    }
+
+    // ============================================
+    // VERIFICAR SE JÁ EXISTE ASSINATURA ATIVA DO MESMO TIPO (UPGRADE/DOWNGRADE)
+    // ============================================
+    let existingSubscription: Stripe.Subscription | null = null;
+    let isUpgrade = false;
+    
+    try {
+      // Buscar assinaturas ativas do customer
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 10, // Buscar todas para verificar se há do mesmo tipo
+      });
+
+      // Verificar se há assinatura ativa do mesmo tipo (Pro ou Coach)
+      for (const sub of subscriptions.data) {
+        const currentPriceId = sub.items.data[0]?.price?.id;
+        const currentPlanId = Object.entries(STRIPE_PRICES).find(([_, price]) => price === currentPriceId)?.[0];
+        
+        // Verificar se é do mesmo tipo (Pro ou Coach)
+        const isCurrentPlanCoach = currentPlanId?.startsWith("coach_");
+        const isNewPlanCoach = requestData.planId.startsWith("coach_");
+        
+        if (isCurrentPlanCoach === isNewPlanCoach) {
+          // Mesmo tipo de plano (Pro ou Coach)
+          existingSubscription = sub;
+          isUpgrade = currentPlanId !== requestData.planId; // Se o plano é diferente, é upgrade/downgrade
+          console.log(`[create-checkout] Assinatura ativa encontrada: ${sub.id}, plano atual: ${currentPlanId}, novo plano: ${requestData.planId}, é upgrade: ${isUpgrade}`);
+          break;
+        }
+      }
+    } catch (subscriptionError: any) {
+      console.warn(`[create-checkout] Aviso: Erro ao buscar assinaturas existentes: ${subscriptionError?.message}`);
+      // Continuar com criação de nova assinatura se houver erro
+    }
+
+    // Se existe assinatura ativa do mesmo tipo e é um plano diferente, fazer upgrade/downgrade
+    if (existingSubscription && isUpgrade) {
+      console.log(`[create-checkout] Fazendo upgrade/downgrade da assinatura ${existingSubscription.id}`);
+      
+      try {
+        // Obter o subscription item ID
+        const subscriptionItemId = existingSubscription.items.data[0]?.id;
+        if (!subscriptionItemId) {
+          throw new Error("Subscription item não encontrado");
+        }
+
+        // Atualizar a assinatura com o novo preço
+        // O Stripe automaticamente faz prorating (cálculo proporcional)
+        const updatedSubscription = await stripe.subscriptions.update(existingSubscription.id, {
+          items: [{
+            id: subscriptionItemId,
+            price: priceId,
+          }],
+          metadata: {
+            user_id: user.id,
+            plan_id: requestData.planId,
+            voucher_code: requestData.voucherCode || undefined,
+          },
+          proration_behavior: 'always_invoice', // Sempre criar invoice com prorating
+        });
+
+        console.log(`[create-checkout] Assinatura atualizada com sucesso: ${updatedSubscription.id}`);
+        console.log(`[create-checkout] Próxima cobrança: ${new Date(updatedSubscription.current_period_end * 1000).toISOString()}`);
+
+        // Se houver invoice pendente (do prorating), redirecionar para página de pagamento
+        if (updatedSubscription.latest_invoice) {
+          const invoiceId = typeof updatedSubscription.latest_invoice === 'string' 
+            ? updatedSubscription.latest_invoice 
+            : updatedSubscription.latest_invoice.id;
+          
+          const invoice = await stripe.invoices.retrieve(invoiceId);
+          
+          // Se a invoice tem valor e não está paga, redirecionar para página de pagamento
+          if (invoice.amount_due > 0 && invoice.status !== 'paid') {
+            const invoiceUrl = invoice.hosted_invoice_url;
+            if (invoiceUrl) {
+              console.log(`[create-checkout] Redirecionando para pagamento da invoice: ${invoiceUrl}`);
+              return new Response(
+                JSON.stringify({ 
+                  url: invoiceUrl,
+                  session_id: updatedSubscription.id,
+                  is_upgrade: true
+                }),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" }
+                }
+              );
+            }
+          }
+        }
+
+        // Se não há cobrança pendente (downgrade com crédito), redirecionar para success
+        console.log(`[create-checkout] Upgrade/downgrade concluído sem cobrança imediata`);
+        return new Response(
+          JSON.stringify({ 
+            url: successUrl,
+            session_id: updatedSubscription.id,
+            is_upgrade: true,
+            message: "Plano atualizado com sucesso"
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+
+      } catch (upgradeError: any) {
+        console.error(`[create-checkout] Erro ao fazer upgrade/downgrade:`, upgradeError);
+        // Se falhar o upgrade, continuar com criação de nova assinatura
+        console.log(`[create-checkout] Continuando com criação de nova assinatura...`);
+      }
     }
     
     console.log(`[create-checkout] Criando sessão de checkout com:`, {
