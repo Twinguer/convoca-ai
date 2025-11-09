@@ -8,11 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { paymentService } from '@/services/paymentService';
 import { Check, ArrowLeft, Loader2, X, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 
 const CoachSubscriptionPage = () => {
   const navigate = useNavigate();
@@ -30,6 +31,16 @@ const CoachSubscriptionPage = () => {
   } | null>(null);
   const [validatingVoucher, setValidatingVoucher] = useState(false);
   const [voucherDialogOpen, setVoucherDialogOpen] = useState(false);
+
+  // Buscar assinatura ativa do Coach
+  const { data: activeSubscription, isLoading: isLoadingSubscription } = useQuery({
+    queryKey: ['coach-subscription', user?.id],
+    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
+    enabled: !!user,
+  });
+
+  // Buscar assinatura Pro para verificar hierarquia de planos
+  const { isPro } = useSubscription();
 
   // Tratar retorno do Stripe
   useEffect(() => {
@@ -52,8 +63,8 @@ const CoachSubscriptionPage = () => {
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
             
-            // Redirecionar para página de boas-vindas
-            navigate(`/welcome?plan=${plan}`, { replace: true });
+            // Redirecionar para dashboard do Coach
+            navigate('/coach/dashboard', { replace: true });
           } else {
             console.warn("[CoachSubscriptionPage] Assinatura Coach não encontrada ainda, aguardando webhook...");
             
@@ -63,8 +74,8 @@ const CoachSubscriptionPage = () => {
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
             
-            // Redirecionar para página de boas-vindas
-            navigate(`/welcome?plan=${plan}`, { replace: true });
+            // Redirecionar para dashboard do Coach
+            navigate('/coach/dashboard', { replace: true });
           }
         } catch (error) {
           console.error("[CoachSubscriptionPage] Erro ao verificar assinatura Coach:", error);
@@ -75,8 +86,8 @@ const CoachSubscriptionPage = () => {
           await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
           await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
           
-          // Redirecionar para página de boas-vindas mesmo com erro
-          navigate(`/welcome?plan=${plan}`, { replace: true });
+          // Redirecionar para dashboard do Coach mesmo com erro
+          navigate('/coach/dashboard', { replace: true });
         }
       };
       
@@ -204,41 +215,61 @@ const CoachSubscriptionPage = () => {
 
   const plans = [
     {
-      name: 'Starter',
+      name: 'Coach Inicial',
       price: 49.90,
       max_students: 5,
       features: [
         'Até 5 alunos',
-        'Acesso completo ao dashboard',
+        'Acesso a todos os rankings',
+        'Pode criar rankings',
+        'Sem limite de edição da cartão',
+        'Visualização de todos os Rankings',
+        'Criação de grupos de estudos',
         'Estatísticas detalhadas',
-        'Sistema de tarefas',
-        'Suporte por email'
+        'Criação de cliclos para seus alunos',
+        'Sistema de tarefas para seus alunos',
+        'Verticaliza edital para seus alunos',
+        'Estatísticas dos alunos',
+        'Sem propaganda'
       ]
     },
     {
-      name: 'Professional',
+      name: 'Coach Intermediário',
       price: 89.90,
       max_students: 10,
       popular: true,
       features: [
         'Até 10 alunos',
-        'Acesso completo ao dashboard',
+        'Acesso a todos os rankings',
+        'Pode criar rankings',
+        'Sem limite de edição da cartão',
+        'Visualização de todos os Rankings',
+        'Criação de grupos de estudos',
         'Estatísticas detalhadas',
-        'Sistema de tarefas avançado',
-        'Relatórios semanais',
-        'Suporte prioritário'
+        'Criação de cliclos para seus alunos',
+        'Sistema de tarefas para seus alunos',
+        'Verticaliza edital para seus alunos',
+        'Estatísticas dos alunos',
+        'Sem propaganda'
       ]
     },
     {
-      name: 'Enterprise',
+      name: 'Coach Avançado',
       price: 149.90,
       max_students: 25,
       features: [
         'Até 25 alunos',
-        'Todos os recursos do Professional',
-        'API personalizada',
-        'Suporte dedicado',
-        'Consultor personalizado'
+        'Acesso a todos os rankings',
+        'Pode criar rankings',
+        'Sem limite de edição da cartão',
+        'Visualização de todos os Rankings',
+        'Criação de grupos de estudos',
+        'Estatísticas detalhadas',
+        'Criação de cliclos para seus alunos',
+        'Sistema de tarefas para seus alunos',
+        'Verticaliza edital para seus alunos',
+        'Estatísticas dos alunos',
+        'Sem propaganda'
       ]
     }
   ];
@@ -322,21 +353,69 @@ const CoachSubscriptionPage = () => {
                 ))}
               </ul>
 
-              <Button 
-                className="w-full mt-auto"
-                variant={plan.popular ? 'default' : 'outline'}
-                onClick={() => handleSubscribe(plan.name.toLowerCase() as 'starter' | 'professional' | 'enterprise')}
-                disabled={loadingPlan === plan.name.toLowerCase()}
-              >
-                {loadingPlan === plan.name.toLowerCase() ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  'Assinar'
-                )}
-              </Button>
+              {(() => {
+                // Hierarquia de planos: free (0) < pro (1) < coach_starter (2) < coach_professional (3) < coach_enterprise (4)
+                const planLevels: Record<string, number> = {
+                  'free': 0,
+                  'pro': 1,
+                  'coach_starter': 2,
+                  'coach_professional': 3,
+                  'coach_enterprise': 4
+                };
+
+                const planTypeMap: Record<string, 'starter' | 'professional' | 'enterprise'> = {
+                  'Coach Inicial': 'starter',
+                  'Coach Intermediário': 'professional',
+                  'Coach Avançado': 'enterprise'
+                };
+                const planType = planTypeMap[plan.name];
+                const planId = `coach_${planType}`;
+                const currentPlanLevel = planLevels[planId] || 0;
+
+                // Determinar nível máximo do plano ativo
+                let maxActiveLevel = 0;
+                
+                // Verificar Pro
+                if (isPro) {
+                  maxActiveLevel = Math.max(maxActiveLevel, planLevels['pro']);
+                }
+                
+                // Verificar Coach
+                if (activeSubscription?.status === 'active' && 
+                    (!activeSubscription?.expires_at || new Date(activeSubscription.expires_at) > new Date())) {
+                  const activeCoachPlanId = `coach_${activeSubscription.plan_type}`;
+                  maxActiveLevel = Math.max(maxActiveLevel, planLevels[activeCoachPlanId] || 0);
+                }
+
+                const isCurrentPlan = activeSubscription?.plan_type === planType 
+                  && activeSubscription?.status === 'active'
+                  && (!activeSubscription?.expires_at || new Date(activeSubscription.expires_at) > new Date());
+                
+                const shouldDisable = currentPlanLevel <= maxActiveLevel;
+                const isLoading = loadingPlan === planType;
+                
+                return (
+                  <Button 
+                    className="w-full mt-auto"
+                    variant={plan.popular ? 'default' : 'outline'}
+                    onClick={() => handleSubscribe(planType)}
+                    disabled={isLoading || shouldDisable}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processando...
+                      </>
+                    ) : isCurrentPlan ? (
+                      'Seu plano atual'
+                    ) : shouldDisable ? (
+                      'Plano Atual'
+                    ) : (
+                      'Assinar'
+                    )}
+                  </Button>
+                );
+              })()}
             </CardContent>
           </Card>
         ))}
