@@ -213,11 +213,13 @@ const ResetPassword: React.FC = () => {
         <Card className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="space-y-4">
             <div className="flex justify-center">
-              <img 
-                src="/images/footer-logo.png" 
-                alt="Nomeia Aí" 
-                className="h-24 w-auto object-contain animate-in fade-in zoom-in duration-500"
-              />
+              <Link to="/">
+                <img 
+                  src="/images/footer-logo.png" 
+                  alt="Nomeia Aí" 
+                  className="h-24 w-auto object-contain animate-in fade-in zoom-in duration-500 cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </Link>
             </div>
           </CardHeader>
         <CardContent>
