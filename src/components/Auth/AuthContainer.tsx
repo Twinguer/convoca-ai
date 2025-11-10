@@ -24,7 +24,7 @@ export const AuthContainer: React.FC = () => {
             <img 
               src="/images/footer-logo.png" 
               alt="Nomeia Aí" 
-              className="h-16 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              className="h-36 w-auto object-contain animate-in fade-in zoom-in duration-500"
             />
           </div>
         </CardHeader>
