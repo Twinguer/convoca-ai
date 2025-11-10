@@ -22,15 +22,48 @@ const ResetPassword: React.FC = () => {
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Verificar se há token na URL
-    const token = searchParams.get('token');
-    const type = searchParams.get('type');
-    
-    if (!token || type !== 'recovery') {
-      setIsValidToken(false);
-    } else {
-      setIsValidToken(true);
-    }
+    const checkToken = async () => {
+      // Verificar se há token na URL (query params ou hash)
+      let token = searchParams.get('token');
+      let type = searchParams.get('type');
+      
+      // Se não encontrou nos query params, verificar no hash (Supabase usa hash para redirects)
+      if (!token || type !== 'recovery') {
+        const hash = window.location.hash.substring(1); // Remove o #
+        if (hash) {
+          const hashParams = new URLSearchParams(hash);
+          token = hashParams.get('access_token') || hashParams.get('token');
+          type = hashParams.get('type');
+          
+          // Se encontrou no hash, o Supabase já processou o token
+          // Verificar se há sessão ativa
+          if (token || type === 'recovery') {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (session && !error) {
+              setIsValidToken(true);
+              // Limpar o hash da URL
+              window.history.replaceState(null, '', window.location.pathname);
+              return;
+            }
+          }
+        }
+      }
+      
+      // Verificar se há sessão ativa (caso o token já tenha sido processado)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsValidToken(true);
+        return;
+      }
+      
+      if (!token || type !== 'recovery') {
+        setIsValidToken(false);
+      } else {
+        setIsValidToken(true);
+      }
+    };
+
+    checkToken();
   }, [searchParams]);
 
   const validatePassword = (password: string): boolean => {
