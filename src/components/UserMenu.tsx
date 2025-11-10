@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, Users, Clock, Moon, Sun, Bell } from 'lucide-react';
+import { User, LogOut, Users, Clock, Moon, Sun, Bell, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -144,6 +144,13 @@ const UserMenu: React.FC = () => {
             <Link to="/perfil" className="flex w-full cursor-pointer items-center">
               <User className="mr-2 h-4 w-4" />
               <span>Meu Perfil</span>
+            </Link>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem asChild>
+            <Link to="/auth/reset-password" className="flex w-full cursor-pointer items-center">
+              <Lock className="mr-2 h-4 w-4" />
+              <span>Trocar Senha</span>
             </Link>
           </DropdownMenuItem>
           

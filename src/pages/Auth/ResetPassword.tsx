@@ -40,31 +40,43 @@ const ResetPassword: React.FC = () => {
 
   useEffect(() => {
     const checkToken = async () => {
-      // Garantir que a flag está setada
-      localStorage.setItem('is_password_recovery', 'true');
-      
       // Obter parâmetros da URL novamente
       const hash = window.location.hash.substring(1);
       const hashParams = new URLSearchParams(hash);
       const type = hashParams.get('type') || searchParams.get('type');
+      const hasAccessToken = hash.includes('access_token') || hashParams.has('access_token');
       
-      // Aguardar um momento para o Supabase processar o hash
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Verificar se é um recovery (tem token na URL)
+      const isRecoveryFlow = type === 'recovery' || hasAccessToken;
       
-      // Verificar se há sessão ativa (Supabase já processou o token de recovery)
+      // Se for recovery, setar flag
+      if (isRecoveryFlow) {
+        localStorage.setItem('is_password_recovery', 'true');
+      }
+      
+      // Aguardar um momento para o Supabase processar o hash (se houver)
+      if (isRecoveryFlow) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // Verificar se há sessão ativa
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
+        // Se há sessão, permitir troca de senha (tanto recovery quanto usuário logado)
         // Limpar hash da URL se existir
         if (window.location.hash) {
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState(null, '', cleanUrl);
         }
         setIsValidToken(true);
-      } else {
-        // Se não há sessão, verificar se há token na URL
+      } else if (isRecoveryFlow) {
+        // Se não há sessão mas é recovery, aguardar processamento
         const hasToken = hashParams.get('access_token') || hashParams.get('token') || searchParams.get('token');
-        if (!hasToken && type !== 'recovery') {
+        if (hasToken) {
+          // Ainda processando
+          setIsValidToken(null);
+        } else {
           // Aguardar mais um pouco antes de considerar inválido
           await new Promise(resolve => setTimeout(resolve, 1000));
           const { data: { session: retrySession } } = await supabase.auth.getSession();
@@ -73,10 +85,10 @@ const ResetPassword: React.FC = () => {
           } else {
             setIsValidToken(false);
           }
-        } else {
-          // Ainda processando ou aguardando processamento
-          setIsValidToken(null);
         }
+      } else {
+        // Usuário não logado e não é recovery - precisa fazer login primeiro
+        setIsValidToken(false);
       }
     };
 
