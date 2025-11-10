@@ -9,6 +9,7 @@ import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle, Lock } from 'lucide-rea
 import { usePasswordReset } from '@/hooks/usePasswordReset';
 import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from '@/components/Auth/PasswordStrengthIndicator';
+import { supabase } from '@/integrations/supabase/client';
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
