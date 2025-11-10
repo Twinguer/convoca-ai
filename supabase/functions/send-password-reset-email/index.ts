@@ -12,25 +12,56 @@ Deno.serve(async (req) => {
     return new Response('not allowed', { status: 400 })
   }
 
-  const payload = await req.text()
-  const headers = Object.fromEntries(req.headers)
-  const wh = new Webhook(hookSecret)
-  
   try {
+    const payload = await req.text()
+    const headers = Object.fromEntries(req.headers)
+    
+    // Verificar se o secret está configurado
+    if (!hookSecret) {
+      console.error('SEND_EMAIL_HOOK_SECRET não está configurado')
+      return new Response(
+        JSON.stringify({ error: 'SEND_EMAIL_HOOK_SECRET não configurado' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    const wh = new Webhook(hookSecret)
+    
+    // Verificar se o payload está vazio
+    if (!payload) {
+      console.error('Payload vazio recebido')
+      return new Response(
+        JSON.stringify({ error: 'Payload vazio' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    console.log('Verificando webhook signature...')
+    let verifiedData
+    try {
+      verifiedData = wh.verify(payload, headers) as {
+        user: {
+          email: string
+        }
+        email_data: {
+          token: string
+          token_hash: string
+          redirect_to: string
+          email_action_type: string
+        }
+      }
+    } catch (verifyError) {
+      console.error('Erro ao verificar webhook signature:', verifyError)
+      return new Response(
+        JSON.stringify({ error: 'Falha na verificação do webhook', details: verifyError.message }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    
     const {
       user,
       email_data: { token, token_hash, redirect_to, email_action_type },
-    } = wh.verify(payload, headers) as {
-      user: {
-        email: string
-      }
-      email_data: {
-        token: string
-        token_hash: string
-        redirect_to: string
-        email_action_type: string
-      }
-    }
+    } = verifiedData
 
     // Verificar se é realmente um email de reset de senha
     if (email_action_type !== 'recovery') {
@@ -43,6 +74,10 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://www.nomeiai.com.br'
+    
+    console.log('Email action type:', email_action_type)
+    console.log('User email:', user.email)
+    console.log('Redirect to:', redirect_to)
     
     // Garantir que redirect_to seja uma URL completa válida
     let redirectUrl = redirect_to || `${siteUrl}/auth/reset-password`
@@ -75,6 +110,7 @@ Deno.serve(async (req) => {
       })
     )
 
+    console.log('Enviando email via Resend...')
     const { error } = await resend.emails.send({
       from: 'Nomeia Aí <onboarding@resend.dev>',
       to: [user.email],
@@ -83,8 +119,11 @@ Deno.serve(async (req) => {
     })
 
     if (error) {
+      console.error('Erro ao enviar email via Resend:', error)
       throw error
     }
+    
+    console.log('Email enviado com sucesso para:', user.email)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -92,14 +131,20 @@ Deno.serve(async (req) => {
     })
   } catch (error) {
     console.error('Error sending password reset email:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error name:', error.name)
+    
+    // Retornar erro mais detalhado para debug
     return new Response(
       JSON.stringify({
         error: {
-          message: error.message,
+          message: error.message || 'Erro desconhecido',
+          name: error.name,
+          stack: error.stack,
         },
       }),
       {
-        status: 401,
+        status: 500,
         headers: { 'Content-Type': 'application/json' },
       }
     )
