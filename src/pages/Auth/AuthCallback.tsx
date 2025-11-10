@@ -55,6 +55,15 @@ const AuthCallback: React.FC = () => {
           }
 
           if (data.session) {
+            // Garantir que o perfil existe (fallback caso o trigger não tenha funcionado)
+            const userId = data.session.user.id;
+            try {
+              await supabase.rpc('ensure_user_profile', { p_user_id: userId });
+            } catch (rpcError) {
+              // Se a RPC falhar, não bloqueia o login - o trigger deve ter criado
+              console.warn('Erro ao garantir perfil via RPC (não crítico):', rpcError);
+            }
+
             setStatus('success');
             setMessage('Autenticação realizada com sucesso! Redirecionando...');
             showSuccessToast('Login realizado!', 'Bem-vindo de volta!');
@@ -68,6 +77,15 @@ const AuthCallback: React.FC = () => {
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session) {
+            // Garantir que o perfil existe (fallback caso o trigger não tenha funcionado)
+            const userId = session.user.id;
+            try {
+              await supabase.rpc('ensure_user_profile', { p_user_id: userId });
+            } catch (rpcError) {
+              // Se a RPC falhar, não bloqueia o login - o trigger deve ter criado
+              console.warn('Erro ao garantir perfil via RPC (não crítico):', rpcError);
+            }
+
             setStatus('success');
             setMessage('Autenticação realizada com sucesso! Redirecionando...');
             showSuccessToast('Login realizado!', 'Bem-vindo de volta!');
