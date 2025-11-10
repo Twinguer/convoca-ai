@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useSocialAuth } from '@/hooks/useSocialAuth';
 
-type SocialProvider = 'google' | 'github' | 'microsoft';
+type SocialProvider = 'google' | 'github';
 
 interface SocialAuthButtonsProps {
   onSuccess?: () => void;
@@ -25,15 +25,6 @@ const GitHubIcon = () => (
   </svg>
 );
 
-const MicrosoftIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 23 23">
-    <path fill="#f25022" d="M0 0h11v11H0z"/>
-    <path fill="#00a4ef" d="M12 0h11v11H12z"/>
-    <path fill="#7fba00" d="M0 12h11v11H0z"/>
-    <path fill="#ffb900" d="M12 12h11v11H12z"/>
-  </svg>
-);
-
 const providerConfig: Record<SocialProvider, { name: string; icon: React.ReactNode; color: string }> = {
   google: {
     name: 'Google',
@@ -44,11 +35,6 @@ const providerConfig: Record<SocialProvider, { name: string; icon: React.ReactNo
     name: 'GitHub',
     icon: <GitHubIcon />,
     color: 'bg-gray-900 hover:bg-gray-800 text-white',
-  },
-  microsoft: {
-    name: 'Microsoft',
-    icon: <MicrosoftIcon />,
-    color: 'bg-blue-600 hover:bg-blue-700 text-white',
   },
 };
 
@@ -73,8 +59,8 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({ onSuccess 
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {(['google', 'github', 'microsoft'] as SocialProvider[]).map((provider) => {
+      <div className="grid grid-cols-2 gap-2">
+        {(['google', 'github'] as SocialProvider[]).map((provider) => {
           const config = providerConfig[provider];
           const isProviderLoading = isLoading && loadingProvider === provider;
 

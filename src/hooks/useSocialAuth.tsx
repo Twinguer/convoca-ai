@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
 import { logError, logSecurity } from '@/utils/secureLogger';
 
-type SocialProvider = 'google' | 'github' | 'microsoft';
+type SocialProvider = 'google' | 'github';
 
 export const useSocialAuth = () => {
   const navigate = useNavigate();
