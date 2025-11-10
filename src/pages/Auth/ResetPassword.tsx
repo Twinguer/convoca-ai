@@ -24,8 +24,18 @@ const ResetPassword: React.FC = () => {
 
   useEffect(() => {
     const checkToken = async () => {
+      // Verificar se há token de recovery no hash ou query params
+      const hash = window.location.hash.substring(1);
+      const hashParams = new URLSearchParams(hash);
+      const type = hashParams.get('type') || searchParams.get('type');
+      
+      // Marcar que é um recovery para evitar redirecionamento automático
+      if (type === 'recovery' || hash.includes('type=recovery')) {
+        localStorage.setItem('is_password_recovery', 'true');
+      }
+      
       // Aguardar um momento para o Supabase processar o hash
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // Verificar se há sessão ativa (Supabase já processou o token de recovery)
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,12 +48,19 @@ const ResetPassword: React.FC = () => {
         }
         setIsValidToken(true);
       } else {
-        setIsValidToken(false);
+        // Se não há sessão e não há token, é inválido
+        const hasToken = hashParams.get('access_token') || hashParams.get('token') || searchParams.get('token');
+        if (!hasToken) {
+          setIsValidToken(false);
+        } else {
+          // Ainda processando
+          setIsValidToken(null);
+        }
       }
     };
 
     checkToken();
-  }, []);
+  }, [searchParams]);
 
   const validatePassword = (password: string): boolean => {
     const validation = PasswordValidator.validate(password);

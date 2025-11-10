@@ -111,8 +111,14 @@ export const usePasswordReset = () => {
         return false;
       }
 
+      // Limpar flag de recovery
+      localStorage.removeItem('is_password_recovery');
+      
       showSuccessToast('Senha redefinida', 'Sua senha foi redefinida com sucesso! Redirecionando para o login...');
       logSecurity('Password reset successful', {}, 'AUTH');
+      
+      // Fazer logout para garantir que o usuário faça login com a nova senha
+      await supabase.auth.signOut();
       
       // Redirecionar para login após 2 segundos
       setTimeout(() => {
