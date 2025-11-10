@@ -17,19 +17,19 @@ export const AuthContainer: React.FC = () => {
   };
 
   return (
-    <div className="container flex h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      <Card className="w-full max-w-md shadow-xl border-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <CardHeader className="space-y-4">
-          <div className="flex justify-center">
+    <div className="container flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8 px-4">
+      <Card className="w-full max-w-md shadow-xl border-2 animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[95vh] overflow-y-auto">
+        <CardHeader className="space-y-4 pb-4">
+          <div className="flex justify-center pt-2">
             <img 
               src="/images/footer-logo.png" 
               alt="Nomeia Aí" 
-              className="h-36 w-auto object-contain animate-in fade-in zoom-in duration-500"
+              className="h-32 w-auto object-contain animate-in fade-in zoom-in duration-500"
             />
           </div>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="px-6">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
@@ -59,7 +59,7 @@ export const AuthContainer: React.FC = () => {
           </div>
         </CardContent>
         
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-4 pt-4">
           <div className="text-sm text-muted-foreground text-center">
             Ao criar uma conta, você concorda com nossos termos de serviço e política de privacidade.
           </div>
