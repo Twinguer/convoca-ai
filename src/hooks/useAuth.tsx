@@ -58,6 +58,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Handle different auth events
         switch (event) {
+          case 'PASSWORD_RECOVERY':
+            // Recovery de senha - não redirecionar, deixar a página de reset lidar
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
+            setIsLoading(false);
+            // Marcar como recovery para evitar redirecionamento
+            localStorage.setItem('is_password_recovery', 'true');
+            // Não marcar como online durante recovery
+            break;
           case 'SIGNED_IN':
             setSession(newSession);
             setUser(newSession?.user ?? null);
