@@ -142,14 +142,14 @@ const UserProfile = () => {
           .maybeSingle();
         
         if (subError && subError.code !== 'PGRST116' && subError.code !== 'PGRST406') {
-          console.error('Error checking coach status:', subError);
+          // Erro silencioso ao verificar status de coach
           return false;
         }
         
         return !!coachSubscription && 
           (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
       } catch (error) {
-        console.error('Error checking coach status:', error);
+        // Erro silencioso ao verificar status de coach
         return false;
       }
     },

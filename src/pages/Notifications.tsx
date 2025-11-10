@@ -134,10 +134,7 @@ export default function NotificationsPage() {
 
   const { activeInvitation, openInvitation, closeInvitation } = useCoachInvitation();
 
-  // Debug: log quando activeInvitation muda
-  useEffect(() => {
-    console.log('activeInvitation changed:', activeInvitation);
-  }, [activeInvitation]);
+  // activeInvitation é gerenciado pelo hook useCoachInvitation
 
   if (isLoading) {
     return (
@@ -202,12 +199,8 @@ export default function NotificationsPage() {
                   notification={notification}
                   onMarkAsRead={markAsRead}
                   onClick={() => {
-                    console.log('Notification onClick triggered:', notification.type);
                     if (notification.type === 'coach_invitation') {
-                      console.log('Opening invitation modal for:', notification);
                       openInvitation(notification);
-                    } else {
-                      console.log('Notification is not a coach_invitation');
                     }
                   }}
                 />
@@ -222,7 +215,6 @@ export default function NotificationsPage() {
         <CoachInvitationModal
           invitation={activeInvitation}
           onClose={() => {
-            console.log('Closing invitation modal');
             closeInvitation();
             // Marcar como lida após fechar o modal
             if (!activeInvitation.is_read) {

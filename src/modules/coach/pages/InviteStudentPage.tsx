@@ -112,19 +112,11 @@ const InviteStudentPage = () => {
     try {
       // Usar a função RPC que cria convite e envia notificação
       // Ordem: p_coach_id, p_student_nickname, p_invitation_message
-      console.log('Enviando convite com:', {
-        p_coach_id: user.id,
-        p_student_nickname: nicknameToUse,
-        p_invitation_message: message || null
-      });
-      
       const { data, error } = await supabase.rpc('send_coach_invitation', {
         p_coach_id: user.id,
         p_student_nickname: nicknameToUse,
         p_invitation_message: message || null
       });
-      
-      console.log('Resposta do RPC:', { data, error });
 
       if (error) {
         throw error;

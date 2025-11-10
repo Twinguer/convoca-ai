@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserStudyService } from '@/services/userStudyService';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import type { StudentRelationship, CanInviteResponse } from '@/types/coach';
+import { logError, logWarn } from '@/utils/secureLogger';
 
 // Helper para obter iniciais
 const getInitials = (name: string) => {
@@ -210,10 +211,10 @@ const CoachDashboard = () => {
           .order('invited_at', { ascending: false });
 
         if (error) {
-          console.error('Erro ao buscar convites pendentes:', error);
+          logError('Erro ao buscar convites pendentes', error, 'COACH');
           // Se for erro 403, tentar novamente após 2 segundos (cache pode estar atualizando)
           if (error.code === 'PGRST301' || error.message?.includes('403')) {
-            console.warn('Erro 403 detectado, aguardando atualização do cache...');
+            logWarn('Erro 403 detectado, aguardando atualização do cache', { coachId: user!.id }, 'COACH');
             await new Promise(resolve => setTimeout(resolve, 2000));
             // Tentar novamente
             const { data: retryData, error: retryError } = await supabase
@@ -258,10 +259,10 @@ const CoachDashboard = () => {
       
         return invitationsWithNames;
       } catch (err: any) {
-        console.error('Erro completo ao buscar convites:', err);
+        logError('Erro completo ao buscar convites', err, 'COACH');
         // Se ainda for erro de permissão, retornar array vazio
         if (err.code === 'PGRST301' || err.message?.includes('403')) {
-          console.warn('Ainda com erro de permissão, retornando lista vazia');
+          logWarn('Ainda com erro de permissão, retornando lista vazia', { code: err.code }, 'COACH');
           return [];
         }
         throw err;
@@ -343,12 +344,10 @@ const CoachDashboard = () => {
   // Função para remover aluno
   const removeStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
-      console.log('Removendo aluno:', { coach_id: user!.id, student_id: studentId });
       try {
         await coachRelationshipService.removeStudent(user!.id, studentId);
-        console.log('Aluno removido com sucesso');
       } catch (error) {
-        console.error('Erro ao remover aluno:', error);
+        logError('Erro ao remover aluno', error, 'COACH');
         throw error;
       }
     },

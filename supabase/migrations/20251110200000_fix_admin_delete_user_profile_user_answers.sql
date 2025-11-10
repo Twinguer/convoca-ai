@@ -24,21 +24,8 @@ BEGIN
       'authorized', true
   ));
   
-  -- Delete user answers if the table exists
-  -- Check if table exists before trying to delete
-  IF EXISTS (
-    SELECT 1 
-    FROM information_schema.tables 
-    WHERE table_schema = 'public' 
-    AND table_name = 'user_answers'
-  ) THEN
-    DELETE FROM user_answers
-    WHERE user_ranking_id IN (
-      SELECT id FROM user_rankings WHERE user_id = user_id_param
-    );
-  END IF;
-  
-  -- Delete user rankings
+  -- Delete user rankings (user_rankings não tem coluna id, só user_id e consolidated_data)
+  -- A tabela user_answers foi removida em 2025-01-15, não precisa deletar dela
   DELETE FROM user_rankings WHERE user_id = user_id_param;
   
   -- Delete user profile

@@ -96,8 +96,7 @@ export const useRequestToJoin = () => {
         userIsCoach = !!coachSubscription && coachSubscription.status === 'active'
           && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
       } catch (error) {
-        // Se der erro ao buscar (ex: RLS), considerar como não Coach
-        console.warn('[useRequestToJoin] Erro ao verificar assinatura Coach:', error);
+        // Se der erro ao buscar (ex: RLS), considerar como não Coach - erro silencioso
       }
       
       // Qualquer assinante (Pro ou Coach) pode solicitar entrada em grupos públicos

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
+import { logError } from '@/utils/secureLogger';
 
 export interface Notification {
   id: string;
@@ -19,16 +20,8 @@ export const useCoachInvitation = () => {
   const [activeInvitation, setActiveInvitation] = useState<Notification | null>(null);
 
   const openInvitation = (notification: Notification) => {
-    console.log('openInvitation called:', {
-      type: notification.type,
-      id: notification.id,
-      metadata: notification.metadata
-    });
     if (notification.type === 'coach_invitation') {
-      console.log('Setting activeInvitation:', notification);
       setActiveInvitation(notification);
-    } else {
-      console.warn('Notification is not a coach_invitation:', notification.type);
     }
   };
 
@@ -82,7 +75,7 @@ export const useNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error) => {
-      console.error('Error marking notification as read:', error);
+      logError('Error marking notification as read', error, 'NOTIFICATIONS');
       toast({
         title: "Erro",
         description: "Não foi possível marcar a notificação como lida",
@@ -112,7 +105,7 @@ export const useNotifications = () => {
       });
     },
     onError: (error) => {
-      console.error('Error marking all notifications as read:', error);
+      logError('Error marking all notifications as read', error, 'NOTIFICATIONS');
       toast({
         title: "Erro",
         description: "Não foi possível marcar todas as notificações como lidas",
@@ -136,7 +129,6 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('New notification received:', payload);
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
           
           // Mostrar toast para nova notificação

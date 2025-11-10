@@ -63,7 +63,7 @@ export class UserStudyService {
       if (error) {
         // PGRST116 = nenhum resultado encontrado (normal quando usuário não tem dados ainda)
         if (error.code === 'PGRST116') {
-          logger.warn('Nenhum dado encontrado para o usuário');
+          // Silencioso - é normal quando usuário não tem dados ainda
           return null;
         }
         // 406 = Not Acceptable (pode ser RLS Policy bloqueando)
@@ -82,7 +82,7 @@ export class UserStudyService {
       
       // Verificar se data é null antes de acessar propriedades
       if (!data) {
-        logger.warn('Nenhum dado encontrado para o usuário');
+        // Silencioso - é normal quando usuário não tem dados ainda
         return null;
       }
       
