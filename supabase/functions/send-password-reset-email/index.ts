@@ -6,14 +6,20 @@ import { PasswordResetEmail } from './_templates/password-reset-email.tsx'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
 
-// Extrair o secret corretamente - o Supabase pode enviar com prefixo v1,whsec_
-// A biblioteca standardwebhooks espera apenas a parte base64 após whsec_
-const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string
-let hookSecret = rawSecret || ''
+// Extrair o secret corretamente
+// O Supabase exige o formato v1,whsec_<base64> na variável de ambiente
+// Mas a biblioteca standardwebhooks espera apenas whsec_<base64>
+// Então removemos o prefixo v1, antes de usar
+const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string || ''
+let hookSecret = rawSecret
 
-// Remover prefixos v1,whsec_ ou whsec_ se existirem
-if (hookSecret.includes('whsec_')) {
-  hookSecret = hookSecret.replace(/^v1,?whsec_/, '').replace(/^whsec_/, '')
+// Remover o prefixo v1, se existir (Supabase exige, mas standardwebhooks não aceita)
+if (hookSecret.startsWith('v1,whsec_')) {
+  hookSecret = hookSecret.substring(3) // Remove "v1," deixando "whsec_..."
+}
+// Se não tiver whsec_, adicionar (caso venha apenas base64)
+else if (hookSecret && !hookSecret.startsWith('whsec_')) {
+  hookSecret = `whsec_${hookSecret}`
 }
 
 Deno.serve(async (req) => {
