@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
+import { logError } from '@/utils/secureLogger';
 
 interface CommentSectionProps {
   postId: string;
@@ -35,28 +36,17 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  // Debug: Log dos comentários
-  React.useEffect(() => {
-    console.log('CommentSection Debug:', {
-      postId,
-      commentsCount: comments?.length || 0,
-      comments: comments || [],
-    });
-  }, [postId, comments]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim() || !user) return;
 
     setIsSubmitting(true);
     try {
-      const result = await addComment.mutateAsync({
+      await addComment.mutateAsync({
         groupId,
         postId,
         content: commentText.trim(),
       });
-      
-      console.log('Comentário adicionado:', result);
       
       setCommentText('');
       
@@ -68,7 +58,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         onCommentAdded();
       }
     } catch (error) {
-      console.error('Erro ao adicionar comentário:', error);
+      logError('Erro ao adicionar comentário', error, 'STUDY_GROUPS');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,17 +69,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   const mainComments = commentsArray.filter(c => !c.parent_comment_id);
   const getReplies = (commentId: string) =>
     commentsArray.filter(c => c.parent_comment_id === commentId);
-
-  // Debug adicional
-  React.useEffect(() => {
-    if (commentsArray.length > 0) {
-      console.log('CommentSection - Comments array:', {
-        total: commentsArray.length,
-        main: mainComments.length,
-        comments: commentsArray,
-      });
-    }
-  }, [commentsArray.length, mainComments.length]);
 
   return (
     <div className="space-y-4">

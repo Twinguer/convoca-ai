@@ -38,19 +38,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     locale: ptBR,
   });
 
-  // Debug: Log do post e comentários
-  React.useEffect(() => {
-    if (post.id) {
-      console.log('PostCard Debug:', {
-        postId: post.id,
-        commentsCount: post.comments_count,
-        commentsArray: post.comments,
-        commentsArrayLength: Array.isArray(post.comments) ? post.comments.length : 0,
-        commentsType: typeof post.comments,
-      });
-    }
-  }, [post.id, post.comments, post.comments_count]);
-
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">

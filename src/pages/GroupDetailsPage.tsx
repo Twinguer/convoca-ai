@@ -74,7 +74,7 @@ export const GroupDetailsPage: React.FC = () => {
           && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
       } catch (error) {
         // Se der erro ao buscar (ex: RLS), considerar como não Coach
-        console.warn('[GroupDetailsPage] Erro ao verificar assinatura Coach:', error);
+        // Erro silencioso - não é crítico para o funcionamento da página
       }
       
       // Qualquer assinante (Pro ou Coach) pode acessar grupos
@@ -93,36 +93,8 @@ export const GroupDetailsPage: React.FC = () => {
   
   const { group, isLoading: isLoadingGroup, isError: isErrorGroup, refetch: refetchGroup } = useStudyGroup(groupId);
   const { posts, isLoading: isLoadingPosts, refetch: refetchPosts, isError: isErrorPosts } = useGroupFeed(groupId);
-
-  // Debug: Log dos posts
-  React.useEffect(() => {
-    if (groupId) {
-      console.log('Group Feed Debug:', {
-        groupId,
-        postsCount: posts.length,
-        posts,
-        isLoadingPosts,
-        isErrorPosts,
-      });
-    }
-  }, [groupId, posts, isLoadingPosts, isErrorPosts]);
   const { members, isLoading: isLoadingMembers, refetch: refetchMembers } = useGroupMembers(groupId);
   const { isMember, isAdmin, hasRequested, isInvited, isLoading: isLoadingMemberStatus } = useIsGroupMember(groupId);
-
-  // Debug: Log do status de membro
-  React.useEffect(() => {
-    if (groupId && user?.id) {
-      console.log('Group Details Debug:', {
-        groupId,
-        userId: user.id,
-        isMember,
-        members: members.length,
-        memberIds: members.map(m => ({ id: m.id, user_id: m.user_id, name: m.name })),
-        isLoadingMembers,
-        isLoadingMemberStatus,
-      });
-    }
-  }, [groupId, user?.id, isMember, members, isLoadingMembers, isLoadingMemberStatus]);
   const requestToJoin = useRequestToJoin();
   const leaveGroup = useLeaveGroup();
   const { requests: pendingRequests, refetch: refetchRequests } = usePendingRequests(isAdmin ? groupId : undefined);

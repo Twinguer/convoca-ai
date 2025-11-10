@@ -80,6 +80,12 @@ export class UserStudyService {
         cyclesCount: data?.study_cycles?.length || 0 
       });
       
+      // Verificar se data é null antes de acessar propriedades
+      if (!data) {
+        logger.warn('Nenhum dado encontrado para o usuário');
+        return null;
+      }
+      
       // Mapear dados da estrutura v2 para a estrutura esperada
       const userData: UserStudy = {
         ...data,

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { StudyGroup, CreateGroupInput, UpdateGroupInput } from '@/types/studyGroups';
+import { logError } from '@/utils/secureLogger';
 
 /**
  * Serviço para gerenciar grupos de estudos
@@ -55,7 +56,7 @@ export const studyGroupService = {
       });
 
     if (memberError) {
-      console.error('Erro ao adicionar criador como membro:', memberError);
+      logError('Erro ao adicionar criador como membro', memberError, 'STUDY_GROUPS');
       // Não falha a criação do grupo, apenas loga o erro
     }
 

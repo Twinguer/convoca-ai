@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, UserX } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/utils/secureLogger';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,12 +39,26 @@ export const UserActions: React.FC<UserActionsProps> = ({
   const handleDeleteFromRanking = async () => {
     setIsLoading(true);
     try {
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .rpc('delete_user_from_ranking', {
           ranking_id_param: rankingId
         });
 
-      if (error) throw error;
+      if (error) {
+        logError('Error calling delete_user_from_ranking RPC', error, 'ADMIN');
+        throw error;
+      }
+
+      // Verificar se a função retornou sucesso (se retornar boolean)
+      if (data === false) {
+        logError('delete_user_from_ranking returned false', { rankingId }, 'ADMIN');
+        toast({
+          title: "Erro ao remover usuário",
+          description: "Não foi possível remover o usuário do ranking.",
+          variant: "destructive"
+        });
+        return;
+      }
 
       toast({
         title: "Usuário removido do ranking",
@@ -52,7 +67,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
 
       if (onSuccess) onSuccess();
     } catch (error: any) {
-      console.error('Error deleting user from ranking:', error);
+      logError('Error deleting user from ranking', error, 'ADMIN');
       toast({
         title: "Erro ao remover usuário",
         description: error.message || "Não foi possível remover o usuário do ranking.",
@@ -67,12 +82,112 @@ export const UserActions: React.FC<UserActionsProps> = ({
   const handleDeleteProfile = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      // Verificar se o usuário atual tem permissão de admin antes de tentar excluir
+      const { data: currentUser } = await supabase.auth.getUser();
+      if (!currentUser?.user) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar autenticado para realizar esta ação.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar role de admin
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (roleError || !roleData) {
+        logError('User does not have admin role', { userId: currentUser.user.id }, 'ADMIN');
+        toast({
+          title: "Permissão negada",
+          description: "Você não tem permissões de administrador para excluir perfis.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar se o usuário a ser excluído existe
+      const { data: targetUser, error: targetError } = await supabase
+        .from('users_profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (targetError || !targetUser) {
+        logError('Target user not found', { userId }, 'ADMIN');
+        toast({
+          title: "Usuário não encontrado",
+          description: "O usuário que você está tentando excluir não existe mais.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Tentar excluir o perfil
+      const { data, error } = await supabase
         .rpc('admin_delete_user_profile', {
           user_id_param: userId
         });
 
-      if (error) throw error;
+      if (error) {
+        logError('Error calling admin_delete_user_profile RPC', error, 'ADMIN');
+        throw error;
+      }
+
+      // A função retorna um boolean - verificar se foi bem-sucedida
+      if (data === false) {
+        // Tentar verificar logs de segurança para entender o motivo (pode falhar por RLS)
+        let errorMessage = "Não foi possível excluir o perfil.";
+        let securityLogs = null;
+        
+        try {
+          const { data: logs, error: logsError } = await supabase
+            .from('security_logs')
+            .select('action, details, created_at')
+            .or('action.eq.unauthorized_admin_delete_attempt,action.eq.admin_delete_user_profile_error')
+            .eq('details->>target_user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!logsError && logs) {
+            securityLogs = logs;
+            if (logs.action === 'unauthorized_admin_delete_attempt') {
+              errorMessage = "Você não tem permissões de administrador para excluir este perfil. Verifique se sua conta tem a role de admin na tabela user_roles.";
+            } else if (logs.action === 'admin_delete_user_profile_error' && logs.details?.error) {
+              errorMessage = `Erro ao excluir: ${logs.details.error}`;
+            }
+          }
+        } catch (logsErr) {
+          // Ignorar erro ao consultar logs - não é crítico
+          logError('Failed to query security_logs', logsErr, 'ADMIN');
+        }
+
+        // Se não conseguiu identificar o motivo específico, usar mensagem genérica baseada na verificação prévia
+        if (!securityLogs) {
+          // Já verificamos permissões antes, então se chegou aqui pode ser outro problema
+          errorMessage = "Não foi possível excluir o perfil. Possíveis causas: o usuário não existe mais, há dependências no banco de dados, ou ocorreu um erro interno. Verifique os logs do servidor.";
+        }
+
+        logError('admin_delete_user_profile returned false', { 
+          userId, 
+          securityLog: securityLogs,
+          hasAdminRole: !!roleData,
+          targetUserExists: !!targetUser
+        }, 'ADMIN');
+        
+        toast({
+          title: "Erro ao excluir perfil",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        return;
+      }
 
       toast({
         title: "Perfil excluído",
@@ -81,7 +196,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
 
       if (onSuccess) onSuccess();
     } catch (error: any) {
-      console.error('Error deleting user profile:', error);
+      logError('Error deleting user profile', error, 'ADMIN');
       toast({
         title: "Erro ao excluir perfil",
         description: error.message || "Não foi possível excluir o perfil do usuário.",

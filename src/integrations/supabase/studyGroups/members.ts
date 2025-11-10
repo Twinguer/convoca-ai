@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { GroupMember } from '@/types/studyGroups';
+import { logError } from '@/utils/secureLogger';
 
 /**
  * Serviço para gerenciar membros de grupos
@@ -17,7 +18,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching group members:', error);
+      logError('Error fetching group members', error, 'STUDY_GROUPS');
       return [];
     }
   },
@@ -42,7 +43,7 @@ export const studyGroupMembersService = {
         is_invited: false,
       };
     } catch (error) {
-      console.error('Error fetching user group status:', error);
+      logError('Error fetching user group status', error, 'STUDY_GROUPS');
       return {
         is_member: false,
         role: null,
@@ -62,12 +63,12 @@ export const studyGroupMembersService = {
         .rpc('count_group_members', { p_group_id: groupId });
 
       if (error) {
-        console.error('Error counting group members:', error);
+        logError('Error counting group members', error, 'STUDY_GROUPS');
         return 0;
       }
       return data || 0;
     } catch (error) {
-      console.error('Error counting group members:', error);
+      logError('Error counting group members', error, 'STUDY_GROUPS');
       return 0;
     }
   },
@@ -83,7 +84,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching user groups:', error);
+      logError('Error fetching user groups', error, 'STUDY_GROUPS');
       return [];
     }
   },
@@ -101,7 +102,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return data as { success: boolean; message?: string; error?: string };
     } catch (error: any) {
-      console.error('Error requesting to join group:', error);
+      logError('Error requesting to join group', error, 'STUDY_GROUPS');
       return { success: false, error: error.message || 'Erro ao solicitar entrada' };
     }
   },
@@ -120,7 +121,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return data as { success: boolean; message?: string; error?: string };
     } catch (error: any) {
-      console.error('Error inviting user:', error);
+      logError('Error inviting user to group', error, 'STUDY_GROUPS');
       return { success: false, error: error.message || 'Erro ao convidar usuário' };
     }
   },
@@ -145,7 +146,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return data as { success: boolean; message?: string; error?: string };
     } catch (error: any) {
-      console.error('Error responding to request:', error);
+      logError('Error responding to join request', error, 'STUDY_GROUPS');
       return { success: false, error: error.message || 'Erro ao processar pedido' };
     }
   },
@@ -162,7 +163,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching pending requests:', error);
+      logError('Error fetching pending requests', error, 'STUDY_GROUPS');
       return [];
     }
   },
@@ -181,7 +182,7 @@ export const studyGroupMembersService = {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('Error leaving group:', error);
+      logError('Error leaving group', error, 'STUDY_GROUPS');
       return false;
     }
   },

@@ -80,8 +80,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
         }
       }
     } catch (error: any) {
-      console.error('Erro ao criar grupo:', error);
-      // O erro já é tratado no hook useCreateGroup
+      // O erro já é tratado no hook useCreateGroup - erro silencioso
     }
   };
 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studyGroupPostsService } from '@/integrations/supabase/studyGroups/posts';
 import type { GroupPost, GroupComment } from '@/types/studyGroups';
 import { useToast } from '@/hooks/use-toast';
+import { logError } from '@/utils/secureLogger';
 
 /**
  * Hook para buscar feed do grupo
@@ -20,9 +21,9 @@ export const useGroupFeed = (groupId: string | undefined, limit: number = 20) =>
     retry: 1,
   });
 
-  // Log de erro para debug
+  // Log de erro usando secureLogger
   if (isError && error) {
-    console.error('Error in useGroupFeed:', error);
+    logError('Error in useGroupFeed', error, 'STUDY_GROUPS');
   }
 
   return {

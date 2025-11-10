@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logError } from '@/utils/secureLogger';
 
 interface CreatePostFormProps {
   groupId: string;
@@ -143,7 +144,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           });
 
         if (uploadError) {
-          console.error('Upload error:', uploadError);
           throw new Error(`Erro ao fazer upload de ${file.name}: ${uploadError.message}`);
         }
 
@@ -173,7 +173,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         onPostCreated();
       }
     } catch (error: any) {
-      console.error('Erro ao criar post:', error);
+      logError('Erro ao criar post', error, 'STUDY_GROUPS');
       toast({
         title: 'Erro ao criar post',
         description: error.message || 'Não foi possível criar o post.',

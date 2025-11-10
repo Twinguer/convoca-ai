@@ -234,8 +234,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
 
       refetchMembers();
     } catch (error: any) {
-      // O toast já é exibido pelo hook
-      console.error('Erro ao convidar usuário:', error);
+      // O toast já é exibido pelo hook - erro silencioso
     }
   };
 

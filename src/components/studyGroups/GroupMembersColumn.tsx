@@ -47,7 +47,7 @@ export const GroupMembersColumn: React.FC<GroupMembersColumnProps> = ({
       const secureUrl = await generateSecureUserUrl(userId, 'profile');
       navigate(secureUrl);
     } catch (error) {
-      console.error('Erro ao gerar URL segura:', error);
+      // Erro silencioso - redirecionar para comunidade
       navigate('/comunidade');
     }
   };
