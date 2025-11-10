@@ -6,20 +6,34 @@ import { PasswordResetEmail } from './_templates/password-reset-email.tsx'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
 
-// Extrair o secret corretamente
+// Função para extrair o secret corretamente
 // O Supabase exige o formato v1,whsec_<base64> na variável de ambiente
 // Mas a biblioteca standardwebhooks espera apenas whsec_<base64>
-// Então removemos o prefixo v1, antes de usar
-const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string || ''
-let hookSecret = rawSecret
-
-// Remover o prefixo v1, se existir (Supabase exige, mas standardwebhooks não aceita)
-if (hookSecret.startsWith('v1,whsec_')) {
-  hookSecret = hookSecret.substring(3) // Remove "v1," deixando "whsec_..."
-}
-// Se não tiver whsec_, adicionar (caso venha apenas base64)
-else if (hookSecret && !hookSecret.startsWith('whsec_')) {
-  hookSecret = `whsec_${hookSecret}`
+function getHookSecret(): string {
+  const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string || ''
+  
+  if (!rawSecret) {
+    console.error('SEND_EMAIL_HOOK_SECRET não está configurado')
+    return ''
+  }
+  
+  console.log('Raw secret recebido (primeiros 20 chars):', rawSecret.substring(0, Math.min(20, rawSecret.length)))
+  
+  let hookSecret = rawSecret
+  
+  // Remover o prefixo v1, se existir (Supabase exige, mas standardwebhooks não aceita)
+  if (hookSecret.startsWith('v1,whsec_')) {
+    hookSecret = hookSecret.substring(3) // Remove "v1," deixando "whsec_..."
+    console.log('Removido prefixo v1, do secret')
+  }
+  // Se não tiver whsec_, adicionar (caso venha apenas base64)
+  else if (hookSecret && !hookSecret.startsWith('whsec_')) {
+    hookSecret = `whsec_${hookSecret}`
+    console.log('Adicionado prefixo whsec_ ao secret')
+  }
+  
+  console.log('Secret final (primeiros 20 chars):', hookSecret.substring(0, Math.min(20, hookSecret.length)))
+  return hookSecret
 }
 
 Deno.serve(async (req) => {
@@ -31,6 +45,9 @@ Deno.serve(async (req) => {
     const payload = await req.text()
     const headers = Object.fromEntries(req.headers)
     
+    // Extrair o secret corretamente
+    const hookSecret = getHookSecret()
+    
     // Verificar se o secret está configurado
     if (!hookSecret) {
       console.error('SEND_EMAIL_HOOK_SECRET não está configurado')
@@ -40,7 +57,23 @@ Deno.serve(async (req) => {
       )
     }
     
-    const wh = new Webhook(hookSecret)
+    console.log('Criando instância do Webhook...')
+    let wh
+    try {
+      wh = new Webhook(hookSecret)
+      console.log('Webhook criado com sucesso')
+    } catch (webhookError) {
+      console.error('Erro ao criar Webhook:', webhookError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Erro ao criar Webhook', 
+          details: webhookError.message,
+          secretLength: hookSecret.length,
+          secretStartsWith: hookSecret.substring(0, 10)
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
     
     // Verificar se o payload está vazio
     if (!payload) {
