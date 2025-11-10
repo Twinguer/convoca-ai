@@ -40,16 +40,8 @@ const NotificationCard = ({
   const isClickable = notification.type === 'coach_invitation';
 
   const handleClick = () => {
-    console.log('NotificationCard clicked:', {
-      type: notification.type,
-      isClickable,
-      hasOnClick: !!onClick
-    });
     if (isClickable && onClick) {
-      console.log('Calling onClick handler');
       onClick();
-    } else {
-      console.log('Not calling onClick - isClickable:', isClickable, 'hasOnClick:', !!onClick);
     }
   };
 
