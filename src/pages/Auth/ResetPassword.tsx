@@ -24,47 +24,26 @@ const ResetPassword: React.FC = () => {
 
   useEffect(() => {
     const checkToken = async () => {
-      // Verificar se há sessão ativa (Supabase já processou o token de recovery)
-      const { data: { session }, error } = await supabase.auth.getSession();
+      // Aguardar um momento para o Supabase processar o hash
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      if (session && !error) {
+      // Verificar se há sessão ativa (Supabase já processou o token de recovery)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
         // Limpar hash da URL se existir
         if (window.location.hash) {
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState(null, '', cleanUrl);
         }
         setIsValidToken(true);
-        return;
+      } else {
+        setIsValidToken(false);
       }
-      
-      // Verificar se há token no hash (logo após clicar no link do email)
-      const hash = window.location.hash.substring(1);
-      if (hash) {
-        const hashParams = new URLSearchParams(hash);
-        const type = hashParams.get('type');
-        
-        if (type === 'recovery') {
-          // Aguardar um pouco para o Supabase processar o token
-          setTimeout(async () => {
-            const { data: { session: newSession } } = await supabase.auth.getSession();
-            if (newSession) {
-              const cleanUrl = window.location.origin + window.location.pathname;
-              window.history.replaceState(null, '', cleanUrl);
-              setIsValidToken(true);
-            } else {
-              setIsValidToken(false);
-            }
-          }, 500);
-          return;
-        }
-      }
-      
-      // Sem sessão e sem token válido
-      setIsValidToken(false);
     };
 
     checkToken();
-  }, [searchParams]);
+  }, []);
 
   const validatePassword = (password: string): boolean => {
     const validation = PasswordValidator.validate(password);
