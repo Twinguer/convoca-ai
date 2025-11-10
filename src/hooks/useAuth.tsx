@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { onlineStatusService } from '@/services/onlineStatusService';
 import { TokenCleanupService } from '@/services/tokenCleanupService';
+import { logError } from '@/utils/secureLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -30,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data: { session: newSession }, error } = await supabase.auth.getSession();
       if (error) {
-        console.error('Session refresh error:', error);
+        logError('Session refresh error', error, 'AUTH');
         // Clear potentially corrupted session
         setSession(null);
         setUser(null);
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
     } catch (error) {
-      console.error('Failed to refresh session:', error);
+      logError('Failed to refresh session', error, 'AUTH');
       setSession(null);
       setUser(null);
     }
@@ -158,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Sign out error:', error);
+        logError('Sign out error', error, 'AUTH');
         throw error;
       }
       
@@ -173,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('auth_lockout_end');
       
     } catch (error) {
-      console.error('Error signing out:', error);
+      logError('Error signing out', error, 'AUTH');
       throw error;
     } finally {
       setIsLoading(false);

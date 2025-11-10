@@ -53,15 +53,8 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
       // Usar invitation_id do metadata ou ID da notificação como fallback
       const invitationId = invitation.metadata?.invitation_id || invitation.metadata?.invitationId || invitation.id;
       
-      console.log('=== DEBUG ACEITAR CONVITE ===');
-      console.log('Notificação completa:', invitation);
-      console.log('Metadata:', invitation.metadata);
-      console.log('Invitation ID usado:', invitationId);
-      console.log('Tipo do ID:', typeof invitationId);
-      console.log('Consent data:', consentData);
-      
       if (!invitationId) {
-        throw new Error('ID do convite não encontrado. Verifique o console para mais detalhes.');
+        throw new Error('ID do convite não encontrado.');
       }
 
       // Verificar se o usuário está autenticado
@@ -78,27 +71,16 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
         p_consent_data: consentData
       });
 
-      console.log('Resposta do RPC accept_coach_invitation:', { data, error });
-
       if (error) {
-        console.error('Erro ao aceitar convite (RPC):', error);
-        console.error('Detalhes do erro:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
         throw error;
       }
       
       // Verificar se a resposta indica sucesso
       if (!data || !(data as any).success) {
         const errorMsg = (data as any)?.error || 'Erro ao aceitar convite';
-        console.error('Resposta indica erro:', errorMsg);
         throw new Error(errorMsg);
       }
       
-      console.log('✅ Convite aceito com sucesso!');
       return data;
     },
     onSuccess: () => {
@@ -146,7 +128,6 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
       }, 1000);
     },
     onError: (error: any) => {
-      console.error('Erro completo ao aceitar convite:', error);
       toast({
         title: 'Erro ao aceitar convite',
         description: error.message || 'Não foi possível aceitar o convite',
@@ -216,11 +197,8 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
     }
   });
 
-  console.log('CoachInvitationModal rendering with invitation:', invitation);
-
   return (
     <Dialog open={true} onOpenChange={(open) => {
-      console.log('Dialog onOpenChange:', open);
       if (!open) {
         onClose();
       }

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { logError, logWarn } from '@/utils/secureLogger';
 
 const CoachSubscriptionPage = () => {
   const navigate = useNavigate();
@@ -51,12 +52,9 @@ const CoachSubscriptionPage = () => {
       // Verificar e ativar assinatura imediatamente no Stripe
       const verifyAndActivate = async () => {
         try {
-          console.log("[CoachSubscriptionPage] Verificando assinatura Coach no Stripe após pagamento...");
           const result = await paymentService.verifySubscription();
           
           if (result.success) {
-            console.log("[CoachSubscriptionPage] Assinatura Coach verificada e ativada com sucesso");
-            
             // Invalidar todas as queries relacionadas à assinatura Coach para atualizar o estado
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
@@ -66,7 +64,7 @@ const CoachSubscriptionPage = () => {
             // Redirecionar para dashboard do Coach
             navigate('/coach/dashboard', { replace: true });
           } else {
-            console.warn("[CoachSubscriptionPage] Assinatura Coach não encontrada ainda, aguardando webhook...");
+            logWarn("Assinatura Coach não encontrada ainda, aguardando webhook", {}, "PAYMENT");
             
             // Invalidar queries mesmo se não encontrou ainda (pode ter sido criada pelo webhook)
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription', user?.id] });
@@ -78,7 +76,7 @@ const CoachSubscriptionPage = () => {
             navigate('/coach/dashboard', { replace: true });
           }
         } catch (error) {
-          console.error("[CoachSubscriptionPage] Erro ao verificar assinatura Coach:", error);
+          logError("Erro ao verificar assinatura Coach", error, "PAYMENT");
           
           // Invalidar queries mesmo em caso de erro (webhook pode ter processado)
           await queryClient.invalidateQueries({ queryKey: ['coach-subscription', user?.id] });
@@ -132,9 +130,6 @@ const CoachSubscriptionPage = () => {
 
     setLoadingPlan(planType);
     try {
-      console.log("[CoachSubscriptionPage] Iniciando checkout Stripe para plano Coach:", planId);
-      console.log("[CoachSubscriptionPage] Tipo do planId:", typeof planId);
-      console.log("[CoachSubscriptionPage] planId antes de enviar:", JSON.stringify(planId));
       const checkout = await paymentService.createCheckout(
         planId,
         appliedDiscountVoucher?.code
@@ -144,11 +139,10 @@ const CoachSubscriptionPage = () => {
         throw new Error("URL de checkout não disponível");
       }
 
-      console.log("[CoachSubscriptionPage] Redirecionando para Stripe Checkout:", checkout.url.substring(0, 50) + "...");
       window.location.href = checkout.url;
 
     } catch (error: any) {
-      console.error("Erro ao processar pagamento Coach");
+      logError("Erro ao processar pagamento Coach", error, "PAYMENT");
       toast({
         title: "Erro ao processar pagamento",
         description: error.message || "Tente novamente em alguns instantes.",

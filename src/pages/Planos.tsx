@@ -16,6 +16,7 @@ import Footer from "@/components/Footer";
 import { paymentService } from "@/services/paymentService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { logError, logWarn } from "@/utils/secureLogger";
 
 const Planos = () => {
   const [searchParams] = useSearchParams();
@@ -57,17 +58,15 @@ const Planos = () => {
       // Verificar e ativar assinatura imediatamente no Stripe
       const verifyAndActivate = async () => {
         try {
-          console.log("[Planos] Verificando assinatura no Stripe após pagamento...");
           const result = await paymentService.verifySubscription();
           
           if (result.success) {
-            console.log("[Planos] Assinatura verificada e ativada com sucesso");
             toast({
               title: "Pagamento realizado com sucesso!",
               description: `Seu plano foi ativado. Bem-vindo ao premium!`
             });
           } else {
-            console.warn("[Planos] Assinatura não encontrada ainda, aguardando webhook...");
+            logWarn("Assinatura não encontrada ainda, aguardando webhook", {}, "PAYMENT");
             toast({
               title: "Pagamento realizado!",
               description: "Estamos processando sua assinatura. Você receberá acesso em instantes."
@@ -78,7 +77,7 @@ const Planos = () => {
           await refetch();
           // Não redirecionar, permanecer na página de planos
         } catch (error) {
-          console.error("[Planos] Erro ao verificar assinatura:", error);
+          logError("Erro ao verificar assinatura", error, "PAYMENT");
           // Mesmo com erro, fazer refetch
           await refetch();
         }
@@ -160,7 +159,6 @@ const Planos = () => {
       }
 
       // Criar sessão de checkout no Stripe
-      console.log("[Planos] Iniciando checkout Stripe para plano:", planoId);
       const checkout = await paymentService.createCheckout(
         planoId,
         appliedDiscountVoucher?.code
@@ -171,13 +169,12 @@ const Planos = () => {
         throw new Error("URL de checkout não disponível");
       }
 
-      console.log("[Planos] Redirecionando para Stripe Checkout:", checkout.url.substring(0, 50) + "...");
       // Redirecionar para o Stripe
       window.location.href = checkout.url;
 
     } catch (error: any) {
       // Log genérico sem expor detalhes técnicos
-      console.error("Erro ao processar pagamento");
+      logError("Erro ao processar pagamento", error, "PAYMENT");
       toast({
         title: "Erro ao processar pagamento",
         description: error.message || "Tente novamente em alguns instantes.",
