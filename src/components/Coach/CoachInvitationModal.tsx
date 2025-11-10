@@ -164,12 +164,10 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
         }
       }
       
+      // Deletar o convite em vez de apenas atualizar status
       const { error } = await supabase
         .from('coach_invitations_history')
-        .update({
-          status: 'rejected',
-          responded_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', invitationId);
 
       if (error) throw error;

@@ -61,12 +61,13 @@ export const useNotifications = () => {
   // Contar notificações não lidas
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  // Marcar notificação como lida
+  // Marcar notificação como lida (deletar após marcar como lida)
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
+      // Deletar a notificação em vez de apenas marcar como lida
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .delete()
         .eq('id', notificationId);
       
       if (error) throw error;
@@ -84,14 +85,15 @@ export const useNotifications = () => {
     },
   });
 
-  // Marcar todas como lidas
+  // Marcar todas como lidas (deletar todas após marcar como lidas)
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) return;
       
+      // Deletar todas as notificações não lidas em vez de apenas marcar como lidas
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .delete()
         .eq('user_id', user.id)
         .eq('is_read', false);
       
@@ -101,7 +103,7 @@ export const useNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({
         title: "Sucesso",
-        description: "Todas as notificações foram marcadas como lidas",
+        description: "Todas as notificações foram removidas",
       });
     },
     onError: (error) => {

@@ -83,15 +83,25 @@ const AcceptInvitationPage = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase
+      // Deletar o convite em vez de apenas atualizar status
+      const { error: deleteError } = await supabase
         .from('coach_invitations_history')
-        .update({
-          status: 'rejected',
-          responded_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', invitationId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // Remover notificação associada
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('type', 'coach_invitation')
+        .eq('metadata->>invitation_id', invitationId);
+
+      // Não falhar se não encontrar notificação
+      if (notificationError && notificationError.code !== 'PGRST116') {
+        // Log mas não falha a operação
+      }
 
       toast({
         title: 'Convite recusado',
@@ -100,7 +110,6 @@ const AcceptInvitationPage = () => {
 
       navigate('/');
     } catch (error: any) {
-      console.error('Erro ao recusar convite:', error);
       toast({
         title: 'Erro',
         description: error.message,
