@@ -53,9 +53,18 @@ Deno.serve(async (req) => {
       return new Response('not allowed', { status: 400 })
     }
 
+    // IMPORTANTE: Send Email Hooks do Supabase usam webhook signatures (standardwebhooks)
+    // NÃO usam Bearer tokens. A validação é feita via wh.verify() abaixo.
+    // Se o Dashboard estiver com "Require Authorization" ativado, DESATIVE essa opção.
+
     try {
     const payload = await req.text()
     const headers = Object.fromEntries(req.headers)
+    
+    // Logs para debug
+    console.log('Headers recebidos:', Object.keys(headers))
+    console.log('Tem svix-signature?', !!headers['svix-signature'] || !!headers['svix_id'] || !!headers['svix_timestamp'])
+    console.log('Payload length:', payload.length)
     
     // Extrair o secret corretamente
     const hookSecret = getHookSecret()
@@ -74,10 +83,13 @@ Deno.serve(async (req) => {
       )
     }
     
+    console.log('Secret processado - length:', hookSecret.length)
+    
     // Criar instância do Webhook conforme documentação
     let wh
     try {
       wh = new Webhook(hookSecret)
+      console.log('Instância do Webhook criada com sucesso')
     } catch (webhookError) {
       console.error('Erro ao criar instância do Webhook:', webhookError)
       console.error('Secret length:', hookSecret.length)
@@ -96,6 +108,7 @@ Deno.serve(async (req) => {
     // Verificar webhook signature
     let verifiedData
     try {
+      console.log('Verificando webhook signature...')
       verifiedData = wh.verify(payload, headers) as {
         user: {
           email: string
@@ -107,8 +120,13 @@ Deno.serve(async (req) => {
           email_action_type: string
         }
       }
+      console.log('Webhook signature verificada com sucesso')
+      console.log('Email action type:', verifiedData.email_data.email_action_type)
     } catch (verifyError) {
       console.error('Erro ao verificar webhook signature:', verifyError)
+      console.error('Error message:', verifyError.message)
+      console.error('Headers disponíveis:', Object.keys(headers))
+      console.error('Payload preview:', payload.substring(0, 200))
       return new Response(
         JSON.stringify({ 
           error: {
