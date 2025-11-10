@@ -159,7 +159,7 @@ const ResetPassword: React.FC = () => {
               <img 
                 src="/images/footer-logo.png" 
                 alt="Nomeia Aí" 
-                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+                className="h-24 w-auto object-contain animate-in fade-in zoom-in duration-500"
               />
             </div>
           </CardHeader>
@@ -182,7 +182,7 @@ const ResetPassword: React.FC = () => {
               <img 
                 src="/images/footer-logo.png" 
                 alt="Nomeia Aí" 
-                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+                className="h-24 w-auto object-contain animate-in fade-in zoom-in duration-500"
               />
             </div>
             <div className="flex justify-center">
@@ -216,7 +216,7 @@ const ResetPassword: React.FC = () => {
               <img 
                 src="/images/footer-logo.png" 
                 alt="Nomeia Aí" 
-                className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
+                className="h-24 w-auto object-contain animate-in fade-in zoom-in duration-500"
               />
             </div>
           </CardHeader>
