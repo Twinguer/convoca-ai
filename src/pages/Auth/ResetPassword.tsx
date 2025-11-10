@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle, Lock } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { usePasswordReset } from '@/hooks/usePasswordReset';
 import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from '@/components/Auth/PasswordStrengthIndicator';
@@ -219,16 +219,7 @@ const ResetPassword: React.FC = () => {
                 className="h-12 w-auto object-contain animate-in fade-in zoom-in duration-500"
               />
             </div>
-            <div className="flex justify-center">
-              <div className="rounded-full bg-primary/10 p-3">
-                <Lock className="h-8 w-8 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl font-bold text-center">Redefinir senha</CardTitle>
-          <CardDescription className="text-center">
-            Digite sua nova senha abaixo
-          </CardDescription>
-        </CardHeader>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
