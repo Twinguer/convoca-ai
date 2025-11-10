@@ -43,7 +43,25 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const siteUrl = Deno.env.get('SITE_URL') ?? 'https://www.nomeiai.com.br'
-    const redirectUrl = redirect_to || `${siteUrl}/auth/reset-password`
+    
+    // Garantir que redirect_to seja uma URL completa válida
+    let redirectUrl = redirect_to || `${siteUrl}/auth/reset-password`
+    
+    // Se redirect_to não começar com http:// ou https://, adicionar o protocolo
+    if (redirectUrl && !redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
+      // Se começar com www., adicionar https://
+      if (redirectUrl.startsWith('www.')) {
+        redirectUrl = `https://${redirectUrl}`
+      } else {
+        // Caso contrário, usar siteUrl como base
+        redirectUrl = `${siteUrl}${redirectUrl.startsWith('/') ? '' : '/'}${redirectUrl}`
+      }
+    }
+    
+    // Garantir que tenha o caminho completo
+    if (!redirectUrl.includes('/auth/reset-password')) {
+      redirectUrl = `${siteUrl}/auth/reset-password`
+    }
     
     // Construir URL de reset - o Supabase processa o token e redireciona
     const resetUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=recovery&redirect_to=${encodeURIComponent(redirectUrl)}`
