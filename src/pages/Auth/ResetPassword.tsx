@@ -217,7 +217,7 @@ const ResetPassword: React.FC = () => {
                 <img 
                   src="/images/footer-logo.png" 
                   alt="Nomeia Aí" 
-                  className="h-24 w-auto object-contain animate-in fade-in zoom-in duration-500 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="h-36 w-auto object-contain animate-in fade-in zoom-in duration-500 cursor-pointer hover:opacity-80 transition-opacity"
                 />
               </Link>
             </div>
