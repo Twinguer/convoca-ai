@@ -5,7 +5,16 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { PasswordResetEmail } from './_templates/password-reset-email.tsx'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
-const hookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string
+
+// Extrair o secret corretamente - o Supabase pode enviar com prefixo v1,whsec_
+// A biblioteca standardwebhooks espera apenas a parte base64 após whsec_
+const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string
+let hookSecret = rawSecret || ''
+
+// Remover prefixos v1,whsec_ ou whsec_ se existirem
+if (hookSecret.includes('whsec_')) {
+  hookSecret = hookSecret.replace(/^v1,?whsec_/, '').replace(/^whsec_/, '')
+}
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
