@@ -44,13 +44,13 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     
     // O redirect_to já vem completo do frontend, apenas usar como está
-    // Se por algum motivo não vier, usar o padrão
-    const redirectUrl = redirect_to || 'https://www.nomeiai.com.br/auth/reset-password'
+    // Se por algum motivo não vier, usar o padrão de produção
+    const redirectUrl = redirect_to || 'https://nomeiai.com.br/auth/reset-password'
     
     console.log('Password reset redirect URL:', redirectUrl)
     
     // Construir URL de reset - o Supabase processa o token e redireciona
-    const resetUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=recovery&redirect_to=${encodeURIComponent(redirectUrl)}`
+    const resetUrl = `${supabaseUrl}/auth/v1/verify?token_hash=${token_hash}&type=recovery&redirect_to=${encodeURIComponent(redirectUrl)}`
 
     const html = await renderAsync(
       React.createElement(PasswordResetEmail, {
