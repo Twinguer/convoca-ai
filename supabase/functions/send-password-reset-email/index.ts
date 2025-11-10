@@ -4,11 +4,24 @@ import { Resend } from 'npm:resend@4.0.0'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { PasswordResetEmail } from './_templates/password-reset-email.tsx'
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
+// Verificar RESEND_API_KEY antes de criar instância
+// Não criar instância se não houver chave para evitar erros
+let resend: Resend | null = null
+const resendApiKey = Deno.env.get('RESEND_API_KEY')
+if (resendApiKey) {
+  try {
+    resend = new Resend(resendApiKey)
+  } catch (error) {
+    console.error('Erro ao criar instância do Resend:', error)
+  }
+} else {
+  console.error('RESEND_API_KEY não está configurada na inicialização')
+}
 
 // Função para extrair o secret corretamente
-// O Supabase exige o formato v1,whsec_<base64> na variável de ambiente
-// Mas a biblioteca standardwebhooks espera apenas whsec_<base64>
+// Seguindo a documentação oficial do Supabase:
+// O secret vem como "v1,whsec_<base64>" mas a biblioteca standardwebhooks
+// espera apenas a parte base64 (sem "v1,whsec_")
 function getHookSecret(): string {
   const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string || ''
   
@@ -17,31 +30,30 @@ function getHookSecret(): string {
     return ''
   }
   
-  console.log('Raw secret recebido (primeiros 20 chars):', rawSecret.substring(0, Math.min(20, rawSecret.length)))
-  
+  // Seguindo exatamente a documentação: remover "v1,whsec_" completamente
+  // Isso deixa apenas a parte base64 que a biblioteca precisa
   let hookSecret = rawSecret
   
-  // Remover o prefixo v1, se existir (Supabase exige, mas standardwebhooks não aceita)
+  // Se tiver o prefixo v1,whsec_, remover
   if (hookSecret.startsWith('v1,whsec_')) {
-    hookSecret = hookSecret.substring(3) // Remove "v1," deixando "whsec_..."
-    console.log('Removido prefixo v1, do secret')
+    hookSecret = hookSecret.replace('v1,whsec_', '')
   }
-  // Se não tiver whsec_, adicionar (caso venha apenas base64)
-  else if (hookSecret && !hookSecret.startsWith('whsec_')) {
-    hookSecret = `whsec_${hookSecret}`
-    console.log('Adicionado prefixo whsec_ ao secret')
+  // Se tiver apenas whsec_, remover também (caso já tenha sido processado)
+  else if (hookSecret.startsWith('whsec_')) {
+    hookSecret = hookSecret.replace('whsec_', '')
   }
   
-  console.log('Secret final (primeiros 20 chars):', hookSecret.substring(0, Math.min(20, hookSecret.length)))
   return hookSecret
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('not allowed', { status: 400 })
-  }
-
+  // Wrapper para capturar TODOS os erros, incluindo erros de inicialização
   try {
+    if (req.method !== 'POST') {
+      return new Response('not allowed', { status: 400 })
+    }
+
+    try {
     const payload = await req.text()
     const headers = Object.fromEntries(req.headers)
     
@@ -52,39 +64,36 @@ Deno.serve(async (req) => {
     if (!hookSecret) {
       console.error('SEND_EMAIL_HOOK_SECRET não está configurado')
       return new Response(
-        JSON.stringify({ error: 'SEND_EMAIL_HOOK_SECRET não configurado' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: {
+            http_code: 401,
+            message: 'SEND_EMAIL_HOOK_SECRET não configurado'
+          }
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
     
-    console.log('Criando instância do Webhook...')
+    // Criar instância do Webhook conforme documentação
     let wh
     try {
       wh = new Webhook(hookSecret)
-      console.log('Webhook criado com sucesso')
     } catch (webhookError) {
-      console.error('Erro ao criar Webhook:', webhookError)
+      console.error('Erro ao criar instância do Webhook:', webhookError)
+      console.error('Secret length:', hookSecret.length)
+      console.error('Secret starts with:', hookSecret.substring(0, 10))
       return new Response(
         JSON.stringify({ 
-          error: 'Erro ao criar Webhook', 
-          details: webhookError.message,
-          secretLength: hookSecret.length,
-          secretStartsWith: hookSecret.substring(0, 10)
+          error: {
+            http_code: 401,
+            message: `Erro ao criar Webhook: ${webhookError.message || 'Secret inválido'}`
+          }
         }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
     
-    // Verificar se o payload está vazio
-    if (!payload) {
-      console.error('Payload vazio recebido')
-      return new Response(
-        JSON.stringify({ error: 'Payload vazio' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-    
-    console.log('Verificando webhook signature...')
+    // Verificar webhook signature
     let verifiedData
     try {
       verifiedData = wh.verify(payload, headers) as {
@@ -101,7 +110,12 @@ Deno.serve(async (req) => {
     } catch (verifyError) {
       console.error('Erro ao verificar webhook signature:', verifyError)
       return new Response(
-        JSON.stringify({ error: 'Falha na verificação do webhook', details: verifyError.message }),
+        JSON.stringify({ 
+          error: {
+            http_code: 401,
+            message: verifyError.message || 'Falha na verificação do webhook'
+          }
+        }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
@@ -114,7 +128,8 @@ Deno.serve(async (req) => {
     // Verificar se é realmente um email de reset de senha
     if (email_action_type !== 'recovery') {
       console.log(`Ignoring email action type: ${email_action_type}`)
-      return new Response(JSON.stringify({ success: true, skipped: true }), {
+      // Retornar JSON vazio conforme documentação
+      return new Response(JSON.stringify({}), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -151,48 +166,134 @@ Deno.serve(async (req) => {
     // Construir URL de reset - o Supabase processa o token e redireciona
     const resetUrl = `${supabaseUrl}/auth/v1/verify?token_hash=${token_hash}&type=recovery&redirect_to=${encodeURIComponent(redirectUrl)}`
 
-    const html = await renderAsync(
-      React.createElement(PasswordResetEmail, {
-        resetUrl,
-        token,
-      })
-    )
+    // Renderizar template HTML
+    let html: string
+    try {
+      html = await renderAsync(
+        React.createElement(PasswordResetEmail, {
+          resetUrl,
+          token,
+        })
+      )
+      console.log('Template HTML renderizado com sucesso')
+    } catch (renderError) {
+      console.error('Erro ao renderizar template:', renderError)
+      return new Response(
+        JSON.stringify({
+          error: {
+            http_code: 401,
+            message: `Erro ao renderizar template: ${renderError.message || 'Erro desconhecido'}`,
+          },
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // Verificar se RESEND_API_KEY está configurada e instância criada
+    if (!resendApiKey || !resend) {
+      console.error('RESEND_API_KEY não está configurada ou instância não foi criada')
+      return new Response(
+        JSON.stringify({
+          error: {
+            http_code: 401,
+            message: 'RESEND_API_KEY não configurada',
+          },
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    }
 
     console.log('Enviando email via Resend...')
-    const { error } = await resend.emails.send({
-      from: 'Nomeia Aí <onboarding@resend.dev>',
-      to: [user.email],
-      subject: 'Redefina sua senha no Nomeia Aí',
-      html,
-    })
+    try {
+      const { error } = await resend.emails.send({
+        from: 'Nomeia Aí <onboarding@resend.dev>',
+        to: [user.email],
+        subject: 'Redefina sua senha no Nomeia Aí',
+        html,
+      })
 
-    if (error) {
-      console.error('Erro ao enviar email via Resend:', error)
-      throw error
+      if (error) {
+        console.error('Erro ao enviar email via Resend:', error)
+        return new Response(
+          JSON.stringify({
+            error: {
+              http_code: 401,
+              message: `Erro ao enviar email: ${error.message || 'Erro desconhecido'}`,
+            },
+          }),
+          {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      }
+      
+      console.log('Email enviado com sucesso para:', user.email)
+
+      // Seguindo a documentação: retornar JSON vazio {} com status 200
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (resendError) {
+      console.error('Exceção ao enviar email via Resend:', resendError)
+      return new Response(
+        JSON.stringify({
+          error: {
+            http_code: 401,
+            message: `Exceção ao enviar email: ${resendError.message || 'Erro desconhecido'}`,
+          },
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
     }
+    } catch (error) {
+      console.error('Error sending password reset email:', error)
+      console.error('Error stack:', error.stack)
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      
+      // Seguindo a documentação: retornar status 401 em caso de erro
+      // O Supabase espera 200 para sucesso, 401 para erro de autenticação/validação
+      // IMPORTANTE: http_code também deve ser 401, não 500
+      return new Response(
+        JSON.stringify({
+          error: {
+            http_code: 401,
+            message: error.message || 'Erro desconhecido ao processar reset de senha',
+          },
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  } catch (outerError) {
+    // Capturar erros que ocorrem fora do try-catch principal
+    console.error('Erro crítico na Edge Function:', outerError)
+    console.error('Error stack:', outerError.stack)
+    console.error('Error name:', outerError.name)
+    console.error('Error message:', outerError.message)
     
-    console.log('Email enviado com sucesso para:', user.email)
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  } catch (error) {
-    console.error('Error sending password reset email:', error)
-    console.error('Error stack:', error.stack)
-    console.error('Error name:', error.name)
-    
-    // Retornar erro mais detalhado para debug
     return new Response(
       JSON.stringify({
         error: {
-          message: error.message || 'Erro desconhecido',
-          name: error.name,
-          stack: error.stack,
+          http_code: 401,
+          message: `Erro crítico: ${outerError.message || 'Erro desconhecido'}`,
         },
       }),
       {
-        status: 500,
+        status: 401,
         headers: { 'Content-Type': 'application/json' },
       }
     )

@@ -7,20 +7,11 @@ import { ConfirmationEmail } from './_templates/confirmation-email.tsx'
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
 
 // Extrair o secret corretamente
-// O Supabase exige o formato v1,whsec_<base64> na variável de ambiente
-// Mas a biblioteca standardwebhooks espera apenas whsec_<base64>
-// Então removemos o prefixo v1, antes de usar
+// Seguindo a documentação oficial do Supabase:
+// O secret vem como "v1,whsec_<base64>" mas a biblioteca standardwebhooks
+// espera apenas a parte base64 (sem "v1,whsec_")
 const rawSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string || ''
-let hookSecret = rawSecret
-
-// Remover o prefixo v1, se existir (Supabase exige, mas standardwebhooks não aceita)
-if (hookSecret.startsWith('v1,whsec_')) {
-  hookSecret = hookSecret.substring(3) // Remove "v1," deixando "whsec_..."
-}
-// Se não tiver whsec_, adicionar (caso venha apenas base64)
-else if (hookSecret && !hookSecret.startsWith('whsec_')) {
-  hookSecret = `whsec_${hookSecret}`
-}
+const hookSecret = rawSecret.replace('v1,whsec_', '')
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
@@ -70,7 +61,8 @@ Deno.serve(async (req) => {
       throw error
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    // Seguindo a documentação: retornar JSON vazio {} com status 200
+    return new Response(JSON.stringify({}), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -79,7 +71,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: {
-          message: error.message,
+          http_code: (error as any).code || 500,
+          message: error.message || 'Erro desconhecido',
         },
       }),
       {

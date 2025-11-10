@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { isLoading, resetPassword } = usePasswordReset();
   const [password, setPassword] = useState('');
@@ -22,24 +23,33 @@ const ResetPassword: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
 
+  // CRÍTICO: Setar flag IMEDIATAMENTE ao montar o componente
+  // Isso previne race condition com Auth.tsx
+  useEffect(() => {
+    // Verificar URL e setar flag sincronamente
+    const hash = window.location.hash.substring(1);
+    const hashParams = new URLSearchParams(hash);
+    const type = hashParams.get('type') || searchParams.get('type');
+    const hasAccessToken = hash.includes('access_token') || hashParams.has('access_token');
+    
+    // Setar flag imediatamente se detectar recovery
+    if (type === 'recovery' || hasAccessToken || location.pathname === '/auth/reset-password') {
+      localStorage.setItem('is_password_recovery', 'true');
+    }
+  }, []); // Executar apenas uma vez ao montar
+
   useEffect(() => {
     const checkToken = async () => {
-      // IMPORTANTE: Marcar como recovery IMEDIATAMENTE ao carregar a página
-      // Isso previne redirecionamento automático antes mesmo de processar o token
+      // Garantir que a flag está setada
       localStorage.setItem('is_password_recovery', 'true');
       
-      // Verificar se há token de recovery no hash ou query params
+      // Obter parâmetros da URL novamente
       const hash = window.location.hash.substring(1);
       const hashParams = new URLSearchParams(hash);
       const type = hashParams.get('type') || searchParams.get('type');
       
-      // Confirmar que é recovery se houver type=recovery na URL
-      if (type === 'recovery' || hash.includes('type=recovery') || hash.includes('access_token')) {
-        localStorage.setItem('is_password_recovery', 'true');
-      }
-      
       // Aguardar um momento para o Supabase processar o hash
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Verificar se há sessão ativa (Supabase já processou o token de recovery)
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,10 +62,17 @@ const ResetPassword: React.FC = () => {
         }
         setIsValidToken(true);
       } else {
-        // Se não há sessão e não há token, é inválido
+        // Se não há sessão, verificar se há token na URL
         const hasToken = hashParams.get('access_token') || hashParams.get('token') || searchParams.get('token');
         if (!hasToken && type !== 'recovery') {
-          setIsValidToken(false);
+          // Aguardar mais um pouco antes de considerar inválido
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            setIsValidToken(true);
+          } else {
+            setIsValidToken(false);
+          }
         } else {
           // Ainda processando ou aguardando processamento
           setIsValidToken(null);
@@ -64,7 +81,7 @@ const ResetPassword: React.FC = () => {
     };
 
     checkToken();
-  }, [searchParams]);
+  }, [searchParams, location]);
 
   const validatePassword = (password: string): boolean => {
     const validation = PasswordValidator.validate(password);

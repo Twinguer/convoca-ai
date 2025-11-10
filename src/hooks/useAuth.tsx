@@ -56,6 +56,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Log removido por segurança
         
+        // CRÍTICO: Verificar URL antes de processar eventos
+        // Isso previne race condition durante recovery
+        const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+        const hash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+        const hashParams = new URLSearchParams(hash);
+        const urlType = hashParams.get('type');
+        const hasAccessToken = hash.includes('access_token');
+        const isResetPasswordPage = currentPath === '/auth/reset-password';
+        
+        // Se detectar recovery na URL, setar flag IMEDIATAMENTE
+        if (isResetPasswordPage || urlType === 'recovery' || hasAccessToken) {
+          localStorage.setItem('is_password_recovery', 'true');
+        }
+
         // Handle different auth events
         switch (event) {
           case 'PASSWORD_RECOVERY':
@@ -71,11 +85,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSession(newSession);
             setUser(newSession?.user ?? null);
             setIsLoading(false);
-            // Verificar se é recovery ANTES de qualquer ação
-            const isRecovery = localStorage.getItem('is_password_recovery') === 'true';
+            
+            // Verificar se é recovery de múltiplas formas
+            const isRecovery = localStorage.getItem('is_password_recovery') === 'true' ||
+                              isResetPasswordPage ||
+                              urlType === 'recovery' ||
+                              hasAccessToken;
             
             // Se for recovery, não fazer nada além de setar a sessão
             if (isRecovery) {
+              // Garantir que a flag está setada
+              localStorage.setItem('is_password_recovery', 'true');
               // Não marcar como online durante recovery
               break;
             }
