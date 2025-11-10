@@ -24,45 +24,43 @@ const ResetPassword: React.FC = () => {
 
   useEffect(() => {
     const checkToken = async () => {
-      // Verificar se há token na URL (query params ou hash)
-      let token = searchParams.get('token');
-      let type = searchParams.get('type');
+      // Verificar se há sessão ativa (Supabase já processou o token de recovery)
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      // Se não encontrou nos query params, verificar no hash (Supabase usa hash para redirects)
-      if (!token || type !== 'recovery') {
-        const hash = window.location.hash.substring(1); // Remove o #
-        if (hash) {
-          const hashParams = new URLSearchParams(hash);
-          token = hashParams.get('access_token') || hashParams.get('token');
-          type = hashParams.get('type');
-          
-          // Se encontrou no hash, o Supabase já processou o token
-          // Verificar se há sessão ativa
-          if (token || type === 'recovery') {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (session && !error) {
-              setIsValidToken(true);
-              // Limpar o hash da URL e redirecionar para a página correta
-              const cleanUrl = window.location.origin + window.location.pathname;
-              window.history.replaceState(null, '', cleanUrl);
-              return;
-            }
-          }
+      if (session && !error) {
+        // Limpar hash da URL se existir
+        if (window.location.hash) {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState(null, '', cleanUrl);
         }
-      }
-      
-      // Verificar se há sessão ativa (caso o token já tenha sido processado)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
         setIsValidToken(true);
         return;
       }
       
-      if (!token || type !== 'recovery') {
-        setIsValidToken(false);
-      } else {
-        setIsValidToken(true);
+      // Verificar se há token no hash (logo após clicar no link do email)
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        const hashParams = new URLSearchParams(hash);
+        const type = hashParams.get('type');
+        
+        if (type === 'recovery') {
+          // Aguardar um pouco para o Supabase processar o token
+          setTimeout(async () => {
+            const { data: { session: newSession } } = await supabase.auth.getSession();
+            if (newSession) {
+              const cleanUrl = window.location.origin + window.location.pathname;
+              window.history.replaceState(null, '', cleanUrl);
+              setIsValidToken(true);
+            } else {
+              setIsValidToken(false);
+            }
+          }, 500);
+          return;
+        }
       }
+      
+      // Sem sessão e sem token válido
+      setIsValidToken(false);
     };
 
     checkToken();
