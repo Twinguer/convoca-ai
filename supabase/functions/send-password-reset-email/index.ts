@@ -53,9 +53,42 @@ Deno.serve(async (req) => {
       return new Response('not allowed', { status: 400 })
     }
 
-    // IMPORTANTE: Send Email Hooks do Supabase usam webhook signatures (standardwebhooks)
-    // NÃO usam Bearer tokens. A validação é feita via wh.verify() abaixo.
-    // Se o Dashboard estiver com "Require Authorization" ativado, DESATIVE essa opção.
+    // IMPORTANTE: Send Email Hooks podem usar webhook signatures (standardwebhooks) E/OU Bearer tokens
+    // Vamos validar ambos para garantir compatibilidade
+    
+    // Verificar Bearer token se presente (algumas configurações do Supabase podem exigir)
+    const authHeader = req.headers.get('authorization')
+    const hookAuthSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET')
+    
+    // Se houver header de autorização, validar Bearer token
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '')
+      console.log('Bearer token recebido, validando...')
+      
+      // O token pode ser o secret completo (v1,whsec_...) ou apenas a parte base64
+      const isValidToken = token === hookAuthSecret || 
+                          token === hookAuthSecret?.replace('v1,whsec_', '') ||
+                          token === hookAuthSecret?.replace('v1,whsec_', 'whsec_')
+      
+      if (!isValidToken && hookAuthSecret) {
+        console.error('Bearer token inválido')
+        console.error('Token recebido (primeiros 20 chars):', token.substring(0, 20))
+        console.error('Secret esperado (primeiros 20 chars):', hookAuthSecret.substring(0, 20))
+        return new Response(
+          JSON.stringify({
+            error: {
+              http_code: 401,
+              message: 'Token de autorização inválido',
+            },
+          }),
+          {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      }
+      console.log('Bearer token válido')
+    }
 
     try {
     const payload = await req.text()
@@ -63,6 +96,7 @@ Deno.serve(async (req) => {
     
     // Logs para debug
     console.log('Headers recebidos:', Object.keys(headers))
+    console.log('Tem authorization?', !!authHeader)
     console.log('Tem svix-signature?', !!headers['svix-signature'] || !!headers['svix_id'] || !!headers['svix_timestamp'])
     console.log('Payload length:', payload.length)
     
