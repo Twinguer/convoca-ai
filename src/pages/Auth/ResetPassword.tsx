@@ -41,8 +41,9 @@ const ResetPassword: React.FC = () => {
             const { data: { session }, error } = await supabase.auth.getSession();
             if (session && !error) {
               setIsValidToken(true);
-              // Limpar o hash da URL
-              window.history.replaceState(null, '', window.location.pathname);
+              // Limpar o hash da URL e redirecionar para a página correta
+              const cleanUrl = window.location.origin + window.location.pathname;
+              window.history.replaceState(null, '', cleanUrl);
               return;
             }
           }
