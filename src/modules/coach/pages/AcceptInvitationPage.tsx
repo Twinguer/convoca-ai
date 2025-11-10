@@ -65,7 +65,6 @@ const AcceptInvitationPage = () => {
 
       navigate('/coach/dashboard');
     } catch (error: any) {
-      console.error('Erro ao aceitar convite:', error);
       toast({
         title: 'Erro ao aceitar convite',
         description: error.message,
