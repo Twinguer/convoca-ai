@@ -71,9 +71,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSession(newSession);
             setUser(newSession?.user ?? null);
             setIsLoading(false);
-            // Não marcar como online se for recovery de senha
+            // Verificar se é recovery ANTES de qualquer ação
             const isRecovery = localStorage.getItem('is_password_recovery') === 'true';
-            if (newSession?.user?.id && !isRecovery) {
+            
+            // Se for recovery, não fazer nada além de setar a sessão
+            if (isRecovery) {
+              // Não marcar como online durante recovery
+              break;
+            }
+            
+            // Apenas marcar como online se NÃO for recovery
+            if (newSession?.user?.id) {
               onlineStatusService.setUserOnline(newSession.user.id);
             }
             break;

@@ -13,8 +13,14 @@ const Auth: React.FC = () => {
     return <AuthContainer />;
   }
 
+  // Se for recovery, não redirecionar
+  const isRecovery = localStorage.getItem('is_password_recovery') === 'true';
+  if (isRecovery) {
+    return <AuthContainer />;
+  }
+
   // If already logged in, redirect to home (exceto se for recovery)
-  if (user && localStorage.getItem('is_password_recovery') !== 'true') {
+  if (user) {
     return <Navigate to="/" />;
   }
 
