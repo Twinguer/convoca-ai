@@ -21,6 +21,7 @@ interface UseOptimizedSessionDataReturn {
 
 interface UseOptimizedSessionDataOptions {
   dependencies?: any[];
+  targetUserId?: string; // ✅ NOVO: userId opcional para permitir uso no modo coach
 }
 
 /**
@@ -89,7 +90,8 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
   }, []);
 
   const loadData = useCallback(async (forceRefresh = false) => {
-    if (!user?.id) {
+    const userId = options.targetUserId || user?.id;
+    if (!userId) {
       setSessionData({});
       setLoading(false);
       return;
@@ -109,7 +111,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     setError(null);
 
     try {
-      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      const userStudyData = await UserStudyService.getUserStudyData(userId);
       
       if (!userStudyData) {
         console.warn('⚠️ Nenhum dado do usuário encontrado');
@@ -130,7 +132,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     } finally {
       setLoading(false);
     }
-  }, [user?.id, processAllSessions]);
+  }, [user?.id, options.targetUserId, processAllSessions]);
 
   const refreshData = useCallback(async () => {
     await loadData(true);
@@ -139,7 +141,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
   // Carregar dados quando o hook é montado ou quando dependências mudam
   useEffect(() => {
     loadData();
-  }, [user?.id, ...(options.dependencies || [])]);
+  }, [user?.id, options.targetUserId, ...(options.dependencies || [])]);
 
   return {
     sessionData,

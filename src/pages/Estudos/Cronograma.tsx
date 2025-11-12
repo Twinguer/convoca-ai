@@ -132,7 +132,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     error: sessionDataError,
     refreshData
   } = useOptimizedSessionData({
-    targetUserId: coachMode ? targetStudentId : undefined
+    targetUserId: coachMode ? targetStudentId : undefined,
+    dependencies: [cycles, coachMode, targetStudentId]
   });
 
   // Armazenar userStudy completo para acessar study_sessions
