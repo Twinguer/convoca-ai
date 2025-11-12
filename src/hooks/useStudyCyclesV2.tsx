@@ -382,7 +382,7 @@ export const useStudyCyclesV2 = () => {
       });
 
       // Salvar tudo: study_sessions, study_schedule e cycles
-      const success = await UserStudyService.upsertUserStudyData(user.id, {
+      const success = await UserStudyService.upsertUserStudyData(userId, {
         study_sessions: updatedStudySessions,
         study_schedule: updatedSchedule,
         study_cycles: updatedCycles
