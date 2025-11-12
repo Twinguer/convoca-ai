@@ -90,7 +90,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
   }, []);
 
   const loadData = useCallback(async (forceRefresh = false) => {
-    const userId = options.targetUserId || user?.id;
+    const userId = targetUserId || user?.id;
     if (!userId) {
       setSessionData({});
       setLoading(false);
@@ -132,7 +132,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     } finally {
       setLoading(false);
     }
-  }, [user?.id, options.targetUserId, processAllSessions]);
+  }, [user?.id, targetUserId, processAllSessions]);
 
   const refreshData = useCallback(async () => {
     await loadData(true);
@@ -141,7 +141,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
   // Carregar dados quando o hook é montado ou quando dependências mudam
   useEffect(() => {
     loadData();
-  }, [user?.id, options.targetUserId, ...(options.dependencies || [])]);
+  }, [user?.id, targetUserId, loadData, ...dependencies]);
 
   return {
     sessionData,
