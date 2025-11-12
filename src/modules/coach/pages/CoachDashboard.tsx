@@ -539,11 +539,11 @@ const CoachDashboard = () => {
 
           {/* Convites Pendentes */}
           {pendingInvitations.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className="border-yellow-500/20 dark:border-yellow-400/20 bg-yellow-500/5 dark:bg-yellow-400/10">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Convites Pendentes</span>
-              <Badge variant="outline" className="bg-orange-100">
+              <Badge variant="outline" className="bg-yellow-500/10 dark:bg-yellow-400/20 border-yellow-500/20 dark:border-yellow-400/20">
                 {pendingInvitations.length}
               </Badge>
             </CardTitle>
@@ -556,7 +556,7 @@ const CoachDashboard = () => {
               {pendingInvitations.map((invitation: any) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-200"
+                  className="flex items-center justify-between p-3 bg-card rounded-lg border border-border"
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <Avatar className="h-10 w-10 flex-shrink-0">
