@@ -466,21 +466,26 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     const fileName = file.name.toLowerCase();
     const fileType = file.type.toLowerCase();
     
-    // Verificar por extensão (flexível: .pdf, pdf, ou termina com pdf)
+    // Tipos de imagem permitidos
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    
+    // Verificar se é PDF
     const hasPDFExtension = fileName.endsWith('.pdf') || 
                            fileName.endsWith('pdf') ||
                            fileName.includes('.pdf');
-    
-    // Verificar por MIME type (várias variações)
     const isPDFMimeType = fileType === 'application/pdf' || 
                          fileType === 'application/x-pdf' ||
                          fileType === 'application/acrobat' ||
                          fileType.includes('pdf');
-    
     const isPDF = isPDFMimeType || hasPDFExtension;
     
-    if (!isPDF) {
-      toast.error(`Apenas arquivos PDF são permitidos. Arquivo selecionado: ${file.name} (tipo: ${file.type || 'desconhecido'})`);
+    // Verificar se é imagem
+    const hasImageExtension = allowedImageExtensions.some(ext => fileName.endsWith(ext));
+    const isImage = allowedImageTypes.includes(fileType) || hasImageExtension;
+    
+    if (!isPDF && !isImage) {
+      toast.error(`Apenas arquivos PDF ou imagens (JPG, PNG, GIF, WEBP) são permitidos. Arquivo selecionado: ${file.name} (tipo: ${file.type || 'desconhecido'})`);
       event.target.value = '';
       return;
     }
@@ -512,17 +517,25 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         return;
       }
 
-      const fileExt = 'pdf';
-      const fileName = `cycle-${selectedCycle}-${type}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `study-documents/${targetUserId}/${fileName}`;
+      // Determinar extensão baseado no tipo do arquivo
+      let fileExt: string;
+      if (isPDF) {
+        fileExt = 'pdf';
+      } else {
+        // Extrair extensão da imagem
+        const imageExt = fileName.match(/\.(jpg|jpeg|png|gif|webp)$/)?.[1] || 'jpg';
+        fileExt = imageExt === 'jpeg' ? 'jpg' : imageExt;
+      }
+      
+      const uploadFileName = `cycle-${selectedCycle}-${type}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `study-documents/${targetUserId}/${uploadFileName}`;
 
       // Upload para storage
-      // O fileName já tem extensão .pdf garantida (linha 516)
-      // Converter para Blob/File com tipo correto se necessário
+      // Manter o arquivo original, apenas garantir que tem a extensão correta no nome
       let fileToUpload: File | Blob = file;
       
-      // Se o tipo não for application/pdf, criar um novo File/Blob com tipo correto
-      if (file.type !== 'application/pdf') {
+      // Se for PDF e o tipo não for application/pdf, criar um novo File/Blob com tipo correto
+      if (isPDF && file.type !== 'application/pdf') {
         // Ler o arquivo como ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
         // Criar um Blob com tipo application/pdf
@@ -559,7 +572,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
       // Recarregar ciclos
       await fetchCycles();
-      toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} enviada com sucesso!`);
+      const fileTypeLabel = isPDF ? 'PDF' : 'imagem';
+      toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} (${fileTypeLabel}) enviada com sucesso!`);
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(`Erro ao fazer upload: ${error.message || 'Tente novamente'}`);
@@ -1180,6 +1194,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   <input
                     id="trilha-semanal-upload"
                     type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/jpeg,image/png,image/gif,image/webp"
                     onChange={(e) => handlePDFFileSelect(e, 'trilha_semanal')}
                     className="hidden"
                     disabled={!selectedCycle || uploadingPDF === 'trilha_semanal'}
@@ -1313,6 +1328,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   <input
                     id="subjetiva-upload"
                     type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/jpeg,image/png,image/gif,image/webp"
                     onChange={(e) => handlePDFFileSelect(e, 'subjetiva')}
                     className="hidden"
                     disabled={!selectedCycle || uploadingPDF === 'subjetiva'}
