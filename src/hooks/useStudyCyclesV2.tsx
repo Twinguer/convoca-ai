@@ -252,9 +252,11 @@ export const useStudyCyclesV2 = () => {
     cycleId: string,
     dayOfWeek: number,
     sessionId: string,
-    sessionDetails: Omit<CompletedSession, 'date'>
+    sessionDetails: Omit<CompletedSession, 'date'>,
+    targetUserId?: string // ✅ NOVO: userId opcional para permitir criação por coach
   ) => {
-    if (!user) return false;
+    const userId = targetUserId || user?.id;
+    if (!userId || !user) return false;
 
     try {
       const today = new Date();
@@ -268,7 +270,7 @@ export const useStudyCyclesV2 = () => {
       };
 
       // Buscar dados atuais do usuário
-      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      const userStudyData = await UserStudyService.getUserStudyData(userId);
       if (!userStudyData) return false;
 
       // Encontrar informações da sessão no ciclo

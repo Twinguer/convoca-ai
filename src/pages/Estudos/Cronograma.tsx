@@ -785,7 +785,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         duration_minutes: stats.duration,
         questions: stats.questions,
         correct_answers: stats.correctAnswers,
-        notes: stats.notes || ''
+        notes: stats.notes || '',
+        course_name: stats.courseName || '',
+        session_link: stats.sessionLink || '',
+        study_type: stats.studyType || 'manual'
       }, targetUserId); // ✅ Passar targetUserId
       if (success) {
         // Recarregar ciclos para atualizar total_stats
