@@ -207,14 +207,15 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     if (!targetUserId) return;
     
     try {
-      const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
+      const userStudyData = await UserStudyService.getUserStudyData(targetUserId, true); // Force refresh
       if (userStudyData) {
         setUserStudy(userStudyData); // Armazenar dados completos incluindo study_sessions
-        const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
+        const activeCycles = userStudyData.study_cycles?.filter(cycle => cycle.is_active) || [];
         setCycles(activeCycles);
       }
     } catch (error) {
       console.error('Error fetching cycles:', error);
+      toast.error('Erro ao carregar ciclos de estudo');
     }
   };
   const fetchSessions = async () => {
@@ -412,17 +413,26 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         return;
       }
       
+      console.log('🗑️ Removendo sessão:', { sessionId, targetUserId, coachMode });
+      
       // Remove session from schedule
       const success = await UserStudyService.removeScheduleSession(targetUserId, sessionId);
+      
       if (success) {
-        // Recarregar sessões do banco
-        await fetchSessions();
+        // Recarregar dados
+        await Promise.all([
+          fetchSessions(),
+          fetchCycles(),
+          refreshData()
+        ]);
         toast.success('Tarefa removida do cronograma!');
       } else {
-        toast.error('Erro ao remover tarefa');
+        console.error('❌ Falha ao remover sessão do banco');
+        toast.error('Erro ao remover tarefa. Verifique suas permissões.');
       }
-    } catch (error) {
-      toast.error('Erro ao remover tarefa');
+    } catch (error: any) {
+      console.error('❌ Erro ao remover tarefa:', error);
+      toast.error(`Erro ao remover tarefa: ${error.message || 'Tente novamente'}`);
     }
   };
 
@@ -1716,8 +1726,9 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                               <div className="space-y-1 flex-1">
                                 <h4 className="font-medium text-sm text-foreground leading-tight">{session.disciplineName}</h4>
                                 <p className="text-xs text-muted-foreground">{session.blockName}</p>
-                                {cumulativeSession?.cycle_name && <p className="text-xs text-primary font-medium">Ciclo: {cumulativeSession.cycle_name}</p>}
-                                {!cumulativeSession?.cycle_name && <p className="text-xs text-red-500">⚠️ Nome do ciclo não encontrado</p>}
+                                {cumulativeSession?.cycle_name && cumulativeSession.cycle_name !== 'Ciclo desconhecido' && (
+                                  <p className="text-xs text-primary font-medium">Ciclo: {cumulativeSession.cycle_name}</p>
+                                )}
                               </div>
                               
                               {/* Estatísticas detalhadas */}

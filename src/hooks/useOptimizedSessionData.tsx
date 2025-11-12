@@ -32,6 +32,7 @@ interface UseOptimizedSessionDataOptions {
  */
 export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions = {}): UseOptimizedSessionDataReturn => {
   const { user } = useAuth();
+  const { targetUserId, dependencies = [] } = options;
   const [sessionData, setSessionData] = useState<Record<string, SessionData>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,19 +48,19 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     if (userStudyData.study_schedule && Array.isArray(userStudyData.study_schedule)) {
       
       for (const session of userStudyData.study_schedule) {
-        const cycle = userStudyData.study_cycles.find((c: any) => c.id === session.cycle_id);
+        // Buscar ciclo (incluindo inativos para garantir que o nome apareça)
+        const cycle = userStudyData.study_cycles?.find((c: any) => c.id === session.cycle_id);
         
-        if (cycle) {
-          allSessionData[session.id] = {
-            id: session.id,
-            cycle_name: cycle.cycle_name,
-            duration_minutes: session.total_stats?.total_duration_minutes || 0,
-            questions: session.total_stats?.total_questions || 0,
-            correct_answers: session.total_stats?.total_correct || 0,
-            session_count: session.total_stats?.session_count || 1,
-            session_link: session.session_link
-          };
-        }
+        // Sempre criar entrada, mesmo sem ciclo (para exibir dados parciais)
+        allSessionData[session.id] = {
+          id: session.id,
+          cycle_name: cycle?.cycle_name || 'Ciclo desconhecido',
+          duration_minutes: session.total_stats?.total_duration_minutes || 0,
+          questions: session.total_stats?.total_questions || 0,
+          correct_answers: session.total_stats?.total_correct || 0,
+          session_count: session.total_stats?.session_count || 1,
+          session_link: session.session_link
+        };
       }
     }
     
@@ -141,7 +142,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
   // Carregar dados quando o hook é montado ou quando dependências mudam
   useEffect(() => {
     loadData();
-  }, [user?.id, targetUserId, loadData, ...dependencies]);
+  }, [loadData]);
 
   return {
     sessionData,
