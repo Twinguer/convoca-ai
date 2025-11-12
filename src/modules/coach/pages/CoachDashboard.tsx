@@ -539,51 +539,37 @@ const CoachDashboard = () => {
 
           {/* Convites Pendentes */}
           {pendingInvitations.length > 0 && (
-        <Card className="border-yellow-500/20 dark:border-yellow-400/20 bg-yellow-500/5 dark:bg-yellow-400/10">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Convites Pendentes</span>
-              <Badge variant="outline" className="bg-yellow-500/10 dark:bg-yellow-400/20 border-yellow-500/20 dark:border-yellow-400/20">
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Convites Pendentes</CardTitle>
+              <Badge variant="outline" className="bg-primary/10 border-primary/20">
                 {pendingInvitations.length}
               </Badge>
-            </CardTitle>
-            <CardDescription>
-              Aguardando resposta dos alunos
-            </CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="pt-0">
+            <div className="space-y-2">
               {pendingInvitations.map((invitation: any) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center justify-between p-3 bg-card rounded-lg border border-border"
+                  className="flex items-center justify-between p-2 bg-card rounded-lg border border-border"
                 >
-                  <div className="flex items-center gap-3 flex-1">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
                       <AvatarImage src={invitation.student_avatar || undefined} />
-                      <AvatarFallback>
+                      <AvatarFallback className="text-xs">
                         {getInitials(invitation.student_name || invitation.student_email || 'A')}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
+                      <p className="text-sm font-medium truncate">
                         {invitation.student_name || invitation.student_email || 'Aluno desconhecido'}
                       </p>
-                      {invitation.student_nickname && (
-                        <p className="text-xs text-muted-foreground">
-                          @{invitation.student_nickname}
-                        </p>
-                      )}
-                      {invitation.invitation_message && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                          {invitation.invitation_message}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Enviado {new Date(invitation.invited_at).toLocaleDateString('pt-BR', {
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(invitation.invited_at).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
-                          year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
@@ -599,10 +585,9 @@ const CoachDashboard = () => {
                       }
                     }}
                     disabled={cancelInvitationMutation.isPending}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {cancelInvitationMutation.isPending ? 'Cancelando...' : 'Remover'}
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               ))}
