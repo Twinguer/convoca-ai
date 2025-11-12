@@ -575,7 +575,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       const fileTypeLabel = isPDF ? 'PDF' : 'imagem';
       toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} (${fileTypeLabel}) enviada com sucesso!`);
     } catch (error: any) {
-      console.error('Upload error:', error);
       toast.error(`Erro ao fazer upload: ${error.message || 'Tente novamente'}`);
     } finally {
       setUploadingPDF(null);
