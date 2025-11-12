@@ -1792,12 +1792,20 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                     </span>
                   </div>
                   
-                  {/* Matéria e Tópico */}
+                  {/* Matéria, Assunto e Tópico */}
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-1">
                       <BookOpen className="w-4 h-4 text-muted-foreground" />
                       <span className="font-medium text-foreground">{sessionData.session.discipline}</span>
                     </div>
+                    {sessionData.session.courseName && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        </div>
+                        <span className="text-sm font-medium text-foreground">Assunto: {sessionData.session.courseName}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 flex items-center justify-center">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
