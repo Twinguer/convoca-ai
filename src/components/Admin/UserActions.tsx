@@ -159,8 +159,8 @@ export const UserActions: React.FC<UserActionsProps> = ({
             securityLogs = logs;
             if (logs.action === 'unauthorized_admin_delete_attempt') {
               errorMessage = "Você não tem permissões de administrador para excluir este perfil. Verifique se sua conta tem a role de admin na tabela user_roles.";
-            } else if (logs.action === 'admin_delete_user_profile_error' && logs.details?.error) {
-              errorMessage = `Erro ao excluir: ${logs.details.error}`;
+            } else if (logs.action === 'admin_delete_user_profile_error' && logs.details && typeof logs.details === 'object' && 'error' in logs.details) {
+              errorMessage = `Erro ao excluir: ${(logs.details as any).error}`;
             }
           }
         } catch (logsErr) {

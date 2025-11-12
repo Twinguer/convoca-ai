@@ -1580,6 +1580,7 @@ export type Database = {
       }
       delete_study_group: { Args: { p_group_id: string }; Returns: Json }
       delete_user_profile: { Args: { user_id_param: string }; Returns: boolean }
+      ensure_user_profile: { Args: { p_user_id: string }; Returns: undefined }
       extract_sessions_to_schedule: {
         Args: never
         Returns: {
@@ -1632,6 +1633,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_current_user_email: { Args: never; Returns: string }
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
