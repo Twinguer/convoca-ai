@@ -65,18 +65,18 @@ const Menu = () => {
     }
   };
   return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
+      <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* User login button - Now on the left */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <UserMenu />
-          {isAdminMode && <div className="ml-4 bg-accent text-accent-foreground px-2 py-1 rounded-md flex items-center">
+          {isAdminMode && <div className="hidden sm:flex ml-2 bg-accent text-accent-foreground px-2 py-1 rounded-md items-center">
               <ShieldAlert className="h-4 w-4 mr-1" />
-              <span className="text-xs font-medium">Modo Administrador</span>
+              <span className="text-xs font-medium">Modo Admin</span>
             </div>}
         </div>
         
         {/* Navigation - Now on the right */}
-        <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="flex items-center gap-2">
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="space-x-1">
               <NavigationMenuItem>
