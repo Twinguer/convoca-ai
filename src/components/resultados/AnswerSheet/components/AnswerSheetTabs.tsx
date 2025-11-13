@@ -22,23 +22,21 @@ export const AnswerSheetTabs: React.FC<AnswerSheetTabsProps> = ({
         onValueChange={handleSectionChange}
         className="w-full"
       >
-        <TabsList 
-          className="grid w-full" 
-          style={{ 
-            gridTemplateColumns: `repeat(${Math.min(objectiveSections.length + (shouldShowSubjective ? 1 : 0), 5)}, 1fr)` 
-          }}
-        >
-          {objectiveSections.map(section => (
-            <TabsTrigger key={section.key} value={section.key}>
-              {section.label}
-            </TabsTrigger>
-          ))}
-          {shouldShowSubjective && (
-            <TabsTrigger value="subjective">
-              Discursivas/Est.Caso
-            </TabsTrigger>
-          )}
-        </TabsList>
+        <div className="w-full overflow-x-auto">
+          <TabsList className="inline-flex w-auto min-w-full">
+
+            {objectiveSections.map(section => (
+              <TabsTrigger key={section.key} value={section.key} className="whitespace-nowrap">
+                {section.label}
+              </TabsTrigger>
+            ))}
+            {shouldShowSubjective && (
+              <TabsTrigger value="subjective" className="whitespace-nowrap">
+                Discursivas/Est.Caso
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
         {objectiveSections.map(section => (
           <TabsContent key={section.key} value={section.key}>
