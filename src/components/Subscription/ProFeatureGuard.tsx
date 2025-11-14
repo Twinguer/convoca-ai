@@ -5,12 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { showProRequiredToast } from '@/utils/planRestrictions';
 
 interface ProFeatureGuardProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   featureName: string;
 }
-
-// Map global para rastrear toasts já mostrados (por featureName)
-const shownToasts = new Map<string, boolean>();
 
 export const ProFeatureGuard = ({ 
   children, 
@@ -20,19 +17,10 @@ export const ProFeatureGuard = ({
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Se não for Pro, mostrar toast e redirecionar APENAS UMA VEZ por featureName
+    // Redirecionar imediatamente se não for Pro
     if (!isLoading && !isPro) {
-      const toastKey = `toast-${featureName}`;
-      if (!shownToasts.get(toastKey)) {
-        shownToasts.set(toastKey, true);
-        showProRequiredToast(navigate, featureName);
-      }
+      showProRequiredToast(navigate, featureName);
     }
-    
-    // Cleanup: reset quando o componente desmontar (opcional)
-    return () => {
-      // Não resetar automaticamente para evitar múltiplos toasts durante navegação rápida
-    };
   }, [isPro, isLoading, navigate, featureName]);
 
   if (isLoading) {

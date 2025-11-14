@@ -224,27 +224,26 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
   };
   const daysUntilExam = calculateDaysUntilExam();
 
-  // Mostrar loading enquanto carrega dados da assinatura
-  if (isLoadingSubscription) {
+  // Redirecionar usuários Free imediatamente
+  React.useEffect(() => {
+    if (!isLoadingSubscription && !isPro) {
+      toast.error('O recurso "Criar Ciclo de Estudos" está disponível apenas no plano Pro.');
+      navigate('/planos');
+    }
+  }, [isPro, isLoadingSubscription, navigate]);
+
+  // Mostrar loading enquanto carrega ou redireciona
+  if (isLoadingSubscription || !isPro) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex justify-center items-center py-8">
           <div className="text-center">
             <Loader2 className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-spin" />
-            <p className="text-muted-foreground">Carregando dados da assinatura...</p>
+            <p className="text-muted-foreground">
+              {isLoadingSubscription ? 'Carregando...' : 'Redirecionando...'}
+            </p>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // Bloquear acesso para usuários Free
-  if (!isPro) {
-    return (
-      <div className="container mx-auto p-6">
-        <ProFeatureGuard
-          featureName="Criar Ciclo de Estudos"
-        />
       </div>
     );
   }
