@@ -1303,6 +1303,18 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
+      check_free_user_edit_limits: {
+        Args: {
+          p_current_edit_count: number
+          p_ranking_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      check_free_user_ranking_limits: {
+        Args: { p_concurso_id: string; p_user_id: string }
+        Returns: Json
+      }
       check_if_can_invite_student: {
         Args: { p_coach_id: string }
         Returns: Json
