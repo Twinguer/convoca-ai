@@ -518,162 +518,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payment_preferences: {
-        Row: {
-          amount: number
-          created_at: string
-          external_reference: string
-          id: string
-          mercado_pago_payment_data: Json | null
-          payment_id: string | null
-          plan_id: string
-          preference_id: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          external_reference: string
-          id?: string
-          mercado_pago_payment_data?: Json | null
-          payment_id?: string | null
-          plan_id: string
-          preference_id: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          external_reference?: string
-          id?: string
-          mercado_pago_payment_data?: Json | null
-          payment_id?: string | null
-          plan_id?: string
-          preference_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      performance_alerts: {
-        Row: {
-          alert_type: string
-          created_at: string | null
-          current_value: number | null
-          id: string
-          is_resolved: boolean | null
-          message: string
-          metadata: Json | null
-          metric_name: string | null
-          resolved_at: string | null
-          severity: string
-          threshold_value: number | null
-        }
-        Insert: {
-          alert_type: string
-          created_at?: string | null
-          current_value?: number | null
-          id?: string
-          is_resolved?: boolean | null
-          message: string
-          metadata?: Json | null
-          metric_name?: string | null
-          resolved_at?: string | null
-          severity: string
-          threshold_value?: number | null
-        }
-        Update: {
-          alert_type?: string
-          created_at?: string | null
-          current_value?: number | null
-          id?: string
-          is_resolved?: boolean | null
-          message?: string
-          metadata?: Json | null
-          metric_name?: string | null
-          resolved_at?: string | null
-          severity?: string
-          threshold_value?: number | null
-        }
-        Relationships: []
-      }
-      performance_metrics: {
-        Row: {
-          created_at: string | null
-          id: string
-          measurement_time: string | null
-          metadata: Json | null
-          metric_name: string
-          metric_unit: string | null
-          metric_value: number
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          measurement_time?: string | null
-          metadata?: Json | null
-          metric_name: string
-          metric_unit?: string | null
-          metric_value: number
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          measurement_time?: string | null
-          metadata?: Json | null
-          metric_name?: string
-          metric_unit?: string | null
-          metric_value?: number
-        }
-        Relationships: []
-      }
-      query_performance_logs: {
-        Row: {
-          created_at: string | null
-          execution_time_ms: number
-          id: string
-          ip_address: unknown
-          metadata: Json | null
-          query_text: string
-          query_type: string | null
-          rows_returned: number | null
-          session_id: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          execution_time_ms: number
-          id?: string
-          ip_address?: unknown
-          metadata?: Json | null
-          query_text: string
-          query_type?: string | null
-          rows_returned?: number | null
-          session_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          execution_time_ms?: number
-          id?: string
-          ip_address?: unknown
-          metadata?: Json | null
-          query_text?: string
-          query_type?: string | null
-          rows_returned?: number | null
-          session_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       score_calculation_logs: {
         Row: {
           calculation_details: Json | null
@@ -701,51 +545,6 @@ export type Database = {
           new_score?: number | null
           previous_score?: number | null
           user_ranking_id?: string | null
-        }
-        Relationships: []
-      }
-      secure_tokens: {
-        Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          ip_address: unknown
-          last_used_at: string | null
-          metadata: Json | null
-          revoked_at: string | null
-          token_hash: string
-          token_type: string
-          updated_at: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at: string
-          id?: string
-          ip_address?: unknown
-          last_used_at?: string | null
-          metadata?: Json | null
-          revoked_at?: string | null
-          token_hash: string
-          token_type: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          ip_address?: unknown
-          last_used_at?: string | null
-          metadata?: Json | null
-          revoked_at?: string | null
-          token_hash?: string
-          token_type?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string
         }
         Relationships: []
       }
@@ -1487,19 +1286,6 @@ export type Database = {
         Args: { p_coach_id: string; p_invitation_id: string }
         Returns: Json
       }
-      check_advanced_performance_alerts: {
-        Args: never
-        Returns: {
-          alert_id: string
-          alert_type: string
-          created_at: string
-          current_value: number
-          message: string
-          metric_name: string
-          severity: string
-          threshold_value: number
-        }[]
-      }
       check_can_edit_answers:
         | {
             Args: { p_ranking_id: string }
@@ -1521,7 +1307,6 @@ export type Database = {
         Args: { p_coach_id: string }
         Returns: Json
       }
-      check_performance_alerts: { Args: never; Returns: undefined }
       check_rate_limit: {
         Args: {
           p_action: string
@@ -1544,8 +1329,6 @@ export type Database = {
         Args: { p_concurso_id: string; p_user_id: string }
         Returns: boolean
       }
-      cleanup_expired_tokens: { Args: never; Returns: number }
-      cleanup_old_alerts: { Args: never; Returns: number }
       cleanup_old_audit_logs:
         | { Args: { p_retention_days?: number }; Returns: number }
         | { Args: never; Returns: number }
@@ -1553,7 +1336,6 @@ export type Database = {
         | { Args: { days_to_keep?: number }; Returns: Json }
         | { Args: never; Returns: undefined }
       cleanup_old_score_logs: { Args: never; Returns: number }
-      collect_performance_metrics: { Args: never; Returns: undefined }
       count_concurso_participants: {
         Args: { concurso_id: string }
         Returns: number
