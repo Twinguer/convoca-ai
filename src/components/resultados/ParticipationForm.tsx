@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useRankingParticipationLimits } from '@/hooks/useRankingParticipationLimits';
 import { useToast } from '@/components/ui/use-toast';
-import { showProRequiredToast } from '@/utils/planRestrictions';
+import { showProRequiredToast, showRankingParticipationLimitToast } from '@/utils/planRestrictions';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@/tanstack/react-query';
 import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
@@ -38,7 +39,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     user
   } = useAuth();
   const { isPro } = useSubscription();
-  const { currentRankingCount, maxRankings, isLoading: isLoadingLimits } = usePlanLimits();
+  const { canParticipateInRanking, participatingInOthersCount, maxParticipationInOthers, isLoading: isLoadingLimits } = usePlanLimits();
+  const participationLimits = useRankingParticipationLimits(concurso.id);
   const [isLoading, setIsLoading] = useState(false);
   const [showAnswerSheet, setShowAnswerSheet] = useState(propShowAnswerSheet || true);
   const [showScoreForm, setShowScoreForm] = useState(false);
@@ -235,6 +237,20 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       navigate('/auth');
       return;
     }
+
+    // Verificar limites de participação ANTES de validar o formulário
+    if (!participationLimits.isLoading && !participationLimits.allowed) {
+      if (participationLimits.message) {
+        toast({
+          title: "Limite atingido",
+          description: participationLimits.message,
+          variant: "destructive"
+        });
+      }
+      showRankingParticipationLimitToast(navigate);
+      return;
+    }
+
     if (!validateParticipation()) {
       // Validation failed
       return;

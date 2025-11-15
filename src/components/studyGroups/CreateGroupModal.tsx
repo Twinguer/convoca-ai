@@ -21,7 +21,10 @@ import {
 import { Plus } from 'lucide-react';
 import { useCreateGroup } from '@/hooks/useStudyGroups';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useNavigate } from 'react-router-dom';
+import { showProRequiredToast } from '@/utils/planRestrictions';
+import { useToast } from '@/components/ui/use-toast';
 import type { PrivacyLevel } from '@/types/studyGroups';
 
 interface CreateGroupModalProps {
@@ -32,7 +35,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   onSuccess,
 }) => {
   const { user } = useAuth();
+  const { canCreateStudyGroup, isPro } = usePlanLimits();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const createGroup = useCreateGroup();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,6 +54,17 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
 
     if (!user) {
       navigate('/auth');
+      return;
+    }
+
+    // Verificar se o usuário pode criar grupos de estudo
+    if (!canCreateStudyGroup) {
+      toast({
+        title: "Recurso Pro",
+        description: "A criação de Grupos de Estudos está disponível apenas para usuários Pro.",
+        variant: "destructive"
+      });
+      showProRequiredToast(navigate, "Criar Grupos de Estudos");
       return;
     }
 
