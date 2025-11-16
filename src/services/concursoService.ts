@@ -115,6 +115,21 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       inscritos: rankingData.inscritos
     });
 
+    // ✅ Verificar se o parent é unificado (para exibir state_uf corretamente)
+    let parentIsUnified = false;
+    if (rankingData.parent_concurso_id) {
+      try {
+        const { data: parentData } = await supabase
+          .from('concursos')
+          .select('is_unified')
+          .eq('id', rankingData.parent_concurso_id)
+          .single();
+        parentIsUnified = parentData?.is_unified || false;
+      } catch (error) {
+        console.error('[fetchConcursoById] Erro ao verificar se parent é unificado:', error);
+      }
+    }
+
     // Converter ranking para formato de concurso
     // console.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
     // console.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
@@ -147,7 +162,8 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       parent_concurso_id: rankingData.parent_concurso_id || null,
       is_general_card: rankingData.is_general_card || false,
       cargo: rankingData.cargo || null,
-      is_unified: rankingData.is_unified || false,
+      // ✅ Se for card de cargo, usar is_unified do parent; caso contrário, usar do próprio card
+      is_unified: rankingData.parent_concurso_id ? parentIsUnified : (rankingData.is_unified || false),
       state_uf: rankingData.state_uf || null,
       // Estrutura JSONB para cotas
       has_cota: rankingData.has_cota || {

@@ -16,6 +16,18 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
     locale: ptBR
   }) : 'Data não informada';
   const getLocalidadesText = () => {
+    // ✅ Se for card de cargo de concurso unificado, mostrar state_uf
+    // Verificar se tem parent e se o parent é unificado (ou se o próprio card tem state_uf)
+    if (concurso.is_unified && concurso.state_uf) {
+      return concurso.state_uf;
+    }
+    
+    // Se tiver parent e state_uf, também considerar como unificado
+    if (concurso.parent_concurso_id && concurso.state_uf) {
+      return concurso.state_uf;
+    }
+
+    // Para concursos não unificados, usar localidades
     if (!concurso.localidades || !Array.isArray(concurso.localidades) || concurso.localidades.length === 0) {
       return 'Não informado'; // Não usar "Nacional" como padrão
     }
