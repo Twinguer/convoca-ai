@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
+import { GeneralCardForm } from '@/components/Admin/CreateRanking/GeneralCardForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
 import { getTotalQuestions } from '@/hooks/useAnswerSheet/questionCountUtils';
@@ -49,9 +50,12 @@ const CriarRanking = () => {
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [isValidatingToken, setIsValidatingToken] = useState(false);
+  const [isEditingGeneralCard, setIsEditingGeneralCard] = useState(false);
   const searchParams = new URLSearchParams(location.search);
   const editToken = searchParams.get('edit');
   const isAdmin = searchParams.get('admin') === 'true';
+  const parentId = searchParams.get('parent');
+  const stateUf = searchParams.get('state'); // Estado para concursos unificados
   const [jobTitles] = useState([{
     id: '1',
     title: 'TCU'
@@ -144,7 +148,14 @@ const CriarRanking = () => {
       has_indigenas: false,
       has_transsexuais: false,
       localidades: [],
-      watermark_image_url: ''
+      watermark_image_url: '',
+      // Campos de hierarquia
+      ranking_type: parentId ? 'position' : 'general',
+      parent_concurso_id: parentId || null,
+      is_general_card: !parentId,
+      cargo: null,
+      is_unified: false,
+      state_uf: stateUf || null
     }
   });
 
@@ -183,6 +194,53 @@ const CriarRanking = () => {
           const data = await fetchRankingData(createdConcursoId);
           if (data) {
             setCreatedConcursoId(data.id);
+            
+            // ✅ VERIFICAR SE É CARD GERAL
+            // Se tem parent_concurso_id, NÃO é card geral (é card de cargo)
+            const isGeneral = data.is_general_card === true && !data.parent_concurso_id;
+            setIsEditingGeneralCard(isGeneral);
+            
+            // Se for card geral, carregar apenas dados básicos
+            if (isGeneral) {
+              const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
+              setIsCustomTitle(isOtherTitle);
+              const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
+              setIsCustomBanca(isOtherBanca);
+              
+              // Configurar as localidades para card geral
+              if (data.localidades && Array.isArray(data.localidades)) {
+                setSelectedStates(data.localidades);
+              }
+              
+              // Carregar apenas dados básicos para card geral
+              const formData = {
+                ...data,
+                predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
+                custom_job_title: isOtherTitle ? data.titulo : '',
+                banca: isOtherBanca ? 'OUTRO' : data.banca,
+                custom_banca: isOtherBanca ? data.banca : '',
+                orgao: data.orgao,
+                created_at: data.created_at ? new Date(new Date(data.created_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
+                vagas: data.vagas || 0,
+                inscritos: data.inscritos || 0,
+                etapa_atual: data.etapa_atual || 'Prova Objetiva',
+                watermark_image_url: data.watermark_image_url || '',
+                link: data.link || '',
+                ranking_type: 'general',
+                is_general_card: true,
+                parent_concurso_id: null,
+                cargo: null,
+                is_unified: data.is_unified || false,
+                state_uf: null,
+                status: data.status || 'Em andamento',
+                localidades: data.localidades || []
+              };
+              
+              form.reset(formData);
+              return; // Sair cedo, não carregar dados de disciplinas/cotas
+            }
+            
+            // Se for card de cargo, carregar todos os dados normalmente
             const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
             setIsCustomTitle(isOtherTitle);
             const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
@@ -234,14 +292,44 @@ const CriarRanking = () => {
               // Debug logs removed for security
             }
             
+            // Verificar se é card de cargo (tem parent_concurso_id)
+            const isPositionCard = !!data.parent_concurso_id;
+            
+            // Se for cargo, carregar dados do parent para exibição
+            if (isPositionCard && data.parent_concurso_id) {
+              try {
+                const { data: parentData } = await supabase
+                  .from('concursos')
+                  .select('id, titulo, orgao, banca, is_unified')
+                  .eq('id', data.parent_concurso_id)
+                  .single();
+                
+                // Os dados do parent serão carregados automaticamente pelo BasicInfoSection
+                // através do useEffect que monitora parent_concurso_id
+              } catch (error) {
+                console.error('Erro ao carregar parent:', error);
+              }
+            }
+            
             // Criar objeto de dados para o formulário
             const formData = {
               ...data,
               localidades: data.localidades || [],
-              predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
-              custom_job_title: isOtherTitle ? data.titulo : '',
-              banca: isOtherBanca ? 'OUTRO' : data.banca,
-              custom_banca: isOtherBanca ? data.banca : '',
+              // ✅ GARANTIR que campos de hierarquia estejam corretos para card de cargo
+              ranking_type: isPositionCard ? 'position' : 'general',
+              is_general_card: isPositionCard ? false : (data.is_general_card || false),
+              parent_concurso_id: isPositionCard ? data.parent_concurso_id : null,
+              cargo: isPositionCard ? data.cargo : null,
+              is_unified: isPositionCard ? false : (data.is_unified || false),
+              state_uf: isPositionCard ? data.state_uf : null,
+              // Para card de cargo, não preencher esses campos (vêm do parent)
+              // Para card geral, preencher normalmente
+              predefined_job_title: isPositionCard ? '' : (isOtherTitle ? 'OUTRO' : data.titulo),
+              custom_job_title: isPositionCard ? '' : (isOtherTitle ? data.titulo : ''),
+              banca: isPositionCard ? '' : (isOtherBanca ? 'OUTRO' : data.banca),
+              custom_banca: isPositionCard ? '' : (isOtherBanca ? data.banca : ''),
+              // Para card de cargo, o campo 'orgao' não deve ser preenchido (vem do parent)
+              orgao: isPositionCard ? '' : data.orgao,
               created_at: data.created_at ? new Date(new Date(data.created_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
               // Campos básicos do concurso
               vagas: data.vagas || 0,
@@ -296,7 +384,7 @@ const CriarRanking = () => {
       }
     };
     loadExistingData();
-  }, [createdConcursoId, form, jobTitles]);
+  }, [createdConcursoId, form, jobTitles, editToken]);
   useEffect(() => {
     // Se não for admin, verifica login
     if (!isAdmin && !user) {
@@ -322,9 +410,89 @@ const CriarRanking = () => {
   const handleOrgaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('orgao', e.target.value.toUpperCase());
   };
+  // Determinar se é card geral ou cargo
+  const isGeneralCard = (!parentId && !editToken) || isEditingGeneralCard;
+  const isPositionCard = !!parentId;
+
   const { 
     saveRanking
   } = useSaveRanking();
+  
+  // Handler específico para salvar card geral (simplificado)
+  const handleSaveGeneralCard = async () => {
+    const formValues = form.getValues();
+    const rankingType = formValues.ranking_type || 'general';
+    
+    if (rankingType !== 'general') {
+      toast.error('Este formulário é apenas para criar card geral');
+      return;
+    }
+
+    // Validações básicas
+    if (!formValues.banca) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Sincronizar os estados selecionados com o formulário antes de salvar
+    form.setValue('localidades', selectedStates, {
+      shouldDirty: true
+    });
+    const finalLocalidades = selectedStates.length > 0 ? selectedStates : (formValues.localidades || []);
+
+    setIsSubmitting(true);
+    try {
+      const saveResult = await saveRanking({
+        formValues: {
+          ...formValues,
+          ranking_type: 'general',
+          is_general_card: true,
+          parent_concurso_id: null,
+          cargo: null,
+          // Campos mínimos necessários para salvar
+          status: formValues.status || 'Em andamento',
+          etapa_atual: formValues.etapa_atual || 'Prova Objetiva',
+          exam_type: 'Alternativas', // Valor padrão
+          alternatives_count: 5, // Valor padrão
+          // Estrutura vazia (será preenchida ao criar cargos)
+          disciplines: [],
+          has_cota: {},
+          subjects: {},
+          localidades: finalLocalidades, // ✅ Usar selectedStates ou formValues.localidades
+          has_ampla_concorrencia: true,
+          has_ppp: false,
+          has_pcd: false,
+          has_hipossuficientes: false,
+          has_indigenas: false,
+          has_transsexuais: false
+        },
+        userId: user?.id,
+        editId: editToken ? createdConcursoId : null, // ✅ Usar createdConcursoId se estiver editando
+        jobTitles
+      });
+
+      if (saveResult?.duplicated) {
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (saveResult?.id) {
+        toast.success(editToken ? 'Card geral atualizado com sucesso!' : 'Card geral criado com sucesso!');
+        queryClient.invalidateQueries({ queryKey: ['rankings'] });
+        if (!editToken) {
+          // Redirecionar para página de cargos apenas se for criação
+          navigate(`/pre-classificacao/${saveResult.id}/cargos`);
+        }
+        return;
+      }
+    } catch (error) {
+      console.error("Erro ao salvar card geral:", error);
+      toast.error("Erro ao salvar card geral: " + (error as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSaveRanking = async (): Promise<string | null> => {
     // Debug logs removed for security
     const formValues = form.getValues();
@@ -527,11 +695,48 @@ const CriarRanking = () => {
     );
   }
 
-  return <div className="page-content-container">
+  // Se for card geral (criação ou edição), mostrar formulário simplificado
+  if (isGeneralCard && (!editToken || isEditingGeneralCard)) {
+    return (
+      <div className="page-content-container">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">
+              {editToken ? 'Editar Card Geral' : 'Criar Card Geral'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={e => e.preventDefault()}>
+                <GeneralCardForm
+                  form={form}
+                  jobTitles={jobTitles}
+                  isCustomTitle={isCustomTitle}
+                  isCustomBanca={isCustomBanca}
+                  handleJobTitleChange={handleJobTitleChange}
+                  handleCustomTitleChange={handleCustomTitleChange}
+                  handleBancaChange={handleBancaChange}
+                  handleOrgaoChange={handleOrgaoChange}
+                  onSave={handleSaveGeneralCard}
+                  isSubmitting={isSubmitting}
+                  selectedStates={selectedStates}
+                  setSelectedStates={setSelectedStates}
+                />
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Se for cargo ou edição, mostrar formulário completo
+  return (
+    <div className="page-content-container">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
-            {editToken ? 'Editar Ranking' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+            {editToken ? 'Editar Ranking' : isPositionCard ? 'Criar Ranking do Cargo' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -562,6 +767,7 @@ const CriarRanking = () => {
           </Form>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
 export default CriarRanking;

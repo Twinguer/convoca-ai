@@ -10,6 +10,7 @@ import { TimerProvider } from "./contexts/TimerContext";
 import { useTimer } from "./contexts/TimerContext";
 import Index from "./pages/Index";
 import PreClassificacao from "./pages/PreClassificacao";
+import CargosPage from "./pages/CargosPage";
 import Resultado from "./pages/Resultado";
 import ConcursoDetails from "./pages/ConcursoDetails";
 import ResultadosPage from "./pages/ResultadosPage";
@@ -267,6 +268,10 @@ const AppContent = () => {
                           <Menu />
                           <RankingsPage />
                         </>} />
+                     <Route path="/pre-classificacao/:id/cargos" element={<>
+                          <Menu />
+                          <CargosPage />
+                        </>} />
                      <Route path="/planos" element={<>
                           <Menu />
                           <Planos />
@@ -416,4 +421,5 @@ const App = () => {
       </QueryClientProvider>
     </React.StrictMode>;
 };
+
 export default App;

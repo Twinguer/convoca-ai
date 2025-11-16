@@ -18,6 +18,8 @@ export interface RankingItemProps {
   isAdminCreated?: boolean;
   status?: string;
   localidade?: string;
+  isGeneralCard?: boolean;
+  watermarkImageUrl?: string | null;
 }
 
 export interface RankingListProps {
@@ -37,6 +39,8 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
   isAdminCreated,
   status,
   localidade,
+  isGeneralCard,
+  watermarkImageUrl,
   onRankingClick
 }) => {
   const navigate = useNavigate();
@@ -50,13 +54,29 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onRankingClick?.(e, id);
-    navigate(`/ranking/${id}`);
+    // Se for card geral, navegar para página de cargos; senão, para ranking normal
+    if (isGeneralCard) {
+      navigate(`/pre-classificacao/${id}/cargos`);
+    } else {
+      navigate(`/ranking/${id}`);
+    }
   };
 
   return (
     <div className="block h-full cursor-pointer" onClick={handleClick}>
-      <Card className="hover:shadow-lg transition-all duration-300 bg-card hover:translate-y-[-4px] h-full cursor-pointer">
-        <CardContent className="p-6 h-full flex flex-col">
+      <Card className="hover:shadow-lg transition-all duration-300 bg-card hover:translate-y-[-4px] h-full cursor-pointer relative flex flex-col">
+        {watermarkImageUrl && (
+          <div 
+            className="absolute inset-0 pointer-events-none opacity-10 z-0"
+            style={{
+              backgroundImage: `url(${watermarkImageUrl})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              backgroundSize: 'cover'
+            }}
+          />
+        )}
+        <CardContent className="p-6 h-full flex flex-col relative z-10">
           <div className="space-y-3 flex-1 flex flex-col">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-1">
@@ -82,9 +102,11 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
               <h3 className="text-base font-bold leading-tight text-foreground mb-1 line-clamp-2">
                 {concursoTitle}
               </h3>
-              <p className="text-sm text-primary font-semibold mb-2 break-words line-clamp-2">
-                {cargoTitle}
-              </p>
+              {!isGeneralCard && (
+                <p className="text-sm text-primary font-semibold mb-2 break-words line-clamp-2">
+                  {cargoTitle}
+                </p>
+              )}
               
               {localidade && (
                 <div className="flex items-center text-xs text-muted-foreground mb-2">
@@ -129,7 +151,7 @@ export const RankingList: React.FC<RankingListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ gridAutoRows: '1fr' }}>
         {[1, 2, 3, 4, 5, 6].map(i => (
           <Card key={i} className="animate-pulse h-full">
             <CardContent className="p-6 h-full flex flex-col">
@@ -157,7 +179,7 @@ export const RankingList: React.FC<RankingListProps> = ({
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ gridAutoRows: '1fr' }}>
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} onRankingClick={onRankingClick} />)}
     </div>
   );

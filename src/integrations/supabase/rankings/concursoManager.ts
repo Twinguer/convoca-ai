@@ -8,7 +8,7 @@ export const createRanking = async (rankingData: any) => {
     // console.log('Creating new ranking with data:', rankingData);
     
     // First, check if all required fields are present
-    const requiredFields = ['titulo', 'orgao', 'banca'];
+    const requiredFields = ['titulo', 'banca'];
     for (const field of requiredFields) {
       if (!rankingData[field]) {
         throw new Error(`Campo obrigatório faltando: ${field}`);
@@ -209,10 +209,10 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
 // Function to delete a ranking
 export const deleteRanking = async (rankingId: string, userId: string, isAdmin: boolean = false) => {
   try {
-    // Check if the ranking exists
+    // Check if the ranking exists and get its type
     const { data: rankingCheck, error: checkError } = await supabase
       .from('concursos')
-      .select('created_by_user_id, is_admin_created')
+      .select('created_by_user_id, is_admin_created, is_general_card')
       .eq('id', rankingId)
       .single();
       
@@ -228,7 +228,24 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       throw new Error('Você não tem permissão para excluir este ranking');
     }
     
-    // 1. First, get all user_rankings for this concurso
+    // ✅ Se for card geral, buscar todos os cards filhos primeiro
+    let allConcursoIds = [rankingId]; // Incluir o card geral também
+    
+    if (rankingCheck.is_general_card === true) {
+      const { data: childCards, error: childError } = await supabase
+        .from('concursos')
+        .select('id')
+        .eq('parent_concurso_id', rankingId);
+      
+      if (childError) {
+        console.error('Error fetching child cards:', childError);
+      } else if (childCards && childCards.length > 0) {
+        // Adicionar IDs dos cards filhos à lista
+        allConcursoIds = [rankingId, ...childCards.map(c => c.id)];
+      }
+    }
+    
+    // 1. First, get all user_rankings that participate in any of these concursos
     const { data: userRankings, error: userRankingsError } = await supabase
       .from('user_rankings')
       .select('user_id, consolidated_data')
@@ -238,10 +255,14 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       console.error('Error fetching user_rankings ids:', userRankingsError);
     }
     
-    // Filter user_rankings that have this concurso in their consolidated_data
-    const relevantUserRankings = userRankings?.filter(ur => 
-      ur.consolidated_data?.rankings?.[rankingId]
-    ) || [];
+    // Filter user_rankings that have any of these concursos in their consolidated_data
+    const relevantUserRankings = userRankings?.filter(ur => {
+      if (!ur.consolidated_data?.rankings) return false;
+      // Verificar se participa de qualquer um dos concursos (geral ou filhos)
+      return allConcursoIds.some(concursoId => 
+        ur.consolidated_data?.rankings?.[concursoId]
+      );
+    }) || [];
     
     const userIds = relevantUserRankings.map(ur => ur.user_id);
     
@@ -263,7 +284,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
     // A remoção dos dados consolidados é feita automaticamente via CASCADE
     // Debug logs removed for security
     
-    // 4. Remove concurso from consolidated_data for each user
+    // 4. Remove ALL concursos (geral + filhos) from consolidated_data for each user
     for (const userId of userIds) {
       const { data: userRankingData, error: fetchError } = await supabase
         .from('user_rankings')
@@ -273,9 +294,20 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
         
       if (!fetchError && userRankingData?.consolidated_data) {
         const updatedData = { ...userRankingData.consolidated_data };
-        if (updatedData.rankings && updatedData.rankings[rankingId]) {
-          delete updatedData.rankings[rankingId];
-          
+        let hasChanges = false;
+        
+        // Remover todos os concursos (geral + filhos) do consolidated_data
+        if (updatedData.rankings) {
+          for (const concursoId of allConcursoIds) {
+            if (updatedData.rankings[concursoId]) {
+              delete updatedData.rankings[concursoId];
+              hasChanges = true;
+            }
+          }
+        }
+        
+        // Atualizar apenas se houver mudanças
+        if (hasChanges) {
           await supabase
             .from('user_rankings')
             .update({ consolidated_data: updatedData })
@@ -284,6 +316,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       }
     }
     
+    // 5. Deletar o card geral (o CASCADE vai deletar os filhos automaticamente)
     const { error } = await supabase.from('concursos').delete().eq('id', rankingId);
       
     if (error) {

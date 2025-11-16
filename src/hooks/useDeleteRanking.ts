@@ -11,6 +11,34 @@ export const useDeleteRanking = () => {
       // console.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
+        // ✅ Verificar se é card geral e buscar cards filhos
+        const { data: rankingCheck, error: checkError } = await supabase
+          .from('concursos')
+          .select('is_general_card')
+          .eq('id', concursoId)
+          .maybeSingle();
+        
+        if (checkError) {
+          console.error('Erro ao verificar tipo do ranking:', checkError);
+        }
+        
+        // ✅ Se for card geral, buscar todos os cards filhos
+        let allConcursoIds = [concursoId]; // Incluir o card geral também
+        
+        if (rankingCheck?.is_general_card === true) {
+          const { data: childCards, error: childError } = await supabase
+            .from('concursos')
+            .select('id')
+            .eq('parent_concurso_id', concursoId);
+          
+          if (childError) {
+            console.error('Erro ao buscar cards filhos:', childError);
+          } else if (childCards && childCards.length > 0) {
+            // Adicionar IDs dos cards filhos à lista
+            allConcursoIds = [concursoId, ...childCards.map(c => c.id)];
+          }
+        }
+        
         // 1. Primeiro buscar os IDs dos user_rankings para deletar dependências
         // console.log('Buscando user_rankings para deletar dependências...');
         const { data: userRankings, error: fetchError } = await supabase
@@ -23,10 +51,14 @@ export const useDeleteRanking = () => {
           throw fetchError;
         }
         
-        // Filter user_rankings that have this concurso in their consolidated_data
-        const relevantUserRankings = userRankings?.filter(ur => 
-          ur.consolidated_data?.rankings?.[concursoId]
-        ) || [];
+        // ✅ Filter user_rankings that have any of these concursos in their consolidated_data
+        const relevantUserRankings = userRankings?.filter(ur => {
+          if (!ur.consolidated_data?.rankings) return false;
+          // Verificar se participa de qualquer um dos concursos (geral ou filhos)
+          return allConcursoIds.some(id => 
+            ur.consolidated_data?.rankings?.[id]
+          );
+        }) || [];
 
         if (relevantUserRankings && relevantUserRankings.length > 0) {
           const userIds = relevantUserRankings.map(ur => ur.user_id);
@@ -47,7 +79,7 @@ export const useDeleteRanking = () => {
           // A remoção dos dados consolidados é feita automaticamente via CASCADE
           // Debug logs removed for security
           
-          // 4. Remove concurso from consolidated_data for each user
+          // 4. ✅ Remove ALL concursos (geral + filhos) from consolidated_data for each user
           for (const userId of userIds) {
             const { data: userRankingData, error: fetchUserError } = await supabase
               .from('user_rankings')
@@ -57,9 +89,20 @@ export const useDeleteRanking = () => {
               
             if (!fetchUserError && userRankingData?.consolidated_data) {
               const updatedData = { ...userRankingData.consolidated_data };
-              if (updatedData.rankings && updatedData.rankings[concursoId]) {
-                delete updatedData.rankings[concursoId];
-                
+              let hasChanges = false;
+              
+              // Remover todos os concursos (geral + filhos) do consolidated_data
+              if (updatedData.rankings) {
+                for (const id of allConcursoIds) {
+                  if (updatedData.rankings[id]) {
+                    delete updatedData.rankings[id];
+                    hasChanges = true;
+                  }
+                }
+              }
+              
+              // Atualizar apenas se houver mudanças
+              if (hasChanges) {
                 await supabase
                   .from('user_rankings')
                   .update({ consolidated_data: updatedData })
@@ -75,7 +118,7 @@ export const useDeleteRanking = () => {
         // 6. Cadernos são gerenciados via JSONB na tabela concursos
         console.log('Cadernos são gerenciados via JSONB na tabela concursos - não precisa deletar');
 
-        // 7. Finalmente deletar o concurso
+        // 7. Finalmente deletar o concurso (o CASCADE vai deletar os filhos automaticamente se for card geral)
         console.log('Deletando concurso...');
         const { error: concursoError } = await supabase
           .from('concursos')

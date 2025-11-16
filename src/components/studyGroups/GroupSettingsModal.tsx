@@ -291,8 +291,11 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                maxLength={100}
+                maxLength={20}
               />
+              <p className="text-xs text-muted-foreground">
+                {name.length}/20 caracteres
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -513,4 +516,3 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
     </Dialog>
   );
 };
-

@@ -40,6 +40,24 @@ const RankingsPage = () => {
   const handleRankingClick = async (e: React.MouseEvent, concursoId: string) => {
     e.preventDefault();
     
+    // Verificar se é card geral primeiro
+    try {
+      const { data: concursoData } = await supabase
+        .from('concursos')
+        .select('is_general_card')
+        .eq('id', concursoId)
+        .maybeSingle();
+
+      // Se for card geral, navegar para página de cargos
+      if (concursoData?.is_general_card === true) {
+        navigate(`/pre-classificacao/${concursoId}/cargos`);
+        return;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar se é card geral:', error);
+      // Continuar com o fluxo normal em caso de erro
+    }
+    
     if (!user) {
       navigate('/auth', { state: { from: `/concurso/${concursoId}/resultados` } });
       return;
@@ -65,6 +83,15 @@ const RankingsPage = () => {
         return;
       }
 
+      // Verificar se criou o ranking (Free users podem ver todos os rankings que criaram)
+      const { data: concursoData } = await supabase
+        .from('concursos')
+        .select('created_by_user_id')
+        .eq('id', concursoId)
+        .maybeSingle();
+
+      const isCreator = concursoData?.created_by_user_id === user.id;
+
       // Verificar se participa deste ranking específico
       let isParticipating = false;
       if (userRankingData?.consolidated_data?.rankings) {
@@ -75,19 +102,29 @@ const RankingsPage = () => {
         });
       }
 
-      if (isParticipating) {
-        // Participa, pode ver o ranking
+      if (isCreator || isParticipating) {
+        // Criou ou participa, pode ver o ranking
         navigate(`/ranking/${concursoId}`);
       } else {
-        // Não participa, verificar se tem algum ranking
-        const hasAnyRanking = userRankingData?.consolidated_data?.rankings && 
-          Object.keys(userRankingData.consolidated_data.rankings).length > 0;
+        // Não criou e não participa - Free users não podem ver rankings que não criaram e não participam
+        // Verificar se pode participar (até 2 rankings que não criou)
+        const { data: limitsCheck, error: limitsError } = await supabase.rpc('check_free_user_ranking_limits', {
+          p_user_id: user.id,
+          p_concurso_id: concursoId
+        });
 
-        if (!hasAnyRanking) {
-          // Não tem nenhum ranking, redireciona para participar
+        if (limitsError) {
+          console.error('[RankingsPage] Erro ao verificar limites:', limitsError);
+          // Em caso de erro, redireciona para participar
+          navigate(`/ranking/${concursoId}/participate`);
+          return;
+        }
+
+        // Se pode participar (dentro do limite de 2), redireciona para página de participação
+        if (limitsCheck && limitsCheck.allowed) {
           navigate(`/ranking/${concursoId}/participate`);
         } else {
-          // Já tem 1 ranking, mostrar aviso e redirecionar para planos
+          // Limite atingido, mostrar aviso e redirecionar para planos
           showProRequiredToast(navigate, 'Visualizar Rankings que Você Não Participa');
         }
       }
@@ -102,6 +139,7 @@ const RankingsPage = () => {
   }, []);
   const loadConcursos = async () => {
     try {
+      // Tentar buscar apenas cards gerais (com fallback para rankings antigos)
       const {
         data,
         error
@@ -114,33 +152,143 @@ const RankingsPage = () => {
           inscritos,
           created_at,
           status,
-          watermark_image_url
-        `).order('created_at', {
-        ascending: false
-      });
+          watermark_image_url,
+          is_general_card,
+          parent_concurso_id
+        `)
+        .eq('is_general_card', true)
+        .order('created_at', {
+          ascending: false
+        });
+      
       if (error) {
+        // Se a coluna não existir, buscar todos (fallback para rankings antigos)
+        if (error.message?.includes('is_general_card') || 
+            error.message?.includes('does not exist')) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('concursos')
+            .select(`
+              id,
+              titulo,
+              orgao,
+              banca,
+              vagas,
+              inscritos,
+              created_at,
+              status,
+              watermark_image_url
+            `)
+            .order('created_at', { ascending: false });
+          
+          if (fallbackError) {
+            console.error('Error loading concursos:', fallbackError);
+            return;
+          }
+          
+          // Processar dados do fallback
+          const concursosWithParticipants = await Promise.all((fallbackData || []).map(async concurso => {
+            // ✅ Para cards gerais, usar função RPC que soma participantes dos filhos
+            let participantCount = 0;
+            
+            // Verificar se é card geral (se a coluna existir)
+            if (concurso.is_general_card === true) {
+              const { data: generalCount, error: generalError } = await supabase
+                .rpc('get_general_card_participant_count', { p_general_card_id: concurso.id });
+              
+              if (generalError) {
+                console.error('Error fetching general card participant count:', generalError);
+                // Fallback: tentar calcular manualmente somando filhos
+                const { data: childCards } = await supabase
+                  .from('concursos')
+                  .select('id')
+                  .eq('parent_concurso_id', concurso.id);
+                
+                if (childCards && childCards.length > 0) {
+                  const childCounts = await Promise.all(
+                    childCards.map(async (child) => {
+                      const { data: count } = await supabase
+                        .rpc('count_concurso_participants', { concurso_id: child.id });
+                      return count || 0;
+                    })
+                  );
+                  participantCount = childCounts.reduce((sum, count) => sum + count, 0);
+                }
+              } else {
+                participantCount = generalCount || 0;
+              }
+            } else {
+              // Para cards normais, contar diretamente
+              const { data: countData, error: countError } = await supabase
+                .rpc('count_concurso_participants', { concurso_id: concurso.id });
+              
+              if (countError) {
+                console.error('Error fetching participant count:', countError);
+                participantCount = 0;
+              } else {
+                participantCount = countData || 0;
+              }
+            }
+            
+            return {
+              ...concurso,
+              participant_count: participantCount
+            };
+          }));
+          
+          setConcursos(concursosWithParticipants);
+          return;
+        }
+        
         console.error('Error loading concursos:', error);
         return;
       }
 
       // Load participant count for each concurso
       const concursosWithParticipants = await Promise.all((data || []).map(async concurso => {
-        // Count users who have this concurso in their consolidated_data
-        const { data: userRankings } = await supabase
-          .from('user_rankings')
-          .select('consolidated_data');
+        // Filtrar apenas cards gerais (se a coluna existir)
+        if (concurso.is_general_card === false || (concurso.parent_concurso_id && !concurso.is_general_card)) {
+          return null;
+        }
         
         let participantCount = 0;
-        if (userRankings) {
-          userRankings.forEach(userRanking => {
-            if (userRanking.consolidated_data?.rankings) {
-              Object.values(userRanking.consolidated_data.rankings).forEach((ranking: any) => {
-                if (ranking.concurso_id === concurso.id) {
-                  participantCount++;
-                }
-              });
+        
+        // ✅ Para cards gerais, usar função RPC que soma participantes dos filhos
+        if (concurso.is_general_card === true) {
+          const { data: generalCount, error: generalError } = await supabase
+            .rpc('get_general_card_participant_count', { p_general_card_id: concurso.id });
+          
+          if (generalError) {
+            console.error('Error fetching general card participant count:', generalError);
+            // Fallback: tentar calcular manualmente somando filhos
+            const { data: childCards } = await supabase
+              .from('concursos')
+              .select('id')
+              .eq('parent_concurso_id', concurso.id);
+            
+            if (childCards && childCards.length > 0) {
+              const childCounts = await Promise.all(
+                childCards.map(async (child) => {
+                  const { data: count } = await supabase
+                    .rpc('count_concurso_participants', { concurso_id: child.id });
+                  return count || 0;
+                })
+              );
+              participantCount = childCounts.reduce((sum, count) => sum + count, 0);
             }
-          });
+          } else {
+            participantCount = generalCount || 0;
+          }
+        } else {
+          // Para cards normais (não gerais), contar diretamente
+          const { data: countData, error: countError } = await supabase
+            .rpc('count_concurso_participants', { concurso_id: concurso.id });
+          
+          if (countError) {
+            console.error('Error fetching participant count:', countError);
+            participantCount = 0;
+          } else {
+            participantCount = countData || 0;
+          }
         }
         
         return {
@@ -148,7 +296,10 @@ const RankingsPage = () => {
           participant_count: participantCount
         };
       }));
-      setConcursos(concursosWithParticipants);
+      
+      // Filtrar nulls (cards de cargo que foram removidos)
+      const filteredConcursos = concursosWithParticipants.filter(c => c !== null);
+      setConcursos(filteredConcursos);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -239,9 +390,9 @@ const RankingsPage = () => {
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5 relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2" style={{ gridAutoRows: '1fr' }}>
+            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group h-full" onClick={(e) => handleRankingClick(e, concurso.id)}>
+                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5 relative h-full flex flex-col">
                   {/* Marca d'água */}
                   {concurso.watermark_image_url && (
                     <div 
@@ -255,7 +406,7 @@ const RankingsPage = () => {
                     />
                   )}
                   
-                  <CardHeader className="relative z-10">
+                  <CardHeader className="relative z-10 flex-shrink-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-lg line-clamp-2 mb-2">
@@ -267,7 +418,7 @@ const RankingsPage = () => {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="relative z-10">
+                  <CardContent className="relative z-10 flex-1 flex flex-col justify-end">
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Vagas:</span>
@@ -308,10 +459,10 @@ const RankingsPage = () => {
         </TabsContent>
 
         <TabsContent value="popular" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {topConcursos.map((concurso, index) => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5">
-                  <CardHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2" style={{ gridAutoRows: '1fr' }}>
+            {topConcursos.map((concurso, index) => <div key={concurso.id} className="block group cursor-pointer h-full" onClick={(e) => handleRankingClick(e, concurso.id)}>
+                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5 h-full flex flex-col">
+                  <CardHeader className="flex-shrink-0">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         {index === 0 && <Medal className="h-5 w-5 text-yellow-500" />}
@@ -326,7 +477,7 @@ const RankingsPage = () => {
                       <Badge variant="secondary">{concurso.orgao}</Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-1 flex flex-col justify-end">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Trophy className="h-4 w-4" />
@@ -343,10 +494,10 @@ const RankingsPage = () => {
         </TabsContent>
 
         <TabsContent value="recent" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {concursos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                  <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5">
-                    <CardHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2" style={{ gridAutoRows: '1fr' }}>
+            {concursos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map(concurso => <div key={concurso.id} className="block group cursor-pointer h-full" onClick={(e) => handleRankingClick(e, concurso.id)}>
+                  <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5 h-full flex flex-col">
+                    <CardHeader className="flex-shrink-0">
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-lg line-clamp-2 flex-1">{concurso.titulo}</CardTitle>
                         <Badge variant="secondary" className="ml-2">
@@ -358,7 +509,7 @@ const RankingsPage = () => {
                         <Badge variant="secondary">{concurso.orgao}</Badge>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1 flex flex-col justify-end">
                       <p className="text-sm text-muted-foreground mb-4">
                         Publicado em {concurso.created_at ? new Date(concurso.created_at).toLocaleDateString('pt-BR') : 'Data não informada'}
                       </p>

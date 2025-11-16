@@ -100,8 +100,18 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     }
   };
 
+  // Handler para quando o modal tenta abrir
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen && !canCreateStudyGroup) {
+      // Se tentar abrir e não tiver permissão, redirecionar para planos
+      showProRequiredToast(navigate, "Criar Grupos de Estudos");
+      return;
+    }
+    setOpen(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -164,7 +174,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 id="max_members"
                 type="number"
                 min="5"
-                max="200"
+                max="1000"
                 value={formData.max_members}
                 onChange={(e) =>
                   setFormData({ ...formData, max_members: parseInt(e.target.value) || 50 })
@@ -200,4 +210,3 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     </Dialog>
   );
 };
-

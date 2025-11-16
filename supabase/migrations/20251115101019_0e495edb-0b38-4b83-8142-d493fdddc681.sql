@@ -15,12 +15,17 @@ DECLARE
   v_created_rankings_count INT;
   v_result JSON;
 BEGIN
-  -- Verificar se é usuário Pro
+  -- Verificar se é usuário Pro (incluindo coaches ativos)
   SELECT EXISTS (
     SELECT 1 FROM user_subscriptions
     WHERE user_id = p_user_id
       AND is_active = true
-      AND plan IN ('pro', 'premium')
+      AND plan = 'pro'
+      AND (expires_at IS NULL OR expires_at > NOW())
+  ) OR EXISTS (
+    SELECT 1 FROM coach_subscriptions
+    WHERE coach_id = p_user_id
+      AND status = 'active'
       AND (expires_at IS NULL OR expires_at > NOW())
   ) INTO v_is_pro;
 
@@ -105,12 +110,17 @@ DECLARE
   v_is_pro BOOLEAN;
   v_result JSON;
 BEGIN
-  -- Verificar se é usuário Pro
+  -- Verificar se é usuário Pro (incluindo coaches ativos)
   SELECT EXISTS (
     SELECT 1 FROM user_subscriptions
     WHERE user_id = p_user_id
       AND is_active = true
-      AND plan IN ('pro', 'premium')
+      AND plan = 'pro'
+      AND (expires_at IS NULL OR expires_at > NOW())
+  ) OR EXISTS (
+    SELECT 1 FROM coach_subscriptions
+    WHERE coach_id = p_user_id
+      AND status = 'active'
       AND (expires_at IS NULL OR expires_at > NOW())
   ) INTO v_is_pro;
 
@@ -164,4 +174,3 @@ WITH CHECK (
     -- Permitir se for Admin
     has_role(auth.uid(), 'admin'::app_role)
   )
-);

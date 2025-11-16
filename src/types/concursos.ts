@@ -114,6 +114,12 @@ export interface Concurso {
   predefined_job_title?: string | null;
   custom_job_title?: string | null;
 
+  // Hierarquia de rankings (card geral vs card de cargo)
+  parent_concurso_id?: string | null;
+  is_general_card?: boolean;
+  cargo?: string | null;
+  is_unified?: boolean;
+  state_uf?: string | null;
 
   // Flag de administrador
   is_admin_update?: boolean;

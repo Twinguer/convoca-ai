@@ -21,6 +21,7 @@ import { getNullifiedQuestionsFromOfficialAnswers } from '@/hooks/useAnswerSheet
 import { toast } from 'sonner';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useEditLimits } from '@/hooks/useEditLimits';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -347,10 +348,21 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   // Get subscription info for edit limits
   const { isPro, maxEditCount } = useSubscription();
   
-  // Define editsLeft and canEdit variables (com limite dinâmico baseado no plano)
+  // Get edit count from user ranking data
   const editCount = userRankingData?.edit_count || 0;
-  const editsLeft = isPro ? Infinity : Math.max(0, 5 - editCount);
-  const canEdit = isPro || editCount < 5;
+  
+  // Use RPC function to validate edit limits (backend validation)
+  const editLimits = useEditLimits(rankingId, editCount);
+  
+  // Define editsLeft and canEdit variables (com limite dinâmico baseado no plano)
+  // Use backend validation if available, otherwise fallback to frontend validation
+  const canEdit = editLimits.isLoading 
+    ? (isPro || editCount < 3) // Fallback durante carregamento
+    : (editLimits.allowed ?? (isPro || editCount < 3));
+  
+  const editsLeft = editLimits.isLoading
+    ? (isPro ? Infinity : Math.max(0, 3 - editCount)) // Fallback durante carregamento
+    : (editLimits.remaining_edits ?? (isPro ? Infinity : Math.max(0, 3 - editCount)));
 
   // Fetch nullified questions for the selected booklet
   const {
@@ -735,6 +747,20 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
             <p>{error}</p>
+          </div>
+        )}
+
+        {editLimits.error && (
+          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <p>Erro ao verificar limites de edição. Tente novamente.</p>
+          </div>
+        )}
+
+        {!editLimits.isLoading && !editLimits.allowed && editLimits.message && (
+          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <p>{editLimits.message}</p>
           </div>
         )}
 

@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { showProRequiredToast, showRankingParticipationLimitToast } from '@/utils/planRestrictions';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@/tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
@@ -310,9 +310,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
       // Check if user already has this concurso in their consolidated_data
       let isAlreadyParticipating = false;
-      let existingRankingsCount = 0;
       if (userRankingData?.consolidated_data?.rankings) {
-        existingRankingsCount = Object.keys(userRankingData.consolidated_data.rankings).length;
         Object.values(userRankingData.consolidated_data.rankings).forEach((rankingData: any) => {
           if (rankingData.concurso_id === concurso.id) {
             isAlreadyParticipating = true;
@@ -330,11 +328,38 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         return;
       }
 
-      // Verificar limite de rankings para usuários Free
-      if (!isPro && existingRankingsCount >= 1) {
-        setIsLoading(false);
-        showProRequiredToast(navigate, 'Participar de Múltiplos Rankings');
-        return;
+      // Verificar limite de rankings para usuários Free usando a função RPC do backend
+      // Isso garante validação consistente e conta apenas rankings que não foram criados pelo usuário
+      if (!isPro) {
+        const { data: limitsCheck, error: limitsError } = await supabase.rpc('check_free_user_ranking_limits', {
+          p_user_id: user.id,
+          p_concurso_id: concurso.id
+        });
+
+        if (limitsError) {
+          console.error('[ParticipationForm] Erro ao verificar limites:', limitsError);
+          toast({
+            title: "Erro",
+            description: "Erro ao verificar limites de participação. Tente novamente.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (limitsCheck && !limitsCheck.allowed) {
+          setIsLoading(false);
+          if (limitsCheck.message) {
+            toast({
+              title: "Limite atingido",
+              description: limitsCheck.message,
+              variant: "destructive"
+            });
+          } else {
+            showRankingParticipationLimitToast(navigate);
+          }
+          return;
+        }
       }
 
       // Inicializar object_scores baseado nas seções habilitadas do concurso
@@ -630,7 +655,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   }
 
   // Default view for non-participating users
-  return <div className="p-6 rounded-lg shadow-sm border border-border bg-muted/30">
+  return (
+    <div className="p-6 rounded-lg shadow-sm border border-border bg-muted/30">
       <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
       
       
@@ -654,5 +680,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             Processando...
           </> : 'Participar do Ranking'}
       </Button>
-    </div>;
+    </div>
+  );
 };

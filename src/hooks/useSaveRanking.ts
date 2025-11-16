@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
 import { mapFormDataToDisciplinesStructure } from '@/utils/disciplinesStructure';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
+import { inheritParentData } from '@/services/concursoService';
 
 interface SaveRankingOptions {
   formValues: any;
@@ -242,46 +243,137 @@ export const useSaveRanking = () => {
         }
       }
       
-      // Validate that at least one discipline is enabled
-      if (!hasEnabledDiscipline) {
+      // Determinar tipo de ranking e campos de hierarquia (disponível para create e update)
+      // ✅ PRIORIDADE: Se tem parent_concurso_id, é card de cargo (não importa o ranking_type)
+      const hasParent = !!formValues.parent_concurso_id;
+      const rankingType = hasParent ? 'position' : (formValues.ranking_type || 'general');
+      const isGeneralCard = !hasParent && (rankingType === 'general' || formValues.is_general_card === true);
+      
+      // Validate that at least one discipline is enabled (apenas para cards de cargo, não para card geral)
+      if (!isGeneralCard && !hasEnabledDiscipline) {
         toast.error("Por favor, selecione ao menos uma disciplina.");
         return { duplicated: false, error: true };
       }
 
       // Fetch rankings and do the comparison in JS for robust uniqueness
+      // ✅ Incluir campos de hierarquia para comparação correta
       const { data: founds, error: findError } = await supabase
         .from('concursos')
-        .select('id, titulo, orgao, banca, created_at');
+        .select('id, titulo, orgao, banca, created_at, is_general_card, parent_concurso_id, cargo');
 
       if (findError) throw findError;
 
       // Don't check for duplicates when editing as admin
       const isAdminEditing = editId && formValues.is_admin_update;
       
-      const isDuplicate = !editId && !isAdminEditing && founds?.some(item =>
-        normalize(item.titulo) === normalize(title) &&
-        normalize(item.orgao) === normalize(orgao) &&
-        normalize(item.banca) === normalize(formValues.custom_banca || formValues.banca)
-      );
+      // ✅ Lógica de duplicata ajustada para hierarquia:
+      // - Cards gerais não devem ser comparados com cards de cargo
+      // - Cards de cargo devem comparar também o campo 'cargo'
+      const isDuplicate = !editId && !isAdminEditing && founds?.some(item => {
+        // Comparar título, órgão e banca
+        const sameBasicInfo = 
+          normalize(item.titulo) === normalize(title) &&
+          normalize(item.orgao) === normalize(orgao) &&
+          normalize(item.banca) === normalize(formValues.custom_banca || formValues.banca);
+        
+        if (!sameBasicInfo) return false;
+        
+        // Se estamos criando um card geral, só comparar com outros cards gerais
+        if (isGeneralCard) {
+          return item.is_general_card === true;
+        }
+        
+        // Se estamos criando um card de cargo, só comparar com outros cards de cargo
+        // E também verificar se o cargo é o mesmo
+        if (hasParent) {
+          const itemIsPositionCard = !!item.parent_concurso_id;
+          if (!itemIsPositionCard) return false; // Ignorar cards gerais
+          
+          // Comparar também o cargo (normalizado)
+          const itemCargo = item.cargo || '';
+          const newCargo = formValues.cargo || '';
+          return normalize(itemCargo) === normalize(newCargo);
+        }
+        
+        // Fallback para cards antigos (sem hierarquia)
+        return true;
+      });
 
       if (isDuplicate) {
-        toast.error("Já existe um ranking com mesmo título, órgão e banca.");
+        if (hasParent) {
+          toast.error("Já existe um ranking de cargo com mesmo título, órgão, banca e cargo.");
+        } else {
+          toast.error("Já existe um ranking com mesmo título, órgão e banca.");
+        }
         return { duplicated: true };
+      }
+      // ✅ Usar hasParent diretamente para garantir que parent_concurso_id seja preservado
+      const parentConcursoId = hasParent ? formValues.parent_concurso_id : null;
+      const cargo = hasParent ? formValues.cargo : null;
+      // is_unified só é definido no card geral; para card de cargo, sempre false (herda do parent)
+      const isUnified = isGeneralCard ? (formValues.is_unified || false) : false;
+      // state_uf só é usado para card de cargo em concurso unificado
+      const stateUf = hasParent ? formValues.state_uf : null;
+
+      // Se for card de cargo, herdar dados do parent
+      let finalTitle = title;
+      let finalOrgao = orgao;
+      let finalBanca = formValues.custom_banca || formValues.banca;
+      
+      // ✅ USAR FUNÇÃO HELPER para herdar localidades, vagas e inscritos (evita duplicação)
+      const inheritedData = !isGeneralCard && parentConcursoId
+        ? await inheritParentData(parentConcursoId, {
+            localidades: formValues.localidades,
+            vagas: formValues.vagas,
+            inscritos: formValues.inscritos
+          })
+        : {
+            localidades: formValues.localidades || [],
+            vagas: formValues.vagas,
+            inscritos: formValues.inscritos
+          };
+      
+      // Herdar título, órgão e banca do parent (apenas para cards de cargo)
+      if (!isGeneralCard && parentConcursoId) {
+        try {
+          const { data: parentData, error: parentError } = await supabase
+            .from('concursos')
+            .select('titulo, orgao, banca')
+            .eq('id', parentConcursoId)
+            .single();
+          
+          if (!parentError && parentData) {
+            finalTitle = parentData.titulo || title;
+            finalOrgao = parentData.orgao || orgao;
+            finalBanca = parentData.banca || finalBanca;
+          }
+        } catch (error) {
+          console.error('Erro ao buscar dados do parent:', error);
+          // Continuar com os valores do formulário em caso de erro
+        }
       }
 
       // Create a clean object with the data for submission (only essential fields)
       const dataToSubmit: Record<string, any> = {
-        titulo: title,
-        orgao: orgao,
-        banca: formValues.custom_banca || formValues.banca,
+        titulo: finalTitle,
+        orgao: finalOrgao,
+        banca: finalBanca,
         status: formValues.status || 'Ativo',
         created_by_user_id: userId,
-        // Campos básicos do concurso
-        vagas: ensureNumeric(formValues.vagas),
-        inscritos: ensureNumeric(formValues.inscritos),
+        // Campos básicos do concurso (usar dados herdados se disponíveis)
+        vagas: ensureNumeric(inheritedData.vagas || formValues.vagas),
+        inscritos: ensureNumeric(inheritedData.inscritos || formValues.inscritos),
         etapa_atual: formValues.etapa_atual,
         link: formValues.link,
-        watermark_image_url: formValues.watermark_image_url || null
+        watermark_image_url: formValues.watermark_image_url || null,
+        // Campos de hierarquia
+        is_general_card: isGeneralCard,
+        parent_concurso_id: parentConcursoId,
+        cargo: cargo,
+        is_unified: isUnified,
+        state_uf: stateUf,
+        // Campos de localidade (usar dados herdados)
+        localidades: inheritedData.localidades
         // Pontuações mínimas agora vão dentro da estrutura disciplines
       };
 
@@ -317,14 +409,20 @@ export const useSaveRanking = () => {
         
         const editDataToSubmit = {
           ...dataToSubmit,
-          // Campos básicos do concurso
-          vagas: ensureNumeric(formValues.vagas),
-          inscritos: ensureNumeric(formValues.inscritos),
+          // Campos básicos do concurso (usar dados herdados se disponíveis)
+          vagas: ensureNumeric(inheritedData.vagas || formValues.vagas),
+          inscritos: ensureNumeric(inheritedData.inscritos || formValues.inscritos),
           etapa_atual: formValues.etapa_atual,
           link: formValues.link,
           watermark_image_url: formValues.watermark_image_url || null,
-          // Campos de localidade e cotas
-          localidades: formValues.localidades,
+          // Campos de hierarquia
+          is_general_card: isGeneralCard,
+          parent_concurso_id: parentConcursoId,
+          cargo: cargo,
+          is_unified: isUnified,
+          state_uf: stateUf,
+          // Campos de localidade e cotas (usar dados herdados)
+          localidades: inheritedData.localidades,
           // Campos de configuração de exame
           exam_type: formValues.exam_type || 'Alternativas',
           alternatives_count: ensureNumeric(formValues.alternatives_count),
@@ -404,14 +502,20 @@ export const useSaveRanking = () => {
             exam_type: formValues.exam_type || 'Alternativas',
             // has_custom_knowledge removido - usando disciplines JSONB
             created_by_user_id: formValues.created_by_user_id || userId,
-            // Campos básicos do concurso
-            vagas: ensureNumeric(formValues.vagas),
-            inscritos: ensureNumeric(formValues.inscritos),
+            // Campos básicos do concurso (usar dados herdados se disponíveis)
+            vagas: ensureNumeric(inheritedData.vagas || formValues.vagas),
+            inscritos: ensureNumeric(inheritedData.inscritos || formValues.inscritos),
             etapa_atual: formValues.etapa_atual,
             link: formValues.link,
             watermark_image_url: formValues.watermark_image_url || null,
-            // Campos de localidade e cotas
-            localidades: formValues.localidades,
+            // Campos de hierarquia
+            is_general_card: isGeneralCard,
+            parent_concurso_id: parentConcursoId,
+            cargo: cargo,
+            is_unified: isUnified,
+            state_uf: stateUf,
+            // Campos de localidade e cotas (usar dados herdados)
+            localidades: inheritedData.localidades,
             // Campos JSONB sincronizados com convoca-ai
             disciplines: disciplinesStructure,
             subjects: createSubjectsStructure(formValues),

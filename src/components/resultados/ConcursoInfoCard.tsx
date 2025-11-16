@@ -16,8 +16,8 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
     locale: ptBR
   }) : 'Data não informada';
   const getLocalidadesText = () => {
-    if (!concurso.localidades || concurso.localidades.length === 0) {
-      return 'Nacional'; // Default quando não há localidades (deveria ser obrigatório)
+    if (!concurso.localidades || !Array.isArray(concurso.localidades) || concurso.localidades.length === 0) {
+      return 'Não informado'; // Não usar "Nacional" como padrão
     }
     if (concurso.localidades.includes('Nacional')) {
       return 'Nacional';
@@ -34,7 +34,10 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
         <div className="grid gap-4">
           <div>
             <h2 className="text-lg sm:text-xl font-semibold">{concurso.titulo}</h2>
-            <p className="text-muted-foreground">{concurso.orgao}</p>
+            {/* Se for card de cargo, mostrar o cargo. Caso contrário, mostrar o título do concurso (orgao) */}
+            <p className="text-muted-foreground">
+              {concurso.cargo || concurso.orgao}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

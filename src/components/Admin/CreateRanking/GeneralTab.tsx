@@ -65,6 +65,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     const currentValues = form.getValues();
     // Debug logs removed for security
 
+    // Verificar se é card de cargo (campos vêm do parent)
+    const isPositionCard = !!currentValues.parent_concurso_id || currentValues.ranking_type === 'position';
+
     // Validação de cadernos criados (não salvos, pois handleFillAnswerKey salva depois)
     // Debug logs removed for security
     
@@ -80,58 +83,76 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    if (!currentValues.predefined_job_title) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione um cargo.",
-        variant: "destructive"
-      });
-      return false;
-    }
+    // Validações específicas para card de cargo
+    if (isPositionCard) {
+      // Para cargo, validar apenas campos específicos
+      if (!currentValues.cargo) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, informe o nome do cargo.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-    if (currentValues.predefined_job_title === "OUTRO" && !currentValues.custom_job_title) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe o cargo personalizado.",
-        variant: "destructive"
-      });
-      return false;
-    }
+      // Se for unificado, validar estado
+      if (currentValues.is_unified && !currentValues.state_uf) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, selecione o estado/UF.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-    if (!currentValues.orgao) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe o órgão.",
-        variant: "destructive"
-      });
-      return false;
-    }
+      // Campos de órgão, banca e título vêm do parent, não validar
+      // Pular para validações de cotas e disciplinas
+    } else {
+      // Validações para card geral
+      if (!currentValues.predefined_job_title) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, selecione um órgão.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-    if (selectedStates.length === 0) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione pelo menos um estado.",
-        variant: "destructive"
-      });
-      return false;
-    }
+      if (currentValues.predefined_job_title === "OUTRO" && !currentValues.custom_job_title) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, informe o órgão personalizado.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-    if (!currentValues.banca) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione uma banca.",
-        variant: "destructive"
-      });
-      return false;
-    }
+      if (selectedStates.length === 0) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, selecione pelo menos um estado.",
+          variant: "destructive"
+        });
+        return false;
+      }
 
-    if (currentValues.banca === "OUTRO" && !currentValues.custom_banca) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe a banca personalizada.",
-        variant: "destructive"
-      });
-      return false;
+      if (!currentValues.banca) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, selecione uma banca.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (currentValues.banca === "OUTRO" && !currentValues.custom_banca) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, informe a banca personalizada.",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     // Verificar se há cotas de reserva selecionadas

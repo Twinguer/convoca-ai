@@ -2,6 +2,63 @@ import { supabase } from "@/integrations/supabase/client";
 import { Concurso, ConcursoFilter } from "@/types/concursos";
 import { fetchUserRankings as fetchRankingsFromService } from "./rankingService";
 
+/**
+ * Helper function para herdar dados do card geral (parent) para cards de cargo
+ * Reutilizável tanto para leitura quanto para escrita
+ */
+export const inheritParentData = async (
+  parentConcursoId: string | null,
+  currentData: {
+    localidades?: string[] | null;
+    vagas?: number | null;
+    inscritos?: number | null;
+  }
+): Promise<{
+  localidades: string[];
+  vagas: number | null;
+  inscritos: number | null;
+}> => {
+  let finalLocalidades = currentData.localidades || [];
+  let finalVagas = currentData.vagas;
+  let finalInscritos = currentData.inscritos;
+
+  if (parentConcursoId) {
+    try {
+      const { data: parentData, error: parentError } = await supabase
+        .from('concursos')
+        .select('localidades, is_unified, vagas, inscritos')
+        .eq('id', parentConcursoId)
+        .single();
+      
+      if (!parentError && parentData) {
+        // Se não for unificado, herdar localidades do parent se o cargo não tiver próprias
+        if (!parentData.is_unified && (!finalLocalidades || !Array.isArray(finalLocalidades) || finalLocalidades.length === 0)) {
+          if (parentData.localidades && Array.isArray(parentData.localidades) && parentData.localidades.length > 0) {
+            finalLocalidades = parentData.localidades;
+          }
+        }
+        
+        // Herdar vagas e inscritos se o cargo não tiver próprios
+        if (!finalVagas && parentData.vagas) {
+          finalVagas = parentData.vagas;
+        }
+        if (!finalInscritos && parentData.inscritos) {
+          finalInscritos = parentData.inscritos;
+        }
+      }
+    } catch (error) {
+      console.error('[inheritParentData] Erro ao buscar dados do parent:', error);
+      // Continuar com os valores atuais em caso de erro
+    }
+  }
+
+  return {
+    localidades: finalLocalidades,
+    vagas: finalVagas,
+    inscritos: finalInscritos
+  };
+};
+
 export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
   try {
     // console.log('[fetchConcursoById] Fetching concurso with ID:', id);
@@ -51,6 +108,13 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
     // Buscar disciplinas do JSONB disciplines na tabela concursos
     const disciplines = rankingData?.disciplines || [];
 
+    // ✅ HERDAR DADOS DO PARENT: Usar função helper para evitar duplicação de código
+    const inheritedData = await inheritParentData(rankingData.parent_concurso_id || null, {
+      localidades: rankingData.localidades,
+      vagas: rankingData.vagas,
+      inscritos: rankingData.inscritos
+    });
+
     // Converter ranking para formato de concurso
     // console.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
     // console.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
@@ -67,10 +131,10 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       status: rankingData.status,
       updated_at: rankingData.updated_at,
       link: rankingData.descricao,
-      inscritos: rankingData.inscritos || rankingData.total_participants,
-      vagas: rankingData.vagas,
+      inscritos: inheritedData.inscritos || rankingData.inscritos || rankingData.total_participants,
+      vagas: inheritedData.vagas || rankingData.vagas,
       knowledgeAreas: null,
-      localidades: rankingData.localidades || [],
+      localidades: inheritedData.localidades,
       custom_banca: null,
       is_admin_created: rankingData.is_admin_created,
       created_by_user_id: rankingData.created_by_user_id,
@@ -79,6 +143,12 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       alternatives_count: 5,
       predefined_job_title: null,
       custom_job_title: null,
+      // Campos de hierarquia
+      parent_concurso_id: rankingData.parent_concurso_id || null,
+      is_general_card: rankingData.is_general_card || false,
+      cargo: rankingData.cargo || null,
+      is_unified: rankingData.is_unified || false,
+      state_uf: rankingData.state_uf || null,
       // Estrutura JSONB para cotas
       has_cota: rankingData.has_cota || {
         ppp: false,

@@ -72,6 +72,24 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             }
 
             try {
+              // ✅ VERIFICAR SE O CONCURSO EXISTE ANTES DE PROCESSAR
+              const { data: concursoCheck, error: concursoCheckError } = await supabase
+                .from('concursos')
+                .select('is_general_card')
+                .eq('id', concursoId)
+                .maybeSingle();
+              
+              // Se o concurso não existir, pular (ranking "fantasma")
+              if (concursoCheckError || !concursoCheck) {
+                console.warn(`Ranking "fantasma" encontrado: concurso_id ${concursoId} não existe mais. Pulando...`);
+                continue;
+              }
+              
+              // Se for card geral, pular (não mostrar)
+              if (concursoCheck.is_general_card === true) {
+                continue;
+              }
+
               // Usar a versão V3 otimizada
               const list = await fetchUserRankingsV3(concursoId);
 
@@ -121,6 +139,18 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               rankingsWithPositions.push(mappedRanking);
             } catch (error) {
               console.error('Erro ao calcular posição:', error);
+              // ✅ TAMBÉM VERIFICAR SE É CARD GERAL NO CATCH
+              const { data: concursoCheck } = await supabase
+                .from('concursos')
+                .select('is_general_card')
+                .eq('id', concursoId)
+                .maybeSingle();
+              
+              // Se for card geral, não adicionar
+              if (concursoCheck?.is_general_card === true) {
+                continue;
+              }
+
               // Adicionar ranking com dados básicos mesmo em caso de erro
               const { data: concursoData } = await supabase
                 .from('concursos')
@@ -161,7 +191,20 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         if (!concursoId) {
           return { ...ranking, position: null, isEliminated: false };
         }
+        
         try {
+          // ✅ VERIFICAR SE É CARD GERAL
+          const { data: concursoCheck } = await supabase
+            .from('concursos')
+            .select('is_general_card')
+            .eq('id', concursoId)
+            .maybeSingle();
+          
+          // Se for card geral, retornar null para filtrar depois
+          if (concursoCheck?.is_general_card === true) {
+            return null;
+          }
+          
           // Fetch community list from service
           const communityList = await fetchUserRankingsV3(concursoId);
           
@@ -205,10 +248,23 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           return { ...ranking, position, isEliminated: !isClassified };
         } catch (e) {
           console.error('Erro ao calcular posição (props):', e);
+          // ✅ TAMBÉM VERIFICAR NO CATCH
+          const { data: concursoCheck } = await supabase
+            .from('concursos')
+            .select('is_general_card')
+            .eq('id', concursoId)
+            .maybeSingle();
+          
+          if (concursoCheck?.is_general_card === true) {
+            return null;
+          }
+          
           return { ...ranking, position: null, isEliminated: false };
         }
       }));
-      return list;
+      
+      // ✅ FILTRAR NULLS (cards gerais removidos)
+      return list.filter((r: any) => r !== null);
     },
     enabled: !!userRankings && !!userId,
   });
@@ -234,7 +290,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       // Log removido por segurança - não expor dados completos do ranking
       
       try {
-        const concursoId = ranking.concurso_id || ranking.concursoId;
+        // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
+        const concursoId = ranking.concurso_id || ranking.concursos?.id;
         const currentUserId = user?.id; // O usuário atual que está saindo
         
         if (!concursoId || !currentUserId) {
@@ -255,12 +312,21 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           throw new Error('Ranking do usuário não encontrado');
         }
 
-        // Verificar se o concurso existe no consolidated_data
-        if (!userRanking.consolidated_data?.rankings?.[concursoId]) {
+        // ✅ Encontrar o rankingId (chave do objeto) que corresponde ao concursoId
+        const rankings = userRanking.consolidated_data?.rankings || {};
+        let rankingIdToRemove: string | null = null;
+        
+        for (const [key, value] of Object.entries(rankings)) {
+          if ((value as any).concurso_id === concursoId) {
+            rankingIdToRemove = key;
+            break;
+          }
+        }
+
+        if (!rankingIdToRemove) {
           throw new Error('Usuário não está participando deste concurso');
         }
 
-        const rankingId = userRanking.user_id;
         // Log removido por segurança
 
         // 1. Buscar dados do usuário
@@ -275,11 +341,11 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           throw fetchError;
         }
 
-        // 2. Remover ranking específico do JSON consolidado
-        const rankings = (userRankingData?.consolidated_data as any)?.rankings;
-        if (rankings) {
+        // 2. Remover ranking específico do JSON consolidado usando o rankingId correto
+        const rankingsData = (userRankingData?.consolidated_data as any)?.rankings;
+        if (rankingsData) {
           const updatedData = { ...(userRankingData.consolidated_data as any) };
-          const { [rankingId]: removed, ...remainingRankings } = rankings as Record<string, any>;
+          const { [rankingIdToRemove]: removed, ...remainingRankings } = rankingsData as Record<string, any>;
           updatedData.rankings = remainingRankings;
           
           // Atualizar dados consolidados
@@ -368,7 +434,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       
       <div className="grid gap-2">
         {displayRankings.map((ranking: any) => 
-          <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
+          <Card key={ranking.concurso_id || ranking.concursos?.id || ranking.id} className="overflow-hidden">
             <div className="bg-card/80 p-4 flex justify-between items-center border-b border-border">
               <div className="flex-1">
                 <h4 className="font-semibold text-card-foreground text-base mb-1">
@@ -398,7 +464,17 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             
             <div className="p-4 bg-card flex justify-end gap-2">
               <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => {
-                const concursoId = ranking.concurso_id || ranking.concursos?.id || ranking.concursoId;
+                // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
+                const concursoId = ranking.concurso_id || ranking.concursos?.id;
+                if (!concursoId) {
+                  console.error('ConcursoId não encontrado:', ranking);
+                  toast({
+                    title: "Erro",
+                    description: "ID do concurso não encontrado. Tente novamente.",
+                    variant: "destructive"
+                  });
+                  return;
+                }
                 navigate(`/ranking/${concursoId}`);
               }}>
                 <Trophy className="h-4 w-4" />
@@ -408,17 +484,18 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               {isOwnProfile && (
                 <>
                   <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => {
-                    const concursoId = ranking.concurso_id || ranking.concursos?.id || ranking.concursoId;
-                    if (concursoId && concursoId !== 'undefined') {
-                      navigate(`/ranking/${concursoId}/participate?showAnswerSheet=true`);
-                    } else {
+                    // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
+                    const concursoId = ranking.concurso_id || ranking.concursos?.id;
+                    if (!concursoId || concursoId === 'undefined') {
                       console.error('ConcursoId não encontrado:', ranking);
                       toast({
                         title: "Erro",
                         description: "ID do concurso não encontrado. Tente novamente.",
                         variant: "destructive"
                       });
+                      return;
                     }
+                    navigate(`/ranking/${concursoId}/participate?showAnswerSheet=true`);
                   }}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>
@@ -467,4 +544,5 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       </div>
     </div>;
 };
+
 export default RankingsTab;
