@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/utils/secureLogger';
+import { validateFileUploadSimple, formatFileSize } from '@/utils/fileUploadValidator';
+import { FILE_UPLOAD_LIMITS } from '@/config/fileUploadLimits';
 
 interface CreatePostFormProps {
   groupId: string;
@@ -30,9 +32,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
-  // Limites de tamanho (em bytes)
-  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB para fotos
-  const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB para PDFs
   const MAX_CONTENT_LENGTH = 500; // Limite de caracteres para posts
 
   // Buscar perfil do usuário para mostrar avatar e nome
@@ -54,38 +53,18 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
     if (!e.target.files || e.target.files.length === 0) return;
 
     const file = e.target.files[0];
-    const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_PDF_SIZE;
-    const maxSizeMB = Math.round(maxSize / 1024 / 1024);
-
-    // Validar tipo
-    if (isImage) {
-      const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedImageTypes.includes(file.type)) {
-        toast({
-          title: 'Tipo de arquivo inválido',
-          description: 'Apenas imagens (JPG, PNG, GIF, WEBP) são permitidas.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    } else {
-      if (file.type !== 'application/pdf') {
-        toast({
-          title: 'Tipo de arquivo inválido',
-          description: 'Apenas arquivos PDF são permitidos.',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
-    // Validar tamanho
-    if (file.size > maxSize) {
+    const uploadType = isImage ? 'POST_IMAGE' : 'POST_PDF';
+    
+    // Validar arquivo usando o sistema padronizado
+    const validation = validateFileUploadSimple(file, uploadType, isImage);
+    
+    if (!validation.isValid) {
       toast({
-        title: 'Arquivo muito grande',
-        description: `O arquivo excede o limite de ${maxSizeMB}MB.`,
+        title: 'Arquivo inválido',
+        description: validation.errors.join('. '),
         variant: 'destructive',
       });
+      e.target.value = '';
       return;
     }
 
@@ -97,12 +76,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

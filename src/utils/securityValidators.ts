@@ -60,23 +60,15 @@ export class SecurityValidators {
   }
 
   public static validateFileUpload(file: File): { isValid: boolean; reason?: string } {
-    const allowedTypes = [
-      'image/jpeg', 
-      'image/png', 
-      'image/gif', 
-      'image/webp',
-      'application/pdf'
-    ];
-    const maxSize = 10 * 1024 * 1024; // 10MB
-
-    if (!allowedTypes.includes(file.type)) {
-      return { isValid: false, reason: 'Tipo de arquivo não permitido. Use imagens (JPEG, PNG, GIF, WEBP) ou PDF' };
+    // Usar o sistema padronizado de validação
+    // Importação dinâmica para evitar dependência circular
+    const { validateFileUploadSimple } = require('@/utils/fileUploadValidator') as typeof import('@/utils/fileUploadValidator');
+    const validation = validateFileUploadSimple(file, 'GENERIC', file.type.startsWith('image/'));
+    
+    if (!validation.isValid) {
+      return { isValid: false, reason: validation.errors.join('. ') };
     }
-
-    if (file.size > maxSize) {
-      return { isValid: false, reason: 'Arquivo excede o limite de 10MB' };
-    }
-
+    
     return { isValid: true };
   }
 }

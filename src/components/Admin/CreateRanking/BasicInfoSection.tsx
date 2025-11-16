@@ -9,6 +9,7 @@ import { RankingHierarchySection } from './RankingHierarchySection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
+import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 
 const ESTADOS_BRASILEIROS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
@@ -51,21 +52,13 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de arquivo
-    if (!file.type.startsWith('image/')) {
+    // Validar arquivo usando o sistema padronizado
+    const validation = validateFileUploadSimple(file, 'WATERMARK', true);
+    
+    if (!validation.isValid) {
       toast({
         title: 'Arquivo inválido',
-        description: 'Por favor, selecione uma imagem.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Validar tamanho (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: 'Arquivo muito grande',
-        description: 'A imagem deve ter no máximo 5MB.',
+        description: validation.errors.join('. '),
         variant: 'destructive'
       });
       return;

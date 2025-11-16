@@ -18,6 +18,7 @@ import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
 import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
+import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
 import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
@@ -259,6 +260,19 @@ const UserProfile = () => {
         return;
       }
       const file = event.target.files[0];
+      
+      // Validar arquivo usando o sistema padronizado
+      const validation = validateFileUploadSimple(file, 'AVATAR', true);
+      
+      if (!validation.isValid) {
+        toast({
+          title: 'Arquivo inválido',
+          description: validation.errors.join('. '),
+          variant: 'destructive'
+        });
+        return;
+      }
+      
       const fileExt = file.name.split('.').pop();
       const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;

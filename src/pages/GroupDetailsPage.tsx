@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PostCard } from '@/components/studyGroups/PostCard';
 import { CreatePostForm } from '@/components/studyGroups/CreatePostForm';
 import { GroupSettingsButton } from '@/components/studyGroups/GroupSettingsButton';
+import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
 import { GroupMembersColumn } from '@/components/studyGroups/GroupMembersColumn';
@@ -128,6 +129,19 @@ export const GroupDetailsPage: React.FC = () => {
 
     try {
       const file = event.target.files[0];
+      
+      // Validar arquivo usando o sistema padronizado
+      const validation = validateFileUploadSimple(file, 'GROUP_COVER', true);
+      
+      if (!validation.isValid) {
+        toast({
+          title: 'Arquivo inválido',
+          description: validation.errors.join('. '),
+          variant: 'destructive'
+        });
+        return;
+      }
+      
       const fileExt = file.name.split('.').pop();
       const fileName = `group-${groupId}-${Date.now()}.${fileExt}`;
       const filePath = `groups/${fileName}`;

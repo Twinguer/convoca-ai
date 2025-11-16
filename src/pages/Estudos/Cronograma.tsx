@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useQuestionTracking } from '@/hooks/useQuestionTracking';
+import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { useStudySessions } from '@/hooks/useStudySessions';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
@@ -501,10 +502,11 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       return;
     }
 
-    // Validação de tamanho (10MB)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('Arquivo muito grande. Máximo: 10MB');
+    // Validar arquivo usando o sistema padronizado
+    const validation = validateFileUploadSimple(file, 'STUDY_DOCUMENT', isImage);
+    
+    if (!validation.isValid) {
+      toast.error(validation.errors.join('. '));
       event.target.value = '';
       return;
     }

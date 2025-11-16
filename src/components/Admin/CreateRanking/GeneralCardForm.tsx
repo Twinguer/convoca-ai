@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { StateSelector } from '@/components/Admin/FormSections/StateSelector';
+import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 
 interface GeneralCardFormProps {
   form: any;
@@ -58,19 +59,13 @@ export const GeneralCardForm: React.FC<GeneralCardFormProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    // Validar arquivo usando o sistema padronizado
+    const validation = validateFileUploadSimple(file, 'WATERMARK', true);
+    
+    if (!validation.isValid) {
       toast({
         title: 'Arquivo inválido',
-        description: 'Por favor, selecione uma imagem.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: 'Arquivo muito grande',
-        description: 'A imagem deve ter no máximo 5MB.',
+        description: validation.errors.join('. '),
         variant: 'destructive'
       });
       return;
