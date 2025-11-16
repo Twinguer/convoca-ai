@@ -7,6 +7,7 @@ import { Users, GraduationCap, Lock, Globe, UserPlus, MessageSquare, Eye } from 
 import type { StudyGroup } from '@/types/studyGroups';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
 
 interface GroupCardProps {
   group: StudyGroup;
@@ -34,7 +35,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   isMember = false,
   onJoin,
 }) => {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+
   const handleCardClick = () => {
+    // ✅ Se não estiver autenticado, redirecionar para login
+    if (!isAuthenticated) {
+      window.location.href = '/auth';
+      return;
+    }
+    
     if (onClick) {
       onClick(group.id);
     }
@@ -110,61 +120,76 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </div>
         </div>
 
-        {/* Estatísticas */}
-        <div className="grid grid-cols-2 gap-3 mb-4 border-t border-b py-3">
-          <div className="flex flex-col items-center">
-            <div className="flex items-center gap-1 text-muted-foreground mb-1">
-              <Users className="h-4 w-4" />
+        {/* ✅ Estatísticas - Mostrar apenas para usuários autenticados */}
+        {isAuthenticated && (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-4 border-t border-b py-3">
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                  <Users className="h-4 w-4" />
+                </div>
+                <span className="text-lg font-bold text-primary">
+                  {group.current_members}
+                </span>
+                <span className="text-xs text-muted-foreground text-center">
+                  {group.max_members ? `de ${group.max_members}` : ''} membros
+                </span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+                <span className="text-lg font-bold text-green-600">
+                  {postsCount}
+                </span>
+                <span className="text-xs text-muted-foreground text-center">
+                  Posts
+                </span>
+              </div>
             </div>
-            <span className="text-lg font-bold text-primary">
-              {group.current_members}
-            </span>
-            <span className="text-xs text-muted-foreground text-center">
-              {group.max_members ? `de ${group.max_members}` : ''} membros
-            </span>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="flex items-center gap-1 text-muted-foreground mb-1">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <span className="text-lg font-bold text-green-600">
-              {postsCount}
-            </span>
-            <span className="text-xs text-muted-foreground text-center">
-              Posts
-            </span>
-          </div>
-        </div>
 
-        {/* Data de criação */}
-        <div className="mb-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            Criado {timeAgo}
-          </p>
-        </div>
+            {/* Data de criação */}
+            <div className="mb-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                Criado {timeAgo}
+              </p>
+            </div>
+          </>
+        )}
 
         {/* Botões de Ação */}
         <div className="flex flex-col gap-2 mt-auto">
-          {isMember ? (
+          {isAuthenticated ? (
+            isMember ? (
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full"
+                onClick={handleCardClick}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Ver Grupo
+              </Button>
+            ) : showJoinButton ? (
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full"
+                onClick={handleJoinClick}
+              >
+                Solicitar Entrada
+              </Button>
+            ) : null
+          ) : (
             <Button
               variant="default"
               size="sm"
               className="w-full"
-              onClick={handleCardClick}
+              onClick={() => window.location.href = '/auth'}
             >
-              <Eye className="mr-2 h-4 w-4" />
-              Ver Grupo
+              Fazer Login para Ver
             </Button>
-          ) : showJoinButton ? (
-            <Button
-              variant="default"
-              size="sm"
-              className="w-full"
-              onClick={handleJoinClick}
-            >
-              Solicitar Entrada
-            </Button>
-          ) : null}
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,13 @@ const CargosPage = () => {
   const { user } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
   const [selectedState, setSelectedState] = useState<string>(searchParams.get('state') || '');
+
+  // ✅ Verificar autenticação: usuários não cadastrados não podem acessar
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
 
   // Buscar informações do card geral
   const { data: generalCard, isLoading: loadingGeneral } = useQuery({
@@ -96,6 +103,11 @@ const CargosPage = () => {
     },
     enabled: !!id && !!generalCard
   });
+
+  // ✅ Se não estiver autenticado, não mostrar conteúdo
+  if (!user) {
+    return null; // Será redirecionado pelo useEffect
+  }
 
   if (loadingGeneral) {
     return (
