@@ -18,6 +18,7 @@ import type { StudentRelationship } from '@/types/coach';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import { UserStudyService } from '@/services/userStudyService';
 import type { StudyStatistics } from '@/types/userStudy';
+import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 
 const StudentDetailsPage = () => {
   const { studentId } = useParams();
@@ -31,6 +32,10 @@ const StudentDetailsPage = () => {
   // Estado para modal de mensagem
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageText, setMessageText] = useState('');
+  
+  // Estado para filtro de tempo do gráfico
+  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('week');
+  
   const queryClient = useQueryClient();
 
   // Buscar dados do aluno específico
@@ -626,6 +631,22 @@ const StudentDetailsPage = () => {
                 </CardContent>
               </Card>
 
+              {/* Gráfico de Desempenho */}
+              {fullStatistics.sessionHistory && fullStatistics.sessionHistory.length > 0 && (
+                <PerformanceChart
+                  statistics={{
+                    totalHours: fullStatistics.totalHours,
+                    totalSessions: fullStatistics.totalSessions,
+                    questionsAnswered: fullStatistics.questionsAnswered,
+                    correctAnswers: fullStatistics.correctAnswers,
+                    sessionHistory: fullStatistics.sessionHistory || [],
+                    subjectStats: fullStatistics.subjectStats || {}
+                  }}
+                  timeFilter={timeFilter}
+                  onTimeFilterChange={setTimeFilter}
+                />
+              )}
+
               {/* Distribuição do Tempo por Disciplina */}
               {fullStatistics.subjectStats && Object.keys(fullStatistics.subjectStats).length > 0 && (
                 <Card>
@@ -661,71 +682,6 @@ const StudentDetailsPage = () => {
                 </Card>
               )}
 
-              {/* Evolução da Taxa de Acerto */}
-              {fullStatistics.sessionHistory && fullStatistics.sessionHistory.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Evolução da Taxa de Acerto</CardTitle>
-                    <CardDescription>Histórico de performance</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex gap-4 items-center text-sm mb-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-green-500 rounded"></div>
-                          <span className="text-muted-foreground">Acertos</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-red-500 rounded"></div>
-                          <span className="text-muted-foreground">Erros</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {fullStatistics.sessionHistory.slice(-10).reverse().map((session: any, index: number) => {
-                          const sessionQuestions = session.questions || 0;
-                          const sessionCorrect = session.correctAnswers || 0;
-                          const accuracy = sessionQuestions > 0 ? (sessionCorrect / sessionQuestions) * 100 : 0;
-                          
-                          return (
-                            <div key={index} className="flex items-center gap-3 p-2 border rounded-lg">
-                              <div className="flex-1">
-                                <div className="flex justify-between items-center mb-1">
-                                  <p className="text-sm font-medium">{session.subject || 'Sessão'}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {new Date(session.date).toLocaleDateString('pt-BR')}
-                                  </p>
-                                </div>
-                                <div className="flex gap-2 text-xs text-muted-foreground">
-                                  <span>{session.duration}min</span>
-                                  {sessionQuestions > 0 && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="text-green-600">{sessionCorrect} certas</span>
-                                      <span>•</span>
-                                      <span className="text-red-600">{sessionQuestions - sessionCorrect} erradas</span>
-                                      <span>•</span>
-                                      <span className="font-medium">{accuracy.toFixed(0)}% acertos</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              {sessionQuestions > 0 && (
-                                <div className="w-16">
-                                  <Progress 
-                                    value={accuracy} 
-                                    className="h-2"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
         </TabsContent>
