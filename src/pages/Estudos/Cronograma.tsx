@@ -1482,13 +1482,24 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
               <div>
                 <Label htmlFor="courseName">Assunto</Label>
-                <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" />
+                <Input id="courseName" value={courseName} onChange={e => {
+                  const value = e.target.value;
+                  if (value.length <= 50) {
+                    setCourseName(value);
+                  }
+                }} placeholder="Ex: Curso Completo de Direito Constitucional" maxLength={50} />
+                <p className="text-xs text-muted-foreground mt-1">{courseName.length}/50 caracteres</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="duration">Tempo estudado (minutos) *</Label>
-                  <Input id="duration" type="number" min="1" value={studyDuration} onChange={e => setStudyDuration(Number(e.target.value))} placeholder="Ex: 60" />
+                  <Input id="duration" type="number" min="1" max={999999} value={studyDuration} onChange={e => {
+                    const value = e.target.value;
+                    if (value === '' || (Number(value) >= 1 && Number(value) <= 999999)) {
+                      setStudyDuration(value === '' ? 0 : Number(value));
+                    }
+                  }} placeholder="Ex: 60" />
                   {studyDuration >= 20 && <p className="text-xs text-green-600 mt-1">✓ Tarefa contará para as estatísticas</p>}
                 </div>
 
@@ -1509,13 +1520,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="questions-total">Total de questões</Label>
-                  <Input id="questions-total" type="number" min="0" value={questionsTotal} onChange={e => {
-                const value = Number(e.target.value);
-                setQuestionsTotal(value);
-                // Validar se as questões corretas não ficaram maiores que o novo total
-                if (questionsCorrect > value) {
-                  setQuestionsCorrect(value);
-                  setQuestionsError('');
+                  <Input id="questions-total" type="number" min="0" max={999999} value={questionsTotal} onChange={e => {
+                const inputValue = e.target.value;
+                if (inputValue === '' || (Number(inputValue) >= 0 && Number(inputValue) <= 999999)) {
+                  const value = inputValue === '' ? 0 : Number(inputValue);
+                  setQuestionsTotal(value);
+                  // Validar se as questões corretas não ficaram maiores que o novo total
+                  if (questionsCorrect > value) {
+                    setQuestionsCorrect(value);
+                    setQuestionsError('');
+                  }
                 }
               }} placeholder="Questões resolvidas" />
                 </div>
@@ -1551,7 +1565,13 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
               <div>
                 <Label htmlFor="notes">Observações</Label>
-                <Textarea id="notes" value={studyNotes} onChange={e => setStudyNotes(e.target.value)} placeholder="O que você estudou, dificuldades, pontos importantes..." rows={3} />
+                <Textarea id="notes" value={studyNotes} onChange={e => {
+                  const value = e.target.value;
+                  if (value.length <= 300) {
+                    setStudyNotes(value);
+                  }
+                }} placeholder="O que você estudou, dificuldades, pontos importantes..." rows={3} maxLength={300} className="resize-none" />
+                <p className="text-xs text-muted-foreground mt-1">{studyNotes.length}/300 caracteres</p>
               </div>
 
               <div className="flex gap-2">

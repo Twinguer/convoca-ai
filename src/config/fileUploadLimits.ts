@@ -100,3 +100,4 @@ export const getImageDimensions = (type: keyof typeof IMAGE_DIMENSION_LIMITS) =>
   return IMAGE_DIMENSION_LIMITS[type];
 };
 
+
