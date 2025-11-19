@@ -85,11 +85,46 @@ export const usePasswordReset = () => {
     }
   }, [sanitizeInput, isEmailValid]);
 
-  // Reset password with token
-  const resetPassword = useCallback(async (newPassword: string) => {
+  // Verify current password (for logged-in users)
+  const verifyCurrentPassword = useCallback(async (currentPassword: string, userEmail: string): Promise<boolean> => {
+    if (!currentPassword || !userEmail) {
+      return false;
+    }
+
+    try {
+      // Try to sign in with current password to verify it
+      // This will create a new session, which is fine since we're about to update the password
+      const { error } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: currentPassword,
+      });
+
+      if (error) {
+        logError('Current password verification failed', { error: error.message }, 'AUTH');
+        return false;
+      }
+
+      return true;
+    } catch (error: any) {
+      logError('Current password verification error', { error: error.message }, 'AUTH');
+      return false;
+    }
+  }, []);
+
+  // Reset password with token or change password for logged-in user
+  const resetPassword = useCallback(async (newPassword: string, currentPassword?: string, userEmail?: string, isLoggedInUser?: boolean) => {
     if (!newPassword || newPassword.length < 8) {
       showErrorToast('Senha inválida', 'A senha deve ter pelo menos 8 caracteres.');
       return false;
+    }
+
+    // If user is logged in, verify current password first
+    if (isLoggedInUser && currentPassword && userEmail) {
+      const isValid = await verifyCurrentPassword(currentPassword, userEmail);
+      if (!isValid) {
+        showErrorToast('Senha atual incorreta', 'A senha atual informada está incorreta. Tente novamente.');
+        return false;
+      }
     }
 
     setIsLoading(true);
@@ -114,16 +149,24 @@ export const usePasswordReset = () => {
       // Limpar flag de recovery
       localStorage.removeItem('is_password_recovery');
       
-      showSuccessToast('Senha redefinida', 'Sua senha foi redefinida com sucesso! Redirecionando para o login...');
-      logSecurity('Password reset successful', {}, 'AUTH');
-      
-      // Fazer logout para garantir que o usuário faça login com a nova senha
-      await supabase.auth.signOut();
-      
-      // Redirecionar para login após 2 segundos
-      setTimeout(() => {
-        navigate('/auth');
-      }, 2000);
+      if (isLoggedInUser) {
+        // Usuário logado - não fazer logout, apenas mostrar sucesso
+        showSuccessToast('Senha alterada', 'Sua senha foi alterada com sucesso!');
+        logSecurity('Password changed successfully', {}, 'AUTH');
+        return true;
+      } else {
+        // Recovery flow - fazer logout e redirecionar
+        showSuccessToast('Senha redefinida', 'Sua senha foi redefinida com sucesso! Redirecionando para o login...');
+        logSecurity('Password reset successful', {}, 'AUTH');
+        
+        // Fazer logout para garantir que o usuário faça login com a nova senha
+        await supabase.auth.signOut();
+        
+        // Redirecionar para login após 2 segundos
+        setTimeout(() => {
+          navigate('/auth');
+        }, 2000);
+      }
       
       return true;
     } catch (error: any) {
@@ -133,12 +176,13 @@ export const usePasswordReset = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, verifyCurrentPassword]);
 
   return {
     isLoading,
     requestPasswordReset,
     resetPassword,
+    verifyCurrentPassword,
   };
 };
 

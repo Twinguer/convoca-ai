@@ -59,6 +59,7 @@ import AcceptInvitationPage from "./modules/coach/pages/AcceptInvitationPage";
 import StudentDetailsPage from "./modules/coach/pages/StudentDetailsPage";
 import CreateCycleForStudent from "./modules/coach/pages/CreateCycleForStudent";
 import StudentSchedulePage from "./modules/coach/pages/StudentSchedulePage";
+import StudentCycleDisciplinesPage from "./modules/coach/pages/StudentCycleDisciplinesPage";
 import { useParams } from 'react-router-dom';
 import { useTokenCleanup } from './hooks/useTokenCleanup';
 // Páginas de teste removidas após migração completa
@@ -319,6 +320,12 @@ const AppContent = () => {
                         <Menu />
                         <ProtectedRoute>
                           <CreateCycleForStudent />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/student/:studentId/cycle/:cycleId/disciplinas" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <StudentCycleDisciplinesPage />
                         </ProtectedRoute>
                       </>} />
                     <Route path="/coach/student/:studentId/cycle/:cycleId/schedule" element={<>

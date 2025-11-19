@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, Plus, Trash2 } from 'lucide-react';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -10,6 +10,7 @@ interface Discipline {
   id: string;
   name: string;
   isCompleted?: boolean;
+  status?: 'em_andamento' | 'finalizada' | 'em_revisao' | null;
 }
 
 interface Block {
@@ -22,18 +23,28 @@ interface EditalVerticalizadoProps {
   blocks: Block[];
   onToggleDiscipline?: (blockId: string, disciplineId: string) => void;
   onToggleBlock?: (blockId: string) => void;
+  onStatusChange?: (blockId: string, disciplineId: string, status: 'em_andamento' | 'finalizada' | 'em_revisao' | null) => void;
+  onAddDiscipline?: (blockId: string) => void;
+  onEditDiscipline?: (blockId: string, disciplineId: string) => void;
+  onRemoveDiscipline?: (blockId: string, disciplineId: string) => void;
   expandedBlocks?: Set<string>;
   showProgress?: boolean;
   className?: string;
+  allowEdit?: boolean;
 }
 
 export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   blocks,
   onToggleDiscipline,
   onToggleBlock,
+  onStatusChange,
+  onAddDiscipline,
+  onEditDiscipline,
+  onRemoveDiscipline,
   expandedBlocks: externalExpandedBlocks,
   showProgress = true,
-  className = ""
+  className = "",
+  allowEdit = false
 }) => {
   const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const [internalExpandedBlocks, setInternalExpandedBlocks] = useState<Set<string>>(new Set());
@@ -59,6 +70,14 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   const handleToggleDiscipline = (blockId: string, disciplineId: string) => {
     if (onToggleDiscipline) {
       onToggleDiscipline(blockId, disciplineId);
+    }
+  };
+
+  const handleStatusChange = (blockId: string, disciplineId: string, status: 'em_andamento' | 'finalizada' | 'em_revisao' | null) => {
+    if (onStatusChange) {
+      // Se um status está sendo marcado, garantir que os outros sejam desmarcados
+      // Isso é feito automaticamente pela lógica de atualização no componente pai
+      onStatusChange(blockId, disciplineId, status);
     }
   };
 
@@ -106,15 +125,31 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
               </span>
             )}
           </div>
-          {hasDisciplines && (
-            <div className="ml-2">
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              )}
-            </div>
-          )}
+          <div className="ml-2 flex items-center gap-2">
+            {allowEdit && onAddDiscipline && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddDiscipline(block.id);
+                }}
+                title="Adicionar disciplina"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            )}
+            {hasDisciplines && (
+              <div>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Sub-tópicos (Disciplinas) */}
@@ -123,19 +158,90 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
             {block.disciplines.map((discipline, disciplineIndex) => (
               <div 
                 key={discipline.id}
-                className={`flex items-center py-2 px-4 pl-8 ${
+                className={`py-2 px-4 pl-8 ${
                   disciplineIndex % 2 === 0 ? 'bg-muted/10' : 'bg-background'
                 } hover:bg-muted/30 transition-colors`}
               >
-                <Checkbox
-                  checked={discipline.isCompleted || false}
-                  onCheckedChange={() => handleToggleDiscipline(block.id, discipline.id)}
-                  className="mt-0.5 mr-3 flex-shrink-0"
-                />
-                <div className="flex-1">
-                  <span className={`font-medium text-foreground text-xs ${discipline.isCompleted ? 'line-through opacity-60' : ''}`}>
-                    {blockIndex + 1}.{disciplineIndex + 1}. {discipline.name}
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+                  <div className="flex items-center flex-1 min-w-0 pr-2">
+                    <Checkbox
+                      checked={discipline.isCompleted || false}
+                      onCheckedChange={() => handleToggleDiscipline(block.id, discipline.id)}
+                      className="mt-0.5 mr-3 flex-shrink-0"
+                    />
+                    <span 
+                      className={`font-medium text-foreground text-xs truncate ${discipline.isCompleted ? 'line-through opacity-60' : ''} ${allowEdit && onEditDiscipline ? 'cursor-pointer hover:text-primary' : ''}`}
+                      onClick={allowEdit && onEditDiscipline ? (e) => {
+                        e.stopPropagation();
+                        onEditDiscipline(block.id, discipline.id);
+                      } : undefined}
+                      title={allowEdit && onEditDiscipline ? 'Clique para editar' : undefined}
+                    >
+                      {blockIndex + 1}.{disciplineIndex + 1}. {discipline.name}
+                    </span>
+                  </div>
+                  {/* Status checkboxes - na mesma linha em telas maiores, abaixo em telas menores */}
+                  <div className="flex items-center gap-1.5 sm:gap-3 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap sm:flex-nowrap">
+                    {allowEdit && onRemoveDiscipline && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Tem certeza que deseja remover a disciplina "${discipline.name}"?`)) {
+                            onRemoveDiscipline(block.id, discipline.id);
+                          }
+                        }}
+                        title="Remover disciplina"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
+                      <Checkbox
+                        checked={discipline.status === 'em_andamento'}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleStatusChange(block.id, discipline.id, 'em_andamento');
+                          } else if (discipline.status === 'em_andamento') {
+                            // Se desmarcar o status atual, remover o status
+                            handleStatusChange(block.id, discipline.id, undefined as any);
+                          }
+                        }}
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0"
+                      />
+                      <span className="text-muted-foreground text-xs">Em andamento</span>
+                    </label>
+                    <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
+                      <Checkbox
+                        checked={discipline.status === 'finalizada'}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleStatusChange(block.id, discipline.id, 'finalizada');
+                          } else if (discipline.status === 'finalizada') {
+                            handleStatusChange(block.id, discipline.id, undefined as any);
+                          }
+                        }}
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0"
+                      />
+                      <span className="text-muted-foreground text-xs">Finalizada</span>
+                    </label>
+                    <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
+                      <Checkbox
+                        checked={discipline.status === 'em_revisao'}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleStatusChange(block.id, discipline.id, 'em_revisao');
+                          } else if (discipline.status === 'em_revisao') {
+                            handleStatusChange(block.id, discipline.id, undefined as any);
+                          }
+                        }}
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0"
+                      />
+                      <span className="text-muted-foreground text-xs">Em revisão</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             ))}

@@ -585,6 +585,35 @@ const StudentDetailsPage = () => {
                                     const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
                                     // ✅ CORREÇÃO: Passar validatedStudentId (dono do ciclo) em vez de user.id (coach)
                                     const cycleToken = await StudyCycleUrlObfuscationService.generateStudyCycleToken(cycle.id, validatedStudentId);
+                                    navigate(`/coach/student/${studentToken}/cycle/${cycleToken}/disciplinas`);
+                                  } catch (error) {
+                                    devLog.error('Erro ao gerar URL segura:', error);
+                                    toast({
+                                      title: 'Erro',
+                                      description: 'Não foi possível gerar URL segura. Tente novamente.',
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                }}
+                                className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
+                              >
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                Disciplinas
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={async () => {
+                                  // Usar URL ofuscada para segurança
+                                  try {
+                                    const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
+                                    const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
+                                    
+                                    if (!validatedStudentId) return;
+                                    
+                                    const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
+                                    // ✅ CORREÇÃO: Passar validatedStudentId (dono do ciclo) em vez de user.id (coach)
+                                    const cycleToken = await StudyCycleUrlObfuscationService.generateStudyCycleToken(cycle.id, validatedStudentId);
                                     navigate(`/coach/student/${studentToken}/cycle/${cycleToken}/schedule`);
                                   } catch (error) {
                                     devLog.error('Erro ao gerar URL segura:', error);
@@ -603,13 +632,45 @@ const StudentDetailsPage = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => {
-                                  if (confirm('Deseja realmente remover este ciclo?')) {
-                                    // TODO: Implementar remoção do ciclo
+                                onClick={async () => {
+                                  if (!confirm('Deseja realmente remover este ciclo? Esta ação não pode ser desfeita.')) {
+                                    return;
+                                  }
+
+                                  if (!validatedStudentId) {
                                     toast({
-                                      title: 'Funcionalidade em desenvolvimento',
-                                      description: 'A remoção de ciclos será implementada em breve.',
-                                      variant: 'default'
+                                      title: 'Erro',
+                                      description: 'ID do aluno não encontrado.',
+                                      variant: 'destructive'
+                                    });
+                                    return;
+                                  }
+
+                                  try {
+                                    const success = await UserStudyService.removeCycle(validatedStudentId, cycle.id);
+                                    
+                                    if (success) {
+                                      // Invalidar queries para atualizar a lista
+                                      queryClient.invalidateQueries({ queryKey: ['coach-student', user?.id, validatedStudentId] });
+                                      queryClient.invalidateQueries({ queryKey: ['coach-student-statistics', validatedStudentId] });
+                                      
+                                      toast({
+                                        title: 'Ciclo removido',
+                                        description: 'O ciclo de estudo foi removido com sucesso.',
+                                      });
+                                    } else {
+                                      toast({
+                                        title: 'Erro',
+                                        description: 'Não foi possível remover o ciclo. Tente novamente.',
+                                        variant: 'destructive'
+                                      });
+                                    }
+                                  } catch (error) {
+                                    devLog.error('Erro ao remover ciclo:', error);
+                                    toast({
+                                      title: 'Erro',
+                                      description: 'Ocorreu um erro ao remover o ciclo. Tente novamente.',
+                                      variant: 'destructive'
                                     });
                                   }
                                 }}

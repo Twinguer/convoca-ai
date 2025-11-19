@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +92,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [selectedDateSessions, setSelectedDateSessions] = useState<any[]>([]);
   const [editingSession, setEditingSession] = useState<StudySession | null>(null);
   const [sessionLink, setSessionLink] = useState<string>('');
@@ -407,6 +410,11 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       toast.error('Erro ao adicionar tarefa');
     }
   };
+  const handleDeleteClick = (sessionId: string) => {
+    setSessionToDelete(sessionId);
+    setShowDeleteConfirmDialog(true);
+  };
+
   const removeSession = async (sessionId: string) => {
     try {
       const targetUserId = coachMode ? targetStudentId : user?.id;
@@ -435,6 +443,9 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     } catch (error: any) {
       devLog.error('❌ Erro ao remover tarefa:', error);
       toast.error(`Erro ao remover tarefa: ${error.message || 'Tente novamente'}`);
+    } finally {
+      setShowDeleteConfirmDialog(false);
+      setSessionToDelete(null);
     }
   };
 
@@ -1739,7 +1750,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                                 </div>
                                 <div className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10" onClick={e => {
                         e.stopPropagation();
-                        removeSession(session.id);
+                        handleDeleteClick(session.id);
                       }} title="Remover tarefa">
                                   <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive transition-colors" />
                                 </div>
@@ -1898,6 +1909,36 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmação para remover tarefa */}
+      <AlertDialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta tarefa do cronograma? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteConfirmDialog(false);
+              setSessionToDelete(null);
+            }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (sessionToDelete) {
+                  removeSession(sessionToDelete);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>;
 };

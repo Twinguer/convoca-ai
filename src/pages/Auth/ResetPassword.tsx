@@ -10,18 +10,23 @@ import { usePasswordReset } from '@/hooks/usePasswordReset';
 import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from '@/components/Auth/PasswordStrengthIndicator';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const { isLoading, resetPassword } = usePasswordReset();
+  const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [isLoggedInUser, setIsLoggedInUser] = useState(false);
 
   // CRÍTICO: Setar flag IMEDIATAMENTE ao montar o componente
   // Isso previne race condition com Auth.tsx
@@ -69,6 +74,12 @@ const ResetPassword: React.FC = () => {
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState(null, '', cleanUrl);
         }
+        
+        // Se não é recovery flow, é um usuário logado que quer trocar a senha
+        if (!isRecoveryFlow) {
+          setIsLoggedInUser(true);
+        }
+        
         setIsValidToken(true);
       } else if (isRecoveryFlow) {
         // Se não há sessão mas é recovery, aguardar processamento
@@ -131,8 +142,24 @@ const ResetPassword: React.FC = () => {
     }
   };
 
+  const handleCurrentPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCurrentPassword(value);
+    if (value) {
+      setErrors(prev => ({ ...prev, currentPassword: '' }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Se for usuário logado, validar senha atual
+    if (isLoggedInUser) {
+      if (!currentPassword) {
+        setErrors(prev => ({ ...prev, currentPassword: 'Por favor, informe sua senha atual' }));
+        return;
+      }
+    }
 
     if (!validatePassword(password)) {
       return;
@@ -143,10 +170,30 @@ const ResetPassword: React.FC = () => {
       return;
     }
 
-    const success = await resetPassword(password);
+    // Verificar se a nova senha é diferente da atual (para usuários logados)
+    if (isLoggedInUser && currentPassword === password) {
+      setErrors(prev => ({ ...prev, password: 'A nova senha deve ser diferente da senha atual' }));
+      return;
+    }
+
+    const success = await resetPassword(
+      password,
+      isLoggedInUser ? currentPassword : undefined,
+      isLoggedInUser && user?.email ? user.email : undefined,
+      isLoggedInUser
+    );
+    
     if (success) {
       setPassword('');
       setConfirmPassword('');
+      setCurrentPassword('');
+      
+      // Se for usuário logado, redirecionar para perfil após sucesso
+      if (isLoggedInUser) {
+        setTimeout(() => {
+          navigate('/perfil');
+        }, 1500);
+      }
     }
   };
 
@@ -221,9 +268,53 @@ const ResetPassword: React.FC = () => {
                 />
               </Link>
             </div>
+            <div className="text-center">
+              <CardTitle className="text-2xl font-bold">
+                {isLoggedInUser ? 'Alterar Senha' : 'Redefinir Senha'}
+              </CardTitle>
+              <CardDescription className="mt-2">
+                {isLoggedInUser 
+                  ? 'Digite sua senha atual e escolha uma nova senha'
+                  : 'Digite sua nova senha abaixo'
+                }
+              </CardDescription>
+            </div>
           </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isLoggedInUser && (
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Senha atual</Label>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Digite sua senha atual"
+                    value={currentPassword}
+                    onChange={handleCurrentPasswordChange}
+                    required
+                    disabled={isLoading}
+                    className={errors.currentPassword ? 'border-destructive pr-10' : 'pr-10'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={isLoading}
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.currentPassword && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.currentPassword}
+                  </p>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="password">Nova senha</Label>
               <div className="relative">
@@ -298,15 +389,23 @@ const ResetPassword: React.FC = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !!errors.password || !!errors.confirmPassword || !password || !confirmPassword}
+              disabled={
+                isLoading || 
+                !!errors.password || 
+                !!errors.confirmPassword || 
+                !!errors.currentPassword ||
+                !password || 
+                !confirmPassword ||
+                (isLoggedInUser && !currentPassword)
+              }
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Redefinindo...
+                  {isLoggedInUser ? 'Alterando...' : 'Redefinindo...'}
                 </>
               ) : (
-                'Redefinir senha'
+                isLoggedInUser ? 'Alterar senha' : 'Redefinir senha'
               )}
             </Button>
           </form>
