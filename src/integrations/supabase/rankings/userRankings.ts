@@ -111,21 +111,34 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
               avatarUrl: userProfile.avatar_url,
               reservationType: typedRankingData.user_data?.reservation_type || 'Ampla Concorrência',
               displayReservation: typedRankingData.user_data?.reservation_type || 'Ampla Concorrência',
-              // Pontuações subjetivas
+              // Pontuações subjetivas (sem peso)
               discursiveScore: typedRankingData.user_data?.subjectives?.discursive || 0,
               caseStudy1Score: typedRankingData.user_data?.subjectives?.case_study_1 || 0,
               caseStudy2Score: typedRankingData.user_data?.subjectives?.case_study_2 || 0,
               caseStudy3Score: typedRankingData.user_data?.subjectives?.case_study_3 || 0,
               otherSubjectiveScore: typedRankingData.user_data?.subjectives?.other_subjective || 0,
-              // Pontuações com peso (mesmo valor)
-              weightedDiscursiveScore: typedRankingData.user_data?.subjectives?.discursive || 0,
-              weightedCaseStudy1Score: typedRankingData.user_data?.subjectives?.case_study_1 || 0,
-              weightedCaseStudy2Score: typedRankingData.user_data?.subjectives?.case_study_2 || 0,
-              weightedCaseStudy3Score: typedRankingData.user_data?.subjectives?.case_study_3 || 0,
-              weightedOtherSubjectiveScore: typedRankingData.user_data?.subjectives?.other_subjective || 0,
-              // Pontuações de disciplinas customizadas
+              // ✅ CORREÇÃO: Pontuações subjetivas com peso (usar weighted_subjective_scores se disponível)
+              weightedDiscursiveScore: typedRankingData.user_data?.weighted_subjective_scores?.weighted_discursive_score || 
+                                      typedRankingData.user_data?.weightedSubjectiveScores?.weightedDiscursiveScore || 
+                                      typedRankingData.user_data?.subjectives?.discursive || 0,
+              weightedCaseStudy1Score: typedRankingData.user_data?.weighted_subjective_scores?.weighted_case_study_1_score || 
+                                       typedRankingData.user_data?.weightedSubjectiveScores?.weightedCaseStudy1Score || 
+                                       typedRankingData.user_data?.subjectives?.case_study_1 || 0,
+              weightedCaseStudy2Score: typedRankingData.user_data?.weighted_subjective_scores?.weighted_case_study_2_score || 
+                                       typedRankingData.user_data?.weightedSubjectiveScores?.weightedCaseStudy2Score || 
+                                       typedRankingData.user_data?.subjectives?.case_study_2 || 0,
+              weightedCaseStudy3Score: typedRankingData.user_data?.weighted_subjective_scores?.weighted_case_study_3_score || 
+                                       typedRankingData.user_data?.weightedSubjectiveScores?.weightedCaseStudy3Score || 
+                                       typedRankingData.user_data?.subjectives?.case_study_3 || 0,
+              weightedOtherSubjectiveScore: typedRankingData.user_data?.weighted_subjective_scores?.weighted_other_subjective_score || 
+                                            typedRankingData.user_data?.weightedSubjectiveScores?.weightedOtherSubjectiveScore || 
+                                            typedRankingData.user_data?.subjectives?.other_subjective || 0,
+              // Pontuações de disciplinas customizadas (sem peso)
               customDisciplineScores: typedRankingData.user_data?.object_scores || {},
-              weightedCustomDisciplineScores: typedRankingData.user_data?.object_scores || {},
+              // ✅ CORREÇÃO: Pontuações de disciplinas customizadas com peso (usar weightedCustomDisciplineScores se disponível)
+              weightedCustomDisciplineScores: typedRankingData.user_data?.weightedCustomDisciplineScores || 
+                                              typedRankingData.user_data?.weighted_object_scores || 
+                                              typedRankingData.user_data?.object_scores || {},
               // Flags de eliminação (padrão: não eliminado)
               belowMinimum: typedRankingData.user_data?.belowMinimum || false,
               belowDisciplineMinimums: typedRankingData.user_data?.belowDisciplineMinimums || [],

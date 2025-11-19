@@ -166,21 +166,34 @@ export const fetchUserRankingsV2 = async (
         avatarUrl: userProfile.avatar_url,
         reservationType: item.user_data?.reservation_type || 'Ampla Concorrência',
         displayReservation: item.user_data?.reservation_type || 'Ampla Concorrência',
-        // Pontuações subjetivas
+        // Pontuações subjetivas (sem peso)
         discursiveScore: item.user_data?.subjective_scores?.discursive_score || 0,
         caseStudy1Score: item.user_data?.subjective_scores?.case_study_1_score || 0,
         caseStudy2Score: item.user_data?.subjective_scores?.case_study_2_score || 0,
         caseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
         otherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
-        // Pontuações com peso (mesmo valor, pois não há mais pesos)
-        weightedDiscursiveScore: item.user_data?.subjective_scores?.discursive_score || 0,
-        weightedCaseStudy1Score: item.user_data?.subjective_scores?.case_study_1_score || 0,
-        weightedCaseStudy2Score: item.user_data?.subjective_scores?.case_study_2_score || 0,
-        weightedCaseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
-        weightedOtherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
-        // Pontuações de disciplinas customizadas
+        // ✅ CORREÇÃO: Pontuações subjetivas com peso (usar weighted_subjective_scores se disponível)
+        weightedDiscursiveScore: item.user_data?.weighted_subjective_scores?.weighted_discursive_score || 
+                                item.user_data?.weightedSubjectiveScores?.weightedDiscursiveScore || 
+                                item.user_data?.subjective_scores?.discursive_score || 0,
+        weightedCaseStudy1Score: item.user_data?.weighted_subjective_scores?.weighted_case_study_1_score || 
+                                 item.user_data?.weightedSubjectiveScores?.weightedCaseStudy1Score || 
+                                 item.user_data?.subjective_scores?.case_study_1_score || 0,
+        weightedCaseStudy2Score: item.user_data?.weighted_subjective_scores?.weighted_case_study_2_score || 
+                                 item.user_data?.weightedSubjectiveScores?.weightedCaseStudy2Score || 
+                                 item.user_data?.subjective_scores?.case_study_2_score || 0,
+        weightedCaseStudy3Score: item.user_data?.weighted_subjective_scores?.weighted_case_study_3_score || 
+                                 item.user_data?.weightedSubjectiveScores?.weightedCaseStudy3Score || 
+                                 item.user_data?.subjective_scores?.case_study_3_score || 0,
+        weightedOtherSubjectiveScore: item.user_data?.weighted_subjective_scores?.weighted_other_subjective_score || 
+                                     item.user_data?.weightedSubjectiveScores?.weightedOtherSubjectiveScore || 
+                                     item.user_data?.subjective_scores?.other_subjective_score || 0,
+        // Pontuações de disciplinas customizadas (sem peso)
         customDisciplineScores: item.user_data?.object_scores || {},
-        weightedCustomDisciplineScores: item.user_data?.object_scores || {},
+        // ✅ CORREÇÃO: Pontuações de disciplinas customizadas com peso (usar weightedCustomDisciplineScores se disponível)
+        weightedCustomDisciplineScores: item.user_data?.weightedCustomDisciplineScores || 
+                                        item.user_data?.weighted_object_scores || 
+                                        item.user_data?.object_scores || {},
       };
     });
 
