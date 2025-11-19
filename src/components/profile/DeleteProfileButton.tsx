@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface DeleteProfileButtonProps {
   userId: string;
@@ -65,7 +66,7 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
       }, 2000);
       
     } catch (error: any) {
-      console.error("Error deleting profile:", error);
+      devLog.error("Error deleting profile:", error);
       showErrorToast(
         "Erro ao excluir perfil",
         error.message || "Não foi possível excluir seu perfil. Tente novamente mais tarde."

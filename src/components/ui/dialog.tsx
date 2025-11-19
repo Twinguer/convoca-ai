@@ -36,21 +36,48 @@ const DialogContent = React.forwardRef<
   const focusTrapRef = useFocusTrap(isOpen);
 
   React.useEffect(() => {
+    if (!ref || !('current' in ref) || !ref.current) return;
+
+    const contentElement = ref.current as HTMLElement;
+    
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'data-state') {
+        if (mutation.type === 'attributes') {
           const target = mutation.target as HTMLElement;
-          setIsOpen(target.getAttribute('data-state') === 'open');
+          
+          if (mutation.attributeName === 'data-state') {
+            const newIsOpen = target.getAttribute('data-state') === 'open';
+            setIsOpen(newIsOpen);
+            
+            // ✅ CORREÇÃO: Remover aria-hidden quando o dialog estiver aberto
+            // O Radix UI define aria-hidden no body, mas não deve estar no dialog content
+            if (newIsOpen && contentElement.getAttribute('aria-hidden') === 'true') {
+              contentElement.removeAttribute('aria-hidden');
+            }
+          }
+          
+          // ✅ CORREÇÃO: Monitorar mudanças em aria-hidden e remover se o dialog estiver aberto
+          if (mutation.attributeName === 'aria-hidden' && target === contentElement) {
+            if (isOpen && contentElement.getAttribute('aria-hidden') === 'true') {
+              contentElement.removeAttribute('aria-hidden');
+            }
+          }
         }
       });
     });
 
-    if (ref && 'current' in ref && ref.current) {
-      observer.observe(ref.current, { attributes: true, attributeFilter: ['data-state'] });
+    observer.observe(contentElement, { 
+      attributes: true, 
+      attributeFilter: ['data-state', 'aria-hidden'] 
+    });
+
+    // Remover aria-hidden inicialmente se presente e o dialog estiver aberto
+    if (isOpen && contentElement.getAttribute('aria-hidden') === 'true') {
+      contentElement.removeAttribute('aria-hidden');
     }
 
     return () => observer.disconnect();
-  }, [ref]);
+  }, [ref, isOpen]);
 
   return (
     <DialogPortal>
@@ -61,6 +88,13 @@ const DialogContent = React.forwardRef<
           "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
           className
         )}
+        onOpenAutoFocus={(e) => {
+          // ✅ CORREÇÃO: Prevenir foco automático se o elemento já estiver focado
+          // Isso evita conflito com aria-hidden
+          if (props.onOpenAutoFocus) {
+            props.onOpenAutoFocus(e);
+          }
+        }}
         {...props}
       >
         <div ref={focusTrapRef}>

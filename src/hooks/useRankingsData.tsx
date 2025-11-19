@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { RankingItemProps } from '@/components/rankings/RankingList';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const fetchRankings = async (): Promise<RankingItemProps[]> => {
   try {
@@ -89,7 +90,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
             .rpc('get_general_card_participant_count', { p_general_card_id: concurso.id });
           
           if (generalError) {
-            console.error('Error fetching general card participant count:', generalError);
+            devLog.error('Error fetching general card participant count:', generalError);
             // Fallback para total_participants do banco
             participantCount = concurso.total_participants || 0;
           } else {
@@ -100,7 +101,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
             .rpc('count_concurso_participants', { concurso_id: concurso.id });
 
           if (countError) {
-            console.error('Error fetching participant count:', countError);
+            devLog.error('Error fetching participant count:', countError);
             return null;
           }
           participantCount = countData || 0;
@@ -169,7 +170,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
 
     return rankings.filter(Boolean) as RankingItemProps[];
   } catch (error) {
-    console.error('Error fetching rankings:', error);
+    devLog.error('Error fetching rankings:', error);
     return [];
   }
 };

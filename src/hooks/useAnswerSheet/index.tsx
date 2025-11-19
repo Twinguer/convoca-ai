@@ -11,6 +11,7 @@ import { useScoreManagement } from './useScoreManagement';
 import { getSectionDisplayName, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { getQuestionStructureFromOfficialAnswers } from './officialAnswersUtils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Interface para a resposta do fetchExistingAnswers
 interface FetchedAnswersData {
@@ -22,7 +23,7 @@ interface FetchedAnswersData {
 }
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
-  // console.log('[useAnswerSheet] Initialized with:', { selectedBookletId });
+  // devLog.log('[useAnswerSheet] Initialized with:', { selectedBookletId });
   
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
@@ -200,7 +201,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   // Handle fetch errors
   useEffect(() => {
     if (fetchError) {
-      console.error('[useAnswerSheet] Erro ao carregar dados:', fetchError);
+      devLog.error('[useAnswerSheet] Erro ao carregar dados:', fetchError);
       setError('Erro ao carregar respostas do usuário: ' + fetchError.message);
     }
   }, [fetchError]);

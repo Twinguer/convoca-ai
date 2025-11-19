@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface EditTokenData {
   concursoId: string;
@@ -48,7 +49,7 @@ export class EditUrlObfuscationService {
       
       return `${this.TOKEN_PREFIX}${encodedToken}`;
     } catch (error) {
-      console.error('Erro ao gerar token de edição:', error);
+      devLog.error('Erro ao gerar token de edição:', error);
       throw new Error('Falha ao gerar token de edição');
     }
   }
@@ -93,7 +94,7 @@ export class EditUrlObfuscationService {
 
       return tokenData.concursoId;
     } catch (error) {
-      console.error('Erro ao validar token de edição:', error);
+      devLog.error('Erro ao validar token de edição:', error);
       return null;
     }
   }

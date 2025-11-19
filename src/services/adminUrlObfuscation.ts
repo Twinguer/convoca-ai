@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logWarn } from '@/utils/secureLogger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço para ofuscar URLs de administração e controlar acesso
 export class AdminUrlObfuscationService {
@@ -7,9 +8,15 @@ export class AdminUrlObfuscationService {
   private static getOBFUSCATION_KEY(): string {
     const key = import.meta.env.VITE_ADMIN_OBFUSCATION_KEY;
     if (!key) {
-      console.warn('[adminUrlObfuscation] ⚠️ VITE_ADMIN_OBFUSCATION_KEY não configurada, usando fallback temporário');
-      // Fallback temporário para não quebrar o sistema - deve ser configurado em produção
-      return 'admin_fallback_key_change_in_production_' + import.meta.env.MODE;
+      // Em desenvolvimento, usar fallback temporário (NÃO SEGURO PARA PRODUÇÃO)
+      if (import.meta.env.DEV) {
+        devLog.warn('[adminUrlObfuscation] ⚠️ VITE_ADMIN_OBFUSCATION_KEY não configurada. Usando fallback temporário apenas para desenvolvimento. Configure a variável antes de produção.');
+        return 'dev_admin_fallback_key_not_secure_change_in_production';
+      }
+      // Em produção, lançar erro crítico
+      const error = new Error('[adminUrlObfuscation] ❌ CRÍTICO: VITE_ADMIN_OBFUSCATION_KEY não configurada. Configure a variável de ambiente antes de usar em produção.');
+      devLog.error(error.message);
+      throw error;
     }
     return key;
   }

@@ -9,6 +9,7 @@ import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { showProRequiredToast } from '@/utils/planRestrictions';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface FollowersColumnProps {
   userId: string;
@@ -36,7 +37,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
         setFollowers(followersData);
         setFollowing(followingData);
       } catch (error) {
-        console.error('Error loading followers/following data:', error);
+        devLog.error('Error loading followers/following data:', error);
         // Set empty arrays on error
         setFollowers([]);
         setFollowing([]);
@@ -62,7 +63,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
       const secureUrl = await generateSecureUserUrl(id, 'profile');
       navigate(secureUrl);
     } catch (error) {
-      console.error('Erro ao gerar URL segura de usuário:', error);
+      devLog.error('Erro ao gerar URL segura de usuário:', error);
       navigate('/comunidade');
     }
   };
@@ -93,7 +94,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
                 const secureUrl = await generateSecureUserUrl(userId, 'followers');
                 navigate(secureUrl);
               } catch (error) {
-                console.error('Erro ao gerar URL segura:', error);
+                devLog.error('Erro ao gerar URL segura:', error);
                 navigate('/comunidade');
               }
             }}
@@ -121,7 +122,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
                 const secureUrl = await generateSecureUserUrl(userId, 'following');
                 navigate(secureUrl);
               } catch (error) {
-                console.error('Erro ao gerar URL segura:', error);
+                devLog.error('Erro ao gerar URL segura:', error);
                 navigate('/comunidade');
               }
             }}

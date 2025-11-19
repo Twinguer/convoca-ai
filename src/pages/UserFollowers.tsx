@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Users, UserPlus, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface FollowerUser {
   id: string;
@@ -43,7 +44,7 @@ const UserFollowers = () => {
 
       const { data, error } = await supabase.rpc('get_followers_list', { target_user_id: targetUserId });
       if (error) {
-        console.error('Error fetching followers:', error);
+        devLog.error('Error fetching followers:', error);
         return [];
       }
 
@@ -78,7 +79,7 @@ const UserFollowers = () => {
 
       const { data, error } = await supabase.rpc('get_following_list', { target_user_id: targetUserId });
       if (error) {
-        console.error('Error fetching following:', error);
+        devLog.error('Error fetching following:', error);
         return [];
       }
 
@@ -185,7 +186,7 @@ const UserFollowers = () => {
       const secureUrl = await generateSecureUserUrl(userId, 'profile');
       navigate(secureUrl);
     } catch (error) {
-      console.error('Erro ao gerar URL segura de usuário:', error);
+      devLog.error('Erro ao gerar URL segura de usuário:', error);
       // Fallback para URL não ofuscada em caso de erro
       navigate(`/usuario/profile/${userId}`);
     }

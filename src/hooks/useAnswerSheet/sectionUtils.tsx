@@ -1,5 +1,6 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso, 
@@ -9,7 +10,7 @@ export const handleQuestionSectionSelection = (
   
   // Always use disciplines structure (new system)
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    console.log('[handleQuestionSectionSelection] Usando estrutura de disciplinas');
+    devLog.log('[handleQuestionSectionSelection] Usando estrutura de disciplinas');
     
     // Selecionar primeira disciplina habilitada
     let foundSection = false;
@@ -43,7 +44,7 @@ export const handleQuestionSectionSelection = (
     }
     
     if (!foundSection) {
-      console.warn('[handleQuestionSectionSelection] No enabled disciplines found');
+      devLog.warn('[handleQuestionSectionSelection] No enabled disciplines found');
     }
   } else {
     // Debug logs removed for security

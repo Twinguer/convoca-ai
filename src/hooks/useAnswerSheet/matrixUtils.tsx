@@ -1,5 +1,6 @@
 
 import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Type for storing questions by section
 export type SectionQuestions = {
@@ -42,7 +43,7 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
   }
   // Verificar se é array (estrutura antiga)
   else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    console.log('[getSectionQuestionsDict] Using disciplines array structure');
+    devLog.log('[getSectionQuestionsDict] Using disciplines array structure');
     
     // Check if hierarchical (blocks -> disciplines)
     const isHierarchical = concurso.disciplines.length > 0 && 

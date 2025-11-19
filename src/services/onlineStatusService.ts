@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export class OnlineStatusService {
   private static instance: OnlineStatusService;
@@ -28,16 +29,16 @@ export class OnlineStatusService {
         .eq('id', userId);
 
       if (error) {
-        console.error('Error setting user online:', error);
+        devLog.error('Error setting user online:', error);
         return;
       }
 
       this.isOnline = true;
       this.startHeartbeat(userId);
       
-      // console.log('User marked as online:', userId);
+      // devLog.log('User marked as online:', userId);
     } catch (error) {
-      console.error('Error in setUserOnline:', error);
+      devLog.error('Error in setUserOnline:', error);
     }
   }
 
@@ -54,16 +55,16 @@ export class OnlineStatusService {
         .eq('id', userId);
 
       if (error) {
-        console.error('Error setting user offline:', error);
+        devLog.error('Error setting user offline:', error);
         return;
       }
 
       this.isOnline = false;
       this.stopHeartbeat();
       
-      // console.log('User marked as offline:', userId);
+      // devLog.log('User marked as offline:', userId);
     } catch (error) {
-      console.error('Error in setUserOffline:', error);
+      devLog.error('Error in setUserOffline:', error);
     }
   }
 
@@ -86,10 +87,10 @@ export class OnlineStatusService {
             .eq('id', userId);
 
           if (error) {
-            console.error('Heartbeat error:', error);
+            devLog.error('Heartbeat error:', error);
           }
         } catch (error) {
-          console.error('Heartbeat error:', error);
+          devLog.error('Heartbeat error:', error);
         }
       }
     }, 2 * 60 * 1000); // 2 minutos

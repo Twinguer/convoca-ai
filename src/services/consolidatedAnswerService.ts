@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Interface para trabalhar com a estrutura consolidada
 interface ConsolidatedAnswerData {
@@ -46,7 +47,7 @@ export const consolidatedAnswerService = {
       // Buscar dados do usuário atual
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('[consolidatedAnswerService] Usuário não autenticado');
+        devLog.error('[consolidatedAnswerService] Usuário não autenticado');
         return null;
       }
 
@@ -58,7 +59,7 @@ export const consolidatedAnswerService = {
         .maybeSingle();
 
       if (rankingError || !rankingData) {
-        console.error('[consolidatedAnswerService] Erro ao buscar ranking:', rankingError);
+        devLog.error('[consolidatedAnswerService] Erro ao buscar ranking:', rankingError);
         return null;
       }
 
@@ -107,7 +108,7 @@ export const consolidatedAnswerService = {
       
       return adaptedData;
     } catch (error) {
-      console.error('[consolidatedAnswerService] Error:', error);
+      devLog.error('[consolidatedAnswerService] Error:', error);
       return null;
     }
   },
@@ -138,10 +139,10 @@ export const consolidatedAnswerService = {
             }
           }
 
-          console.log('[consolidatedAnswerService] Nenhuma resposta encontrada para o caderno:', bookletId);
+          devLog.log('[consolidatedAnswerService] Nenhuma resposta encontrada para o caderno:', bookletId);
           return {};
         } catch (error) {
-          console.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
+          devLog.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
           return {};
         }
       },
@@ -160,7 +161,7 @@ export const consolidatedAnswerService = {
         error: undefined
       };
     } catch (error: any) {
-      console.error('[consolidatedAnswerService] Error switching booklet:', error);
+      devLog.error('[consolidatedAnswerService] Error switching booklet:', error);
       return { success: false, error: error.message };
     }
   },
@@ -178,12 +179,12 @@ export const consolidatedAnswerService = {
     editCount = 0
   ) {
     try {
-      // console.log('[consolidatedAnswerService] Salvando respostas consolidadas via RPC');
-      // console.log('[consolidatedAnswerService] Ranking ID:', rankingId);
-      // console.log('[consolidatedAnswerService] Concurso ID:', concursoId);
-      // console.log('[consolidatedAnswerService] Booklet ID:', bookletId);
-      // console.log('[consolidatedAnswerService] Answers count:', answers.length);
-      // console.log('[consolidatedAnswerService] Respostas a salvar:', answers);
+      // devLog.log('[consolidatedAnswerService] Salvando respostas consolidadas via RPC');
+      // devLog.log('[consolidatedAnswerService] Ranking ID:', rankingId);
+      // devLog.log('[consolidatedAnswerService] Concurso ID:', concursoId);
+      // devLog.log('[consolidatedAnswerService] Booklet ID:', bookletId);
+      // devLog.log('[consolidatedAnswerService] Answers count:', answers.length);
+      // devLog.log('[consolidatedAnswerService] Respostas a salvar:', answers);
 
       // Garantir que bookletId seja string
       const bookletIdString = String(bookletId);
@@ -209,15 +210,15 @@ export const consolidatedAnswerService = {
         });
 
       if (error) {
-        console.error('[consolidatedAnswerService] RPC Error:', error);
+        devLog.error('[consolidatedAnswerService] RPC Error:', error);
         return { success: false, error: error.message };
       }
 
-      console.log('[consolidatedAnswerService] RPC Response:', data);
+      devLog.log('[consolidatedAnswerService] RPC Response:', data);
       
       return data;
     } catch (error: any) {
-      console.error('[consolidatedAnswerService] Error saving consolidated answers:', error);
+      devLog.error('[consolidatedAnswerService] Error saving consolidated answers:', error);
       return { success: false, error: error.message };
     }
   },
@@ -266,7 +267,7 @@ export const consolidatedAnswerService = {
         bookletStats
       };
     } catch (error) {
-      console.error('[consolidatedAnswerService] Error getting stats:', error);
+      devLog.error('[consolidatedAnswerService] Error getting stats:', error);
       return {
         totalAnswers: 0,
         bookletCount: 0,

@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useEditLimits } from '@/hooks/useEditLimits';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -70,7 +71,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         .maybeSingle();
       
       if (error) {
-        console.error('[AnswerSheet] Erro ao buscar dados do ranking:', error);
+        devLog.error('[AnswerSheet] Erro ao buscar dados do ranking:', error);
         throw error;
       }
       
@@ -191,7 +192,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         .single();
       
       if (error) {
-        console.error('[AnswerSheet] Erro ao buscar cadernos:', error);
+        devLog.error('[AnswerSheet] Erro ao buscar cadernos:', error);
         throw error;
       }
       
@@ -278,14 +279,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             .eq('user_id', user.id);
           
           if (error) {
-            console.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
+            devLog.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
           } else {
             // Debug logs removed for security
           }
         }
       }
     } catch (error) {
-      console.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
+      devLog.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
     }
     
     toast.success(`Caderno alterado para ${getBookletName(newBookletId)}. Marcações mantidas e score recalculado.`);
@@ -327,7 +328,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           setMissingOfficialAnswers(false);
         }
       } catch (err) {
-        console.error('[AnswerSheet] Erro ao verificar gabarito oficial:', err);
+        devLog.error('[AnswerSheet] Erro ao verificar gabarito oficial:', err);
       } finally {
         setCheckingOfficialAnswers(false);
       }
@@ -582,7 +583,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       await refetchNullified();
       // Debug logs removed for security
     } catch (error: any) {
-      console.error("[AnswerSheet] Erro durante o salvamento:", error);
+      devLog.error("[AnswerSheet] Erro durante o salvamento:", error);
       setIsSaving(false);
       setError(error.message || "Erro ao salvar respostas");
     }

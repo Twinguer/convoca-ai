@@ -22,6 +22,8 @@ import { UserStudyService } from '@/services/userStudyService';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import type { StudentRelationship, CanInviteResponse } from '@/types/coach';
 import { logError, logWarn } from '@/utils/secureLogger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 
 // Helper para obter iniciais
 const getInitials = (name: string) => {
@@ -149,7 +151,7 @@ const CoachDashboard = () => {
         engagement_score: Math.min(10, (hoursThisWeek / 20) * 10)
       };
     } catch (error) {
-      console.error('Erro ao calcular performance do aluno:', error);
+      devLog.error('Erro ao calcular performance do aluno:', error);
       return {
         hours_this_week: 0,
         hours_last_week: 0,
@@ -282,7 +284,7 @@ const CoachDashboard = () => {
       });
 
       if (error) {
-        console.error('Erro ao cancelar convite:', error);
+        devLog.error('Erro ao cancelar convite:', error);
         throw error;
       }
       
@@ -303,7 +305,7 @@ const CoachDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: any) => {
-      console.error('Erro completo ao cancelar convite:', error);
+      devLog.error('Erro completo ao cancelar convite:', error);
       toast({
         title: 'Erro ao cancelar convite',
         description: error.message || 'Não foi possível cancelar o convite',
@@ -337,8 +339,19 @@ const CoachDashboard = () => {
     navigate('/coach/invite');
   };
 
-  const handleViewStudent = (studentId: string) => {
-    navigate(`/coach/student/${studentId}`);
+  const handleViewStudent = async (studentId: string) => {
+    try {
+      // Gerar URL ofuscada para segurança
+      const studentToken = await UserUrlObfuscationService.generateUserToken(studentId);
+      navigate(`/coach/student/${studentToken}`);
+    } catch (error) {
+      devLog.error('Erro ao gerar URL segura:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível acessar o aluno. Tente novamente.',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Função para remover aluno
@@ -414,7 +427,7 @@ const CoachDashboard = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Erro ao enviar mensagem:', error);
+      devLog.error('Erro ao enviar mensagem:', error);
       toast({
         title: 'Erro ao enviar mensagem',
         description: error.message || 'Não foi possível enviar a mensagem. Tente novamente.',
@@ -728,7 +741,7 @@ const CoachDashboard = () => {
                         <Button 
                           variant="default"
                           size="sm"
-                          onClick={() => handleViewStudent(student.student_id)}
+                          onClick={async () => await handleViewStudent(student.student_id)}
                           className="w-full bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
                         >
                           <Eye className="mr-2 h-4 w-4" />

@@ -13,6 +13,7 @@ import { Ranking } from '@/services/rankingService';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadMoreButton } from './LoadMoreButton';
 import { formatScore } from '@/lib/utils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -44,7 +45,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 
   // Debug: verificar se os rankings estão sendo recebidos
   // useEffect(() => {
-  //   console.log('RankingTable received rankings:', {
+  //   devLog.log('RankingTable received rankings:', {
   //     rankingsLength: rankings?.length || 0,
   //     rankings: rankings?.slice(0, 3), // Primeiros 3 para debug
   //     hasMore,
@@ -55,7 +56,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   // }, [rankings, hasMore, totalLoaded, isAuthenticated, currentUserId]);
 
   // Debug: verificar se o componente está sendo renderizado
-  // console.log('RankingTable render:', {
+  // devLog.log('RankingTable render:', {
   //   rankingsLength: rankings?.length || 0,
   //   isLoadingMore,
   //   hasMore,
@@ -213,8 +214,15 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     try {
       const secureUrl = await UserUrlObfuscationService.generateSecureProfileUrl(userId);
       navigate(secureUrl);
-    } catch (error) {
-      // Fallback para URL não ofuscada em caso de erro
+    } catch (error: any) {
+      devLog.error('Erro ao gerar URL segura:', error);
+      // Em produção, se variáveis não estiverem configuradas, mostrar erro
+      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
+        // Em produção, não usar fallback inseguro - apenas mostrar erro
+        // O toast será mostrado pelo componente que chama
+        return;
+      }
+      // Em desenvolvimento ou outros erros, usar fallback
       navigate(`/usuario/profile/${userId}`);
     }
   };

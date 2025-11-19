@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // SECURITY: Scoring logic moved to backend - use Edge Functions
 
@@ -29,7 +30,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .maybeSingle();
 
     if (userRankingError || !userRanking) {
-      console.error(`[recalculateUserScore] ❌ ERRO ao buscar usuário: Database operation failed`);
+      devLog.error(`[recalculateUserScore] ❌ ERRO ao buscar usuário: Database operation failed`);
       return { 
         success: false, 
         message: 'Erro ao buscar ranking do usuário', 
@@ -53,7 +54,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     if (!rankingId) {
-      console.error(`[recalculateUserScore] ❌ Usuário não está participando do concurso`);
+      devLog.error(`[recalculateUserScore] ❌ Usuário não está participando do concurso`);
       return { 
         success: false, 
         message: 'Usuário não está participando deste concurso'
@@ -61,7 +62,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     if (!selectedBooklet) {
-      console.error(`[recalculateUserScore] ❌ selectedBooklet não encontrado`);
+      devLog.error(`[recalculateUserScore] ❌ selectedBooklet não encontrado`);
       return { 
         success: false, 
         message: 'selectedBooklet não encontrado no ranking do usuário'
@@ -77,7 +78,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     });
 
     if (calculationError) {
-      console.error(`[recalculateUserScore] ❌ ERRO ao chamar função do backend:`, calculationError);
+      devLog.error(`[recalculateUserScore] ❌ ERRO ao chamar função do backend:`, calculationError);
       return { 
         success: false, 
         message: `Erro ao recalcular pontuação: ${calculationError.message}`, 
@@ -92,8 +93,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       updatedScore: typeof calculatedScore === 'number' ? calculatedScore : 0
     };
   } catch (error) {
-    console.error(`[recalculateUserScore] ❌ ERRO GERAL para usuário ${userId}:`, error);
-    console.error(`[recalculateUserScore] ❌ Stack trace:`, error.stack);
+    devLog.error(`[recalculateUserScore] ❌ ERRO GERAL para usuário ${userId}:`, error);
+    devLog.error(`[recalculateUserScore] ❌ Stack trace:`, error.stack);
     return { 
       success: false, 
       message: `Erro ao recalcular pontuação: ${error.message}`, 
@@ -116,7 +117,7 @@ export const getUserRankingPosition = async (
       .maybeSingle();
 
     if (userRankingError || !userRanking) {
-      console.error('Erro ao buscar ranking do usuário:', userRankingError);
+      devLog.error('Erro ao buscar ranking do usuário:', userRankingError);
       return null;
     }
 
@@ -133,7 +134,7 @@ export const getUserRankingPosition = async (
     }
 
     if (!rankingId) {
-      console.error('Usuário não está participando deste concurso');
+      devLog.error('Usuário não está participando deste concurso');
       return null;
     }
 
@@ -148,7 +149,7 @@ export const getUserRankingPosition = async (
       .single();
 
     if (concursoError) {
-      console.error('Erro ao buscar número de vagas:', concursoError);
+      devLog.error('Erro ao buscar número de vagas:', concursoError);
       return position;
     }
 
@@ -164,7 +165,7 @@ export const getUserRankingPosition = async (
 
     return position;
   } catch (error) {
-    console.error('Erro ao obter posição do usuário:', error);
+    devLog.error('Erro ao obter posição do usuário:', error);
     return null;
   }
 };

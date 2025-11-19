@@ -25,6 +25,7 @@ import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface UserRanking {
   concursoId: string;
@@ -73,7 +74,7 @@ const UserProfile = () => {
           error
         } = await supabase.from('users_profiles').select('*').eq('id', user.id).single();
         if (error) {
-          console.error('Error fetching profile:', error);
+          devLog.error('Error fetching profile:', error);
           if (error.code === 'PGRST116') {
             // Log removido por segurança
             const {
@@ -89,7 +90,7 @@ const UserProfile = () => {
               profile_text: ''
             }).select('*').single();
             if (createError) {
-              console.error('Error creating profile:', createError);
+              devLog.error('Error creating profile:', createError);
               throw createError;
             }
             return newProfile;
@@ -99,7 +100,7 @@ const UserProfile = () => {
         // Log removido por segurança
         return data;
       } catch (err) {
-        console.error('Error in profile query:', err);
+        devLog.error('Error in profile query:', err);
         toast({
           title: 'Erro ao carregar perfil',
           description: 'Não foi possível carregar os dados do perfil. Tente novamente.',
@@ -223,7 +224,7 @@ const UserProfile = () => {
 
         return results;
       } catch (error) {
-        console.error('Error fetching rankings for stats:', error);
+        devLog.error('Error fetching rankings for stats:', error);
         return [];
       }
     },
@@ -286,7 +287,7 @@ const UserProfile = () => {
         upsert: true
       });
       if (uploadError) {
-        console.error("Upload error:", uploadError);
+        devLog.error("Upload error:", uploadError);
         throw uploadError;
       }
       // Log removido por segurança
@@ -304,7 +305,7 @@ const UserProfile = () => {
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
       if (updateError) {
-        console.error("Update profile error:", updateError);
+        devLog.error("Update profile error:", updateError);
         throw updateError;
       }
       // Log removido por segurança
@@ -315,7 +316,7 @@ const UserProfile = () => {
       });
       await refetch();
     } catch (error: any) {
-      console.error("Avatar upload error:", error);
+      devLog.error("Avatar upload error:", error);
       toast({
         title: 'Erro ao fazer upload',
         description: error.message || 'Ocorreu um erro ao enviar a imagem. Tente novamente.',
@@ -352,7 +353,7 @@ const UserProfile = () => {
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
       if (error) {
-        console.error("Error saving profile:", error);
+        devLog.error("Error saving profile:", error);
         throw error;
       }
       // Log removido por segurança
@@ -362,7 +363,7 @@ const UserProfile = () => {
       });
       await refetch();
     } catch (error: any) {
-      console.error("Save profile error:", error);
+      devLog.error("Save profile error:", error);
       toast({
         title: 'Erro ao salvar',
         description: error.message || 'Ocorreu um erro ao salvar o perfil. Tente novamente.',

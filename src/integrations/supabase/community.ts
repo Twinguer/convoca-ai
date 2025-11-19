@@ -1,4 +1,5 @@
 import { supabase } from './client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Function to generate specific users for the community
 export const generateSpecificUsers = async () => {
@@ -13,7 +14,7 @@ export const generateSpecificUsers = async () => {
     if (checkError) throw checkError;
     
     if (existingUsers && existingUsers.length > 0) {
-      console.log('Specific users already exist. Skipping generation.');
+      devLog.log('Specific users already exist. Skipping generation.');
       return { success: true, message: 'Specific users already exist' };
     }
 
@@ -102,11 +103,11 @@ export const generateSpecificUsers = async () => {
       }
     }
     
-    console.log(`Created ${testUsers.length} specific users`);
+    devLog.log(`Created ${testUsers.length} specific users`);
     return { success: true, message: `Criados ${testUsers.length} usuários específicos` };
     
   } catch (error) {
-    console.error('Error generating specific users: Database operation failed');
+    devLog.error('Error generating specific users: Database operation failed');
     return { success: false, message: 'Erro ao gerar usuários específicos' };
   }
 };
@@ -124,7 +125,7 @@ export const generateTestUsers = async (count: number = 30) => {
     if (checkError) throw checkError;
     
     if (existingUsers && existingUsers.length > 0) {
-      console.log('Test users already exist. Skipping generation.');
+      devLog.log('Test users already exist. Skipping generation.');
       return { success: true, message: 'Test users already exist' };
     }
 
@@ -162,11 +163,11 @@ export const generateTestUsers = async (count: number = 30) => {
     
     // Sistema de seguidores removido - não criar mais relacionamentos
     
-    console.log(`Created ${testUsers.length} test users`);
+    devLog.log(`Created ${testUsers.length} test users`);
     return { success: true, message: `Criados ${testUsers.length} usuários de teste` };
     
   } catch (error) {
-    console.error('Error generating test users: Database operation failed');
+    devLog.error('Error generating test users: Database operation failed');
     return { success: false, message: 'Erro ao gerar usuários de teste' };
   }
 };

@@ -1,3 +1,4 @@
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 /**
  * Feature Flags para Migração de Segurança
  * Permite controle granular da migração de lógica frontend para backend
@@ -62,7 +63,7 @@ export const useNewRankingStructure = (): boolean => true;
 export const logFeatureUsage = (feature: keyof FeatureFlags, context?: string) => {
   // Log silencioso - apenas para monitoramento interno
   if (featureFlags.enableSecurityLogging && process.env.NODE_ENV === 'development') {
-    console.log(`[FEATURE_FLAG] ${feature} used${context ? ` in ${context}` : ''}`);
+    devLog.log(`[FEATURE_FLAG] ${feature} used${context ? ` in ${context}` : ''}`);
   }
 };
 

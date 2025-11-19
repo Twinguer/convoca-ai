@@ -6,6 +6,7 @@
 import { featureFlags, updateFeatureFlags } from '@/config/featureFlags';
 import { securityMonitor } from './securityMonitor';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export interface MigrationConfig {
   // Configuração de migração
@@ -286,7 +287,7 @@ class MigrationManager {
    * Executa rollback
    */
   async rollbackMigration(): Promise<void> {
-    console.log('🔄 Executando rollback...');
+    devLog.log('🔄 Executando rollback...');
     
     this.status.status = 'rollback';
     
@@ -313,7 +314,7 @@ class MigrationManager {
       this.checkMigrationHealth();
     }, interval * 60 * 1000); // Converter minutos para ms
 
-    console.log(`📊 Monitoramento iniciado (verificação a cada ${interval} minutos)`);
+    devLog.log(`📊 Monitoramento iniciado (verificação a cada ${interval} minutos)`);
   }
 
   /**
@@ -324,7 +325,7 @@ class MigrationManager {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
     }
-    console.log('📊 Monitoramento parado');
+    devLog.log('📊 Monitoramento parado');
   }
 
   /**
@@ -356,7 +357,7 @@ class MigrationManager {
       });
 
     } catch (error) {
-      console.error('Erro na verificação de saúde:', error);
+      devLog.error('Erro na verificação de saúde:', error);
       this.logMigrationAction('health_check_error', { error: error.message });
     }
   }
@@ -373,7 +374,7 @@ class MigrationManager {
       this.status.averageResponseTime > rollbackConfig.performanceThreshold;
 
     if (shouldRollback) {
-      console.warn('⚠️ Condições de rollback detectadas, executando rollback automático...');
+      devLog.warn('⚠️ Condições de rollback detectadas, executando rollback automático...');
       await this.rollbackMigration();
     }
   }
@@ -462,7 +463,7 @@ class MigrationManager {
     this.stopMonitoring();
     this.status.status = 'idle';
     this.migrationHistory = [];
-    console.log('🧹 Dados de migração limpos');
+    devLog.log('🧹 Dados de migração limpos');
   }
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface SessionData {
   id: string;
@@ -102,7 +103,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     const isCacheValid = !forceRefresh && (now - lastFetch) < CACHE_DURATION && Object.keys(sessionData).length > 0;
 
     if (isCacheValid) {
-      console.log('📦 Usando dados em cache');
+      devLog.log('📦 Usando dados em cache');
       setLoading(false);
       return;
     }
@@ -115,7 +116,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       const userStudyData = await UserStudyService.getUserStudyData(userId);
       
       if (!userStudyData) {
-        console.warn('⚠️ Nenhum dado do usuário encontrado');
+        devLog.warn('⚠️ Nenhum dado do usuário encontrado');
         setSessionData({});
         return;
       }
@@ -127,7 +128,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       // Debug logs removed for security
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      console.error('❌ Erro ao carregar dados de sessão', err);
+      devLog.error('❌ Erro ao carregar dados de sessão', err);
       setError(errorMessage);
       setSessionData({});
     } finally {

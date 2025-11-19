@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Hook to fetch community users
 export const useCommunityUsers = (searchQuery: string = '') => {
@@ -37,7 +38,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
         const { data: profiles, error } = await query.limit(100);
 
         if (error) {
-          console.error('Error fetching profiles:', error);
+          devLog.error('Error fetching profiles:', error);
           throw error;
         }
 
@@ -52,7 +53,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               .select('*', { count: 'exact', head: true })
               .eq('user_id', profile.id);
 
-            if (postError) console.error('Error counting posts:', postError);
+            if (postError) devLog.error('Error counting posts:', postError);
 
             // Check if user is a coach using RPC function (bypasses RLS issues)
             let isCoach = false;
@@ -163,7 +164,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
         return usersWithCounts;
       } catch (error) {
-        console.error('Error fetching community users:', error);
+        devLog.error('Error fetching community users:', error);
         throw error;
       }
     },

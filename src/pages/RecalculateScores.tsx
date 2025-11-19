@@ -7,6 +7,7 @@ import { recalculateAllUserScores, recalculateSpecificUserScore } from '@/utils/
 import { useAuth } from '@/hooks/useAuth';
 // import { testRecalculate } from '@/utils/testRecalculate'; // Removido - arquivo deletado
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const RecalculateScores: React.FC = () => {
   const [concursoId, setConcursoId] = useState('44c3e864-9c12-4f41-9d12-40b2a1273b62');
@@ -36,16 +37,16 @@ const RecalculateScores: React.FC = () => {
     setResults([]);
     
     try {
-      console.log('🔍 [RecalculateScores] Chamando recalculateSpecificUserScore...');
+      devLog.log('🔍 [RecalculateScores] Chamando recalculateSpecificUserScore...');
       const result = await recalculateSpecificUserScore(userId, concursoId);
-      console.log('🔍 [RecalculateScores] Resultado recebido');
+      devLog.log('🔍 [RecalculateScores] Resultado recebido');
       
       setResults(prev => [...prev, { 
         type: result.success ? 'success' : 'error', 
         message: result.success ? 'Recálculo do usuário específico concluído' : `Erro: ${result.message}` 
       }]);
     } catch (error) {
-      console.error('❌ [RecalculateScores] Erro capturado:', error);
+      devLog.error('❌ [RecalculateScores] Erro capturado:', error);
       setResults(prev => [...prev, { type: 'error', message: `Erro: ${error.message}` }]);
     } finally {
       setIsRecalculating(false);

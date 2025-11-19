@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -7,36 +7,86 @@ import { Alert } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CriarCiclo from '@/pages/Estudos/CriarCiclo';
+import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
+import { devLog } from '@/utils/productionLogger';
+import { useToast } from '@/hooks/use-toast';
+
+// Helper para verificar se é UUID válido
+const isValidUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
 
 const CreateCycleForStudent = () => {
-  const { studentId } = useParams();
+  const { studentId: studentIdParam } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Estado para ID validado
+  const [validatedStudentId, setValidatedStudentId] = useState<string | null>(null);
+  const [isValidatingToken, setIsValidatingToken] = useState(false);
+
+  // Validar token se necessário
+  useEffect(() => {
+    const validateId = async () => {
+      if (!studentIdParam) return;
+
+      setIsValidatingToken(true);
+      
+      try {
+        let studentId: string;
+        if (isValidUUID(studentIdParam)) {
+          studentId = studentIdParam;
+        } else {
+          const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
+          if (!validatedUserId) {
+            throw new Error('Token de aluno inválido');
+          }
+          studentId = validatedUserId;
+        }
+
+        setValidatedStudentId(studentId);
+      } catch (error) {
+        devLog.error('Erro ao validar token:', error);
+        toast({
+          title: 'Erro',
+          description: 'Token de acesso inválido ou expirado.',
+          variant: 'destructive'
+        });
+        navigate('/coach/dashboard');
+      } finally {
+        setIsValidatingToken(false);
+      }
+    };
+
+    validateId();
+  }, [studentIdParam, navigate, toast]);
 
   // ✅ Buscar nome do aluno
   const { data: studentInfo, isLoading: isStudentLoading } = useQuery({
-    queryKey: ['student-info', studentId],
+    queryKey: ['student-info', validatedStudentId],
     queryFn: async () => {
-      if (!studentId) return null;
+      if (!validatedStudentId) return null;
       
       // Buscar dados do aluno na tabela users_profiles
       const { data, error } = await supabase
         .from('users_profiles')
         .select('name, email')
-        .eq('id', studentId)
+        .eq('id', validatedStudentId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!studentId,
+    enabled: !!validatedStudentId,
   });
 
   // Verificar acesso ao aluno
   const { data: hasAccess, isLoading } = useQuery({
-    queryKey: ['coach-has-access', user?.id, studentId],
+    queryKey: ['coach-has-access', user?.id, validatedStudentId],
     queryFn: async () => {
-      if (!user?.id || !studentId) return false;
+      if (!user?.id || !validatedStudentId) return false;
       
       const { data: coachProfile } = await supabase
         .from('coach_profiles')
@@ -45,12 +95,20 @@ const CreateCycleForStudent = () => {
         .single();
       
       const students = coachProfile?.student_relationships || [];
-      return students.some((s: any) => s.student_id === studentId && s.status === 'active');
+      return students.some((s: any) => s.student_id === validatedStudentId && s.status === 'active');
     },
-    enabled: !!user && !!studentId,
+    enabled: !!user && !!validatedStudentId,
   });
 
   // Provider para passar contexto do aluno para o CriarCiclo
+  if (isValidatingToken || !validatedStudentId) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">Validando acesso...</div>
+      </div>
+    );
+  }
+
   if (isLoading || isStudentLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -79,7 +137,16 @@ const CreateCycleForStudent = () => {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate(`/coach/student/${studentId}`)}
+            onClick={async () => {
+              if (!validatedStudentId) return;
+              try {
+                const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
+                navigate(`/coach/student/${studentToken}`);
+              } catch (error) {
+                devLog.error('Erro ao gerar URL segura:', error);
+                navigate('/coach/dashboard');
+              }
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -98,8 +165,17 @@ const CreateCycleForStudent = () => {
       <CriarCiclo 
         // Passar prop para indicar modo coach
         coachMode
-        targetStudentId={studentId}
-        onSuccess={() => navigate(`/coach/student/${studentId}`)}
+        targetStudentId={validatedStudentId}
+        onSuccess={async () => {
+          if (!validatedStudentId) return;
+          try {
+            const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
+            navigate(`/coach/student/${studentToken}`);
+          } catch (error) {
+            devLog.error('Erro ao gerar URL segura:', error);
+            navigate('/coach/dashboard');
+          }
+        }}
       />
     </div>
   );

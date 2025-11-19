@@ -1,5 +1,6 @@
 import { Concurso } from '@/types/concursos';
 import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * Mapeia object_scores da estrutura antiga para a nova estrutura baseada em disciplinas JSONB
@@ -44,7 +45,7 @@ export const mapObjectScoresToOldStructure = (
   newObjectScores: Record<string, number>,
   concurso: Concurso
 ): Record<string, number> => {
-  console.log('[mapObjectScoresToOldStructure] Input newObjectScores:', newObjectScores);
+  devLog.log('[mapObjectScoresToOldStructure] Input newObjectScores:', newObjectScores);
   
   const oldObjectScores: Record<string, number> = {};
   
@@ -73,7 +74,7 @@ export const mapObjectScoresToOldStructure = (
     }
   }
   
-  console.log('[mapObjectScoresToOldStructure] Final oldObjectScores:', oldObjectScores);
+  devLog.log('[mapObjectScoresToOldStructure] Final oldObjectScores:', oldObjectScores);
   return oldObjectScores;
 };
 
@@ -81,23 +82,23 @@ export const mapObjectScoresToOldStructure = (
  * Cria object_scores inicial baseado na estrutura de disciplinas do concurso
  */
 export const createInitialObjectScores = (concurso: Concurso): Record<string, number> => {
-  console.log('[createInitialObjectScores] Creating initial scores for concurso:', concurso.id);
+  devLog.log('[createInitialObjectScores] Creating initial scores for concurso:', concurso.id);
   
   const objectScores: Record<string, number> = {};
   
   // Obter disciplinas da nova estrutura
   const disciplines = getDisciplines(concurso);
-  console.log('[createInitialObjectScores] Disciplines:', disciplines);
+  devLog.log('[createInitialObjectScores] Disciplines:', disciplines);
   
   // Inicializar pontuações para todas as disciplinas habilitadas
   for (const discipline of disciplines) {
     if (discipline.isEnabled && discipline.type) {
       objectScores[discipline.type] = 0;
-      console.log(`[createInitialObjectScores] Initialized ${discipline.type}: 0`);
+      devLog.log(`[createInitialObjectScores] Initialized ${discipline.type}: 0`);
     }
   }
   
-  console.log('[createInitialObjectScores] Final objectScores:', objectScores);
+  devLog.log('[createInitialObjectScores] Final objectScores:', objectScores);
   return objectScores;
 };
 

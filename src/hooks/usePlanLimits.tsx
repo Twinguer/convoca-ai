@@ -4,6 +4,7 @@ import { useSubscription } from './useSubscription';
 import { useAuth } from './useAuth';
 import { UserStudyService } from '@/services/userStudyService';
 import { PLAN_LIMITS } from '@/utils/planRestrictions';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const usePlanLimits = () => {
   const { user } = useAuth();
@@ -80,7 +81,7 @@ export const usePlanLimits = () => {
         if (!userStudyData?.study_cycles) return 0;
         return userStudyData.study_cycles.filter(cycle => cycle.is_active).length;
       } catch (error) {
-        console.debug('[usePlanLimits] Erro ao buscar ciclos:', error);
+        devLog.debug('[usePlanLimits] Erro ao buscar ciclos:', error);
         return 0;
       }
     },

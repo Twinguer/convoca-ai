@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatScore } from '@/lib/utils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface ScoreFormProps {
   concurso: Concurso;
@@ -138,7 +139,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       );
 
       if (calculationError) {
-        console.error('Erro no cálculo de pontuações:', calculationError);
+        devLog.error('Erro no cálculo de pontuações:', calculationError);
         throw new Error('Erro no cálculo de pontuações: ' + calculationError.message);
       }
 
@@ -173,7 +174,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Erro ao atualizar ranking:', updateError);
+        devLog.error('Erro ao atualizar ranking:', updateError);
         throw updateError;
       }
       
@@ -190,7 +191,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       // Pequeno delay para o toast aparecer antes do redirecionamento
       setTimeout(onSuccess, 1500);
     } catch (error) {
-      console.error('Erro ao registrar notas:', error);
+      devLog.error('Erro ao registrar notas:', error);
       toast({
         title: 'Erro ao registrar notas',
         description: 'Ocorreu um erro ao tentar registrar suas notas. Tente novamente.',

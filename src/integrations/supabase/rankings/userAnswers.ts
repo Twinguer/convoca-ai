@@ -1,5 +1,6 @@
 
 import { supabase } from '../client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * Interface for subjective scores
@@ -59,7 +60,7 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
       .maybeSingle();
       
     if (error) {
-      console.error('[fetchUserAnswers] Error:', error);
+      devLog.error('[fetchUserAnswers] Error:', error);
       return {};
     }
 
@@ -123,7 +124,7 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
       subjectiveScores: subjectiveScoresForConcurso
     };
   } catch (error) {
-    console.error('[fetchUserAnswers] Erro ao buscar respostas consolidadas:', error);
+    devLog.error('[fetchUserAnswers] Erro ao buscar respostas consolidadas:', error);
     return {};
   }
 };
@@ -153,7 +154,7 @@ export const fetchUserAnswersForBooklet = async (rankingId: string, bookletId: s
     
     return {};
   } catch (error) {
-    console.error('[fetchUserAnswersForBooklet] Erro:', error);
+    devLog.error('[fetchUserAnswersForBooklet] Erro:', error);
     return {};
   }
 };
@@ -164,7 +165,7 @@ export const saveUserAnswers = async (
   concursoId: string,
   answers: { questionNumber: number; answer: string; isBasicKnowledge?: boolean }[]
 ) => {
-  console.log('[saveUserAnswers] Função legada redirecionando para RPC consolidada...');
+  devLog.log('[saveUserAnswers] Função legada redirecionando para RPC consolidada...');
   // Esta função agora apenas redireciona - a real implementação está no useSaveAnswers.tsx
   return true;
 };

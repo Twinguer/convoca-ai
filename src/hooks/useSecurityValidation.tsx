@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { SecurityValidators } from '@/utils/securityValidators';
 import { inputSanitizer } from '@/components/Security/InputSanitizer';
 import { showErrorToast } from '@/integrations/supabase/toast-utils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const useSecurityValidation = () => {
   const validateAndSanitizeInput = useCallback((input: string, fieldName: string = 'campo') => {
@@ -17,7 +18,7 @@ export const useSecurityValidation = () => {
       // Then sanitize the input
       return inputSanitizer.sanitizeText(input);
     } catch (error) {
-      console.error('Validation error:', error);
+      devLog.error('Validation error:', error);
       showErrorToast('Erro de validação', `Erro ao processar ${fieldName}`);
       return null;
     }

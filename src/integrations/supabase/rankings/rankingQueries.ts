@@ -1,6 +1,7 @@
 
 import { supabase } from '../client';
 import { Concurso } from '@/types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Função para buscar um ranking específico por ID
 export const fetchRankingById = async (rankingId: string): Promise<Concurso | null> => {
@@ -12,13 +13,13 @@ export const fetchRankingById = async (rankingId: string): Promise<Concurso | nu
       .single();
       
     if (error) {
-      console.error('Erro ao buscar ranking por ID:', error);
+      devLog.error('Erro ao buscar ranking por ID:', error);
       throw error;
     }
     
     return data;
   } catch (error) {
-    console.error('Erro na função fetchRankingById:', error);
+    devLog.error('Erro na função fetchRankingById:', error);
     return null;
   }
 };
@@ -57,7 +58,7 @@ export const fetchAllRankings = async (filters?: {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Erro ao buscar rankings:', error);
+    devLog.error('Erro ao buscar rankings:', error);
     return [];
   }
 };
@@ -74,7 +75,7 @@ export const fetchOfficialAnswers = async (concursoId: string) => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Erro ao buscar gabarito oficial:', error);
+    devLog.error('Erro ao buscar gabarito oficial:', error);
     return [];
   }
 };

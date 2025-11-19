@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { checkAnswerKeyCompleteness } from '@/services/answerKeyService';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface BookletCompleteness {
   bookletId: string;
@@ -35,8 +36,8 @@ export const useAnswerKeyCompleteness = (
     const checkCompleteness = async () => {
       setIsLoading(true);
       try {
-        console.log('Verificando completude dos cadernos...');
-        console.log('Total de questões esperadas:', expectedQuestions);
+        devLog.log('Verificando completude dos cadernos...');
+        devLog.log('Total de questões esperadas:', expectedQuestions);
         
         const result = await checkAnswerKeyCompleteness(
           concursoId,
@@ -46,17 +47,17 @@ export const useAnswerKeyCompleteness = (
         
         // Log detalhado para cada caderno
         result.details.forEach(detail => {
-          console.log(
+          devLog.log(
             `Caderno ${detail.bookletName}: ${detail.completed}/${detail.total} questões ${
               detail.isComplete ? '(completo)' : '(incompleto)'
             }`
           );
         });
         
-        console.log('Status de completude:', result);
+        devLog.log('Status de completude:', result);
         setCompleteness(result);
       } catch (error) {
-        console.error('Erro ao verificar completude do gabarito:', error);
+        devLog.error('Erro ao verificar completude do gabarito:', error);
         setCompleteness({
           allComplete: false,
           details: bookletIds.map(id => ({

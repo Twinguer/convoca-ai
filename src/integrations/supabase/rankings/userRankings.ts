@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * Interface for ranking data item
@@ -56,7 +57,7 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
       `) as { data: UserRankingData[] | null, error: any };
 
     if (rankingError) {
-      console.error("[userRankings] Erro ao buscar user_rankings:", rankingError);
+      devLog.error("[userRankings] Erro ao buscar user_rankings:", rankingError);
       throw rankingError;
     }
 
@@ -77,7 +78,7 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
       .in('id', userIds);
     
     if (profileError) {
-      console.error("[userRankings] Erro ao buscar profiles:", profileError);
+      devLog.error("[userRankings] Erro ao buscar profiles:", profileError);
     }
     
     // Create a map for quick profile lookup
@@ -97,7 +98,7 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
             const userProfile = profileMap.get(userRanking.user_id);
             
             if (!userProfile) {
-              console.warn(`[userRankings] Profile not found for user ${userRanking.user_id}`);
+              devLog.warn(`[userRankings] Profile not found for user ${userRanking.user_id}`);
               continue;
             }
             
@@ -144,7 +145,7 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
     return rankingData;
     
   } catch (error) {
-    console.error("[userRankings] Error fetching rankings with user info:", error);
+    devLog.error("[userRankings] Error fetching rankings with user info:", error);
     throw error;
   }
 };

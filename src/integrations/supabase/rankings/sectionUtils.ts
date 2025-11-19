@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getNumericValue } from './examStructure';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * Atualiza os tipos de seções para um gabarito
@@ -12,13 +13,13 @@ export const updateSectionTypes = async (concursoId: string) => {
     });
     
     if (error) {
-      console.error('Error updating section types:', error);
+      devLog.error('Error updating section types:', error);
       return { success: false, error: error.message };
     }
     
     return { success: true, data };
   } catch (error) {
-    console.error('Error updating section types:', error);
+    devLog.error('Error updating section types:', error);
     return { success: false, error: String(error) };
   }
 };
@@ -56,7 +57,7 @@ export const getExamSections = async (concursoId: string) => {
       specific3Count: getNumericValue(data.specific_knowledge_3_questions)
     };
   } catch (error) {
-    console.error('Error fetching exam sections:', error);
+    devLog.error('Error fetching exam sections:', error);
     return {
       hasBasic: false,
       hasSpecific1: false,

@@ -1,4 +1,5 @@
 import { DisciplinesStructure, DisciplineBlockStructure, NestedDisciplineStructure, DisciplineBlock, NestedDiscipline, Concurso } from '../types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * TypeGuards para detectar diferentes estruturas de disciplines
@@ -115,7 +116,7 @@ export const migrateDisciplinesStructure = (concurso: Concurso): Concurso => {
     };
   }
   
-  console.warn('[migrateDisciplinesStructure] Unknown structure, returning as is');
+  devLog.warn('[migrateDisciplinesStructure] Unknown structure, returning as is');
   return concurso;
 };
 
@@ -221,8 +222,8 @@ export const extractDisciplines = (concurso: Concurso): NestedDiscipline[] => {
     }
   }
   
-  console.warn('[extractDisciplines] Unknown structure, returning empty array');
-  console.warn('[extractDisciplines] Structure details:', {
+  devLog.warn('[extractDisciplines] Unknown structure, returning empty array');
+  devLog.warn('[extractDisciplines] Structure details:', {
     type: typeof concurso.disciplines,
     isArray: Array.isArray(concurso.disciplines),
     length: Array.isArray(concurso.disciplines) ? concurso.disciplines.length : 'N/A',
@@ -254,24 +255,24 @@ export const getGlobalMinimumScores = (concurso: Concurso): { total: number; cot
  * Função temporária para debug
  */
 export const debugDisciplinesStructure = (concurso: Concurso) => {
-  console.log('=== DEBUG DISCIPLINES STRUCTURE ===');
-  console.log('Concurso ID:', concurso.id);
-  console.log('Concurso disciplines:', concurso.disciplines);
-  console.log('Type of disciplines:', typeof concurso.disciplines);
-  console.log('Is Array:', Array.isArray(concurso.disciplines));
+  devLog.log('=== DEBUG DISCIPLINES STRUCTURE ===');
+  devLog.log('Concurso ID:', concurso.id);
+  devLog.log('Concurso disciplines:', concurso.disciplines);
+  devLog.log('Type of disciplines:', typeof concurso.disciplines);
+  devLog.log('Is Array:', Array.isArray(concurso.disciplines));
   
   if (concurso.disciplines) {
-    console.log('Disciplines keys:', Object.keys(concurso.disciplines));
+    devLog.log('Disciplines keys:', Object.keys(concurso.disciplines));
     
     if (Array.isArray(concurso.disciplines)) {
-      console.log('Array length:', concurso.disciplines.length);
+      devLog.log('Array length:', concurso.disciplines.length);
       if (concurso.disciplines.length > 0) {
         // Debug logs removed for security
         // Debug logs removed for security
       }
     }
   }
-  console.log('=== END DEBUG ===');
+  devLog.log('=== END DEBUG ===');
 };
 
 /**

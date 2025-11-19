@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 
   Users, 
   Clock, 
@@ -57,7 +58,7 @@ const CoachLandingPage = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar usuários:', error);
+        devLog.error('Erro ao buscar usuários:', error);
         return [];
       }
 

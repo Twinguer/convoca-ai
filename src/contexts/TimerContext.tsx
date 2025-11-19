@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, ReactNod
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface TimerContextType {
   minutes: number;
@@ -37,7 +38,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   
   // Defensive check for hooks
   if (!addStudySession) {
-    console.warn('addStudySession not available in TimerProvider');
+    devLog.warn('addStudySession not available in TimerProvider');
   }
 
   // Create user-specific localStorage keys
@@ -164,7 +165,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
             })
             .eq('id', previousUserId);
         } catch (error) {
-          console.error('Error updating studying status on logout:', error);
+          devLog.error('Error updating studying status on logout:', error);
         }
       };
       updateStatus();
@@ -400,7 +401,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         })
         .eq('id', user.id);
     } catch (error) {
-      console.error('Error updating studying status:', error);
+      devLog.error('Error updating studying status:', error);
     }
   };
 

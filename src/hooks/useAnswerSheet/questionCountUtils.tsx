@@ -1,16 +1,17 @@
 
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Calculate the total number of objective questions in the exam
 export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  console.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
+  devLog.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
   
   // Always use disciplines structure (new system)
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    console.log('[getTotalQuestions] Usando estrutura de disciplinas');
+    devLog.log('[getTotalQuestions] Usando estrutura de disciplinas');
     let totalQuestions = 0;
     
     // Check if hierarchical structure (blocks -> disciplines)
@@ -52,7 +53,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       }
     }
     
-    console.log(`[getTotalQuestions] Total de questões: ${totalQuestions}`);
+    devLog.log(`[getTotalQuestions] Total de questões: ${totalQuestions}`);
     return totalQuestions;
   }
   
@@ -63,7 +64,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
 // Get the count of questions that have been answered
 export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): number => {
   const count = Object.keys(answers).length;
-  console.log(`[getAnsweredQuestionsCount] Total de respostas: ${count}`);
+  devLog.log(`[getAnsweredQuestionsCount] Total de respostas: ${count}`);
   return count;
 };
 
@@ -81,7 +82,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
     // Debug logs removed for security
 
     if (error || !data) {
-      console.log('[checkMissingOfficialAnswers] Erro ao buscar gabarito oficial ou gabarito não encontrado');
+      devLog.log('[checkMissingOfficialAnswers] Erro ao buscar gabarito oficial ou gabarito não encontrado');
       return true;
     }
 
@@ -111,7 +112,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
     // Debug logs removed for security
     return false;
   } catch (error) {
-    console.error('[checkMissingOfficialAnswers] Erro ao verificar gabarito oficial:', error);
+    devLog.error('[checkMissingOfficialAnswers] Erro ao verificar gabarito oficial:', error);
     return true;
   }
 };

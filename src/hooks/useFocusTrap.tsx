@@ -37,24 +37,14 @@ export const useFocusTrap = (isActive: boolean) => {
       }
     };
 
-    // Focus no primeiro elemento quando o trap é ativado (sem outline)
-    if (firstElement) {
-      // Pequeno delay para garantir que o modal esteja totalmente renderizado
-      setTimeout(() => {
-        firstElement.focus();
-        // Remove outline temporariamente para evitar borda verde
-        firstElement.style.outline = 'none';
-      }, 50);
-    }
+    // ✅ CORREÇÃO: Não focar automaticamente - deixar o Radix UI gerenciar o foco inicial
+    // O Radix UI já gerencia o foco e aria-hidden corretamente
+    // Focar manualmente pode causar conflito com aria-hidden
 
     document.addEventListener('keydown', handleTabKey);
 
     return () => {
       document.removeEventListener('keydown', handleTabKey);
-      // Restaura outline quando o trap é desativado
-      if (firstElement) {
-        firstElement.style.outline = '';
-      }
     };
   }, [isActive]);
 

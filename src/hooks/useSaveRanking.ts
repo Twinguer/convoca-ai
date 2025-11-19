@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { mapFormDataToDisciplinesStructure } from '@/utils/disciplinesStructure';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
 import { inheritParentData } from '@/services/concursoService';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface SaveRankingOptions {
   formValues: any;
@@ -348,7 +349,7 @@ export const useSaveRanking = () => {
             finalBanca = parentData.banca || finalBanca;
           }
         } catch (error) {
-          console.error('Erro ao buscar dados do parent:', error);
+          devLog.error('Erro ao buscar dados do parent:', error);
           // Continuar com os valores do formulário em caso de erro
         }
       }
@@ -443,13 +444,13 @@ export const useSaveRanking = () => {
           .select();
 
         if (error) {
-          console.error("Error updating ranking:", error);
+          devLog.error("Error updating ranking:", error);
           throw error;
         }
         result = data;
         concursoIdToUse = editId;
         
-        // console.log('[useSaveRanking] Ranking editado com sucesso, campos atualizados:', Object.keys(editDataToSubmit));
+        // devLog.log('[useSaveRanking] Ranking editado com sucesso, campos atualizados:', Object.keys(editDataToSubmit));
       } else {
         const { data, error } = await supabase
           .from('concursos')
@@ -457,7 +458,7 @@ export const useSaveRanking = () => {
           .select();
           
         if (error) {
-          console.error("Error inserting ranking:", error);
+          devLog.error("Error inserting ranking:", error);
           throw error;
         }
         result = data;
@@ -529,8 +530,8 @@ export const useSaveRanking = () => {
           .eq('id', concursoIdToUse);
 
         if (updateError) {
-          console.error("Error updating additional fields:", updateError);
-          console.error("Update error details:", {
+          devLog.error("Error updating additional fields:", updateError);
+          devLog.error("Update error details:", {
             code: updateError.code,
             message: updateError.message,
             details: updateError.details,
@@ -565,10 +566,10 @@ export const useSaveRanking = () => {
                 queryClient.invalidateQueries({ queryKey: ['rankings', concursoIdToUse] });
                 queryClient.invalidateQueries({ queryKey: ['user-created-rankings'] });
               })
-              .catch((e) => console.error('[useSaveRanking] Erro ao executar recálculo em lote:', e));
+              .catch((e) => devLog.error('[useSaveRanking] Erro ao executar recálculo em lote:', e));
           }
         } catch (batchErr) {
-          console.error('[useSaveRanking] Erro ao preparar recálculo pós-edição:', batchErr);
+          devLog.error('[useSaveRanking] Erro ao preparar recálculo pós-edição:', batchErr);
         }
       }
 
@@ -582,7 +583,7 @@ export const useSaveRanking = () => {
       
       return { id: concursoIdToUse, duplicated: false };
     } catch (error: any) {
-      console.error("Erro ao salvar ranking:", error);
+      devLog.error("Erro ao salvar ranking:", error);
       toast.error("Erro ao salvar ranking: " + (error?.message || 'Erro desconhecido'));
       return { duplicated: false, error: true };
     }

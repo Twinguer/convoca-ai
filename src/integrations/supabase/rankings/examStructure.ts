@@ -1,5 +1,6 @@
 import { Concurso, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
 import { extractDisciplines, getGlobalMinimumScores, debugDisciplinesStructure } from '@/utils/disciplinesStructure';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Mapa para exibição amigável dos nomes das seções
 export let sectionDisplayNames: Record<string, string> = {
@@ -199,7 +200,7 @@ export const getDisciplines = (concurso: Concurso) => {
   }
   
   // Fallback para estrutura tradicional (apenas se não houver disciplines JSONB)
-  console.warn('[getDisciplines] Usando estrutura tradicional como fallback - disciplines JSONB não encontrado');
+  devLog.warn('[getDisciplines] Usando estrutura tradicional como fallback - disciplines JSONB não encontrado');
   return getTraditionalDisciplines(concurso);
 };
 
@@ -272,7 +273,7 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
     });
   }
   
-  // console.log('[updateSectionDisplayNames] Nomes de exibição finais:', displayNames);
+  // devLog.log('[updateSectionDisplayNames] Nomes de exibição finais:', displayNames);
   return displayNames;
 };
 

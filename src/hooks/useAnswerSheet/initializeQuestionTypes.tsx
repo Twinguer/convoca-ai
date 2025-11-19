@@ -1,5 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const createQuestionOptions = (concurso: Concurso): Record<number, string[]> => {
   const questionOptions: Record<number, string[]> = {};
@@ -56,7 +57,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
   
   // Verificar se é array (estrutura antiga)
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    console.log('[getTotalQuestions] Usando estrutura de disciplinas (array)');
+    devLog.log('[getTotalQuestions] Usando estrutura de disciplinas (array)');
     let total = 0;
     
     // Verificar se temos estrutura hierárquica (blocos -> disciplinas)

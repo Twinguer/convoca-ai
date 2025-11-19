@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyContest, StudySubject } from '@/types/userStudy';
 import { toast } from '@/hooks/use-toast';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface Discipline {
   id: string;
@@ -144,7 +145,7 @@ const CriarConcurso = () => {
         throw new Error('Failed to save data');
       }
     } catch (error) {
-      console.error('Error creating study contest:', error);
+      devLog.error('Error creating study contest:', error);
       toast({
         title: "Erro",
         description: "Erro ao criar concurso de estudo. Tente novamente.",

@@ -10,6 +10,7 @@ import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batch
 import { useEffect, useState } from 'react';
 import { logger } from '@/utils/logger';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export function useResultadosData(concursoId?: string) {
   const { id: urlId } = useParams() as { id: string };
@@ -219,7 +220,7 @@ export function useResultadosData(concursoId?: string) {
     logger.info('Manual refresh initiated', 'USE_RESULTADOS_DATA', { concursoId: id });
     
     if (!id) {
-      console.error("[useResultadosData] ID do concurso não fornecido");
+      devLog.error("[useResultadosData] ID do concurso não fornecido");
       return {
         success: false,
         error: "ID do concurso não fornecido"
@@ -324,7 +325,7 @@ export function useResultadosData(concursoId?: string) {
   };
   
   // Debug log para verificar o userRankingId
-  // console.log('[useResultadosData] Retornando dados:', {
+  // devLog.log('[useResultadosData] Retornando dados:', {
   //   concursoId: id,
   //   isParticipating: userParticipationStatus?.isParticipating || false,
   //   userRankingId: userParticipationStatus?.rankingId,
@@ -344,7 +345,7 @@ export function useResultadosData(concursoId?: string) {
     refetchCount,
     creatorName: (() => {
       const name = creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário');
-      // console.log('[useResultadosData] Creator name calculado:', { 
+      // devLog.log('[useResultadosData] Creator name calculado:', { 
       //   creatorInfo: creatorInfo?.name, 
       //   is_admin_created: concurso?.is_admin_created, 
       //   finalName: name 

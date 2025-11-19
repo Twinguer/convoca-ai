@@ -1,11 +1,12 @@
 
 import { supabase } from '../client';
 import { recalculateAllUserScores } from './userAnswers';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Function to create a new ranking
 export const createRanking = async (rankingData: any) => {
   try {
-    // console.log('Creating new ranking with data:', rankingData);
+    // devLog.log('Creating new ranking with data:', rankingData);
     
     // First, check if all required fields are present
     const requiredFields = ['titulo', 'banca'];
@@ -83,14 +84,14 @@ export const createRanking = async (rankingData: any) => {
       .select();
       
     if (error) {
-      console.error('Database error creating ranking:', error);
+      devLog.error('Database error creating ranking:', error);
       throw error;
     }
     
-    // console.log('Ranking created successfully:', data);
+    // devLog.log('Ranking created successfully:', data);
     return data;
   } catch (error) {
-    console.error('Error creating ranking:', error);
+    devLog.error('Error creating ranking:', error);
     throw error;
   }
 };
@@ -141,7 +142,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
       .single();
     
     if (oldDataError) {
-      console.error('Error fetching old ranking data:', oldDataError);
+      devLog.error('Error fetching old ranking data:', oldDataError);
     }
     
     // Update the ranking
@@ -152,7 +153,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
       .select();
       
     if (error) {
-      console.error('Database error updating ranking:', error);
+      devLog.error('Database error updating ranking:', error);
       throw error;
     }
     
@@ -182,7 +183,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
       for (const field of structureFields) {
         if (rankingData[field] !== undefined && rankingData[field] !== oldData[field]) {
           structureChanged = true;
-          // console.log(`Field ${field} changed from ${oldData[field]} to ${rankingData[field]}`);
+          // devLog.log(`Field ${field} changed from ${oldData[field]} to ${rankingData[field]}`);
           break;
         }
       }
@@ -191,17 +192,17 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     // If structure changed, recalculate all scores
     if (structureChanged) {
       try {
-        console.log('Exam structure changed, recalculating all scores');
+        devLog.log('Exam structure changed, recalculating all scores');
         await recalculateAllUserScores(rankingId);
       } catch (recalcError) {
-        console.error('Error recalculating scores after structure change:', recalcError);
+        devLog.error('Error recalculating scores after structure change:', recalcError);
         // Don't throw error here, as the update was successful
       }
     }
     
     return data;
   } catch (error) {
-    console.error('Error updating ranking:', error);
+    devLog.error('Error updating ranking:', error);
     throw error;
   }
 };
@@ -238,7 +239,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
         .eq('parent_concurso_id', rankingId);
       
       if (childError) {
-        console.error('Error fetching child cards:', childError);
+        devLog.error('Error fetching child cards:', childError);
       } else if (childCards && childCards.length > 0) {
         // Adicionar IDs dos cards filhos à lista
         allConcursoIds = [rankingId, ...childCards.map(c => c.id)];
@@ -252,7 +253,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       .not('consolidated_data', 'is', null);
       
     if (userRankingsError) {
-      console.error('Error fetching user_rankings ids:', userRankingsError);
+      devLog.error('Error fetching user_rankings ids:', userRankingsError);
     }
     
     // Filter user_rankings that have any of these concursos in their consolidated_data
@@ -275,7 +276,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
           .eq('user_ranking_id', userId);
           
         if (scoreLogsError) {
-          console.error(`Error deleting score_calculation_logs for user ${userId}:`, scoreLogsError);
+          devLog.error(`Error deleting score_calculation_logs for user ${userId}:`, scoreLogsError);
         }
       }
     }
@@ -320,13 +321,13 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
     const { error } = await supabase.from('concursos').delete().eq('id', rankingId);
       
     if (error) {
-      console.error('Database error deleting ranking:', error);
+      devLog.error('Database error deleting ranking:', error);
       throw error;
     }
     
     return { success: true };
   } catch (error) {
-    console.error('Error deleting ranking:', error);
+    devLog.error('Error deleting ranking:', error);
     throw error;
   }
 };

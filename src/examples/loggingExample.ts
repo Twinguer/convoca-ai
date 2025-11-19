@@ -5,6 +5,7 @@
 
 import { serverLogger } from '../services/serverLogger';
 import { clientLogger } from '../services/clientLogger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Exemplo de uso no servidor
 export const serverLoggingExample = () => {
@@ -205,10 +206,10 @@ export const configureLogging = () => {
 
   if (isDevelopment) {
     // Em desenvolvimento, log tudo
-    console.log('Logging configured for development');
+    devLog.log('Logging configured for development');
   } else if (isProduction) {
     // Em produção, apenas logs importantes
-    console.log('Logging configured for production');
+    devLog.log('Logging configured for production');
   }
 
   // Configurar redirecionamento de erros não capturados

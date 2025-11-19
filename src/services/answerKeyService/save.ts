@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { AnswerKeyData } from './types';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const saveBookletAnswerKey = async (
   concursoId: string, 
@@ -21,7 +22,7 @@ export const saveBookletAnswerKey = async (
       .single();
 
     if (concursoError || !concursoData) {
-      console.error('[answerKeyService] Error fetching concurso exam_type:', concursoError);
+      devLog.error('[answerKeyService] Error fetching concurso exam_type:', concursoError);
       return { success: false, error: 'Erro ao buscar tipo de exame do concurso' };
     }
 
@@ -59,7 +60,7 @@ export const saveBookletAnswerKey = async (
     });
 
     if (error) {
-      console.error('[answerKeyService] RPC Error details:', {
+      devLog.error('[answerKeyService] RPC Error details:', {
         message: error.message,
         details: error.details,
         hint: error.hint,
@@ -72,13 +73,13 @@ export const saveBookletAnswerKey = async (
     
     // Verificar se a resposta indica sucesso
     if (data && typeof data === 'object' && 'success' in data && !data.success) {
-      console.error('[answerKeyService] RPC returned failure:', data);
+      devLog.error('[answerKeyService] RPC returned failure:', data);
       return { success: false, error: data.error || 'Falha na função do banco de dados' };
     }
 
     return { success: true, data };
   } catch (error: any) {
-    console.error('[answerKeyService] Exception in saveBookletAnswerKey:', error);
+    devLog.error('[answerKeyService] Exception in saveBookletAnswerKey:', error);
     return { success: false, error: error.message };
   }
 };
@@ -89,8 +90,8 @@ export const updateSingleAnswer = async (
   answerData: AnswerKeyData
 ) => {
   try {
-    console.log('[answerKeyService] Updating single answer');
-    console.log('[answerKeyService] Question:', questionNumber, 'Answer:', answerData);
+    devLog.log('[answerKeyService] Updating single answer');
+    devLog.log('[answerKeyService] Question:', questionNumber, 'Answer:', answerData);
 
     // Buscar exam_type do concurso para definir question_type corretamente
     const { data: concursoData, error: concursoError } = await supabase
@@ -100,7 +101,7 @@ export const updateSingleAnswer = async (
       .single();
 
     if (concursoError || !concursoData) {
-      console.error('[answerKeyService] Error fetching concurso exam_type:', concursoError);
+      devLog.error('[answerKeyService] Error fetching concurso exam_type:', concursoError);
       return { success: false, error: 'Erro ao buscar tipo de exame do concurso' };
     }
 
@@ -126,20 +127,20 @@ export const updateSingleAnswer = async (
     });
 
     if (error) {
-      console.error('[answerKeyService] Error updating single answer:', error);
+      devLog.error('[answerKeyService] Error updating single answer:', error);
       return { success: false, error: error.message };
     }
 
     // Verificar se a resposta indica sucesso
     if (data && typeof data === 'object' && 'success' in data && !data.success) {
-      console.error('[answerKeyService] RPC returned failure for single answer:', data);
+      devLog.error('[answerKeyService] RPC returned failure for single answer:', data);
       return { success: false, error: data.error || 'Falha na atualização da resposta' };
     }
 
-    console.log('[answerKeyService] Successfully updated answer:', data);
+    devLog.log('[answerKeyService] Successfully updated answer:', data);
     return { success: true, data };
   } catch (error: any) {
-    console.error('[answerKeyService] Error in updateSingleAnswer:', error);
+    devLog.error('[answerKeyService] Error in updateSingleAnswer:', error);
     return { success: false, error: error.message };
   }
 };

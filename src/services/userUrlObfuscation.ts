@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logWarn } from '@/utils/secureLogger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço para ofuscar URLs de usuários e controlar acesso
 export class UserUrlObfuscationService {
@@ -7,9 +8,15 @@ export class UserUrlObfuscationService {
   private static getOBFUSCATION_KEY(): string {
     const key = import.meta.env.VITE_OBFUSCATION_KEY;
     if (!key) {
-      console.warn('[userUrlObfuscation] ⚠️ VITE_OBFUSCATION_KEY não configurada, usando fallback temporário');
-      // Fallback temporário para não quebrar o sistema - deve ser configurado em produção
-      return 'user_fallback_key_change_in_production_' + import.meta.env.MODE;
+      // Em desenvolvimento, usar fallback temporário (NÃO SEGURO PARA PRODUÇÃO)
+      if (import.meta.env.DEV) {
+        devLog.warn('[userUrlObfuscation] ⚠️ VITE_OBFUSCATION_KEY não configurada. Usando fallback temporário apenas para desenvolvimento. Configure a variável antes de produção.');
+        return 'dev_fallback_key_not_secure_change_in_production';
+      }
+      // Em produção, lançar erro crítico
+      const error = new Error('[userUrlObfuscation] ❌ CRÍTICO: VITE_OBFUSCATION_KEY não configurada. Configure a variável de ambiente antes de usar em produção.');
+      devLog.error(error.message);
+      throw error;
     }
     return key;
   }

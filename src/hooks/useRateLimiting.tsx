@@ -1,5 +1,6 @@
 
 import { useState, useCallback } from 'react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface RateLimitConfig {
   maxAttempts: number;
@@ -26,7 +27,7 @@ export const useRateLimiting = (key: string, config: RateLimitConfig) => {
       try {
         rateLimitData = JSON.parse(storedData);
       } catch (error) {
-        console.error('Error parsing rate limit data:', error);
+        devLog.error('Error parsing rate limit data:', error);
       }
     }
 

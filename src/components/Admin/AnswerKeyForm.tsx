@@ -10,6 +10,7 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 import { saveBookletAnswerKeyLegacy, getAnswerKeyForBooklet } from '@/services/answerKeyService';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface AnswerKeyFormProps {
   concursoId: string;
   bookletId: string;
@@ -54,7 +55,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       // Log removido por segurança
       const result = await getAnswerKeyForBooklet(concursoId, bookletId);
       if (!result.success) {
-        console.error('Erro ao buscar gabarito:', result.error);
+        devLog.error('Erro ao buscar gabarito:', result.error);
         throw new Error(result.error);
       }
       // Log removido por segurança
@@ -343,7 +344,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         setSavedSuccess(false);
       }, 3000);
     } catch (error: any) {
-      console.error('Error saving answer key:', error);
+      devLog.error('Error saving answer key:', error);
       setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
       toast({
         title: "Erro ao salvar gabarito",

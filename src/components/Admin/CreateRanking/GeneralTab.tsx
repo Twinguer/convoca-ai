@@ -9,6 +9,7 @@ import { ExamBookletsSection } from './ExamBookletsSection';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface GeneralTabProps {
   form: any;
@@ -313,7 +314,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       // Mudar para a aba de gabarito
       handleNextTab();
     } catch (error) {
-      console.error("Erro ao salvar:", error);
+      devLog.error("Erro ao salvar:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar. Tente novamente.",

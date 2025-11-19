@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { Calendar, Trophy, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { UrlObfuscationService } from '@/services/urlObfuscation';
+import { devLog } from '@/utils/productionLogger';
 
 export interface RankingItemProps {
   id: string;
@@ -51,14 +53,31 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
     return '';
   };
   
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     onRankingClick?.(e, id);
-    // Se for card geral, navegar para página de cargos; senão, para ranking normal
-    if (isGeneralCard) {
-      navigate(`/pre-classificacao/${id}/cargos`);
-    } else {
-      navigate(`/ranking/${id}`);
+    
+    try {
+      // Se for card geral, navegar para página de cargos; senão, para ranking normal
+      if (isGeneralCard) {
+        const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(id);
+        navigate(secureUrl);
+      } else {
+        const secureUrl = await UrlObfuscationService.generateSecureRankingUrl(id);
+        navigate(secureUrl);
+      }
+    } catch (error: any) {
+      devLog.error('Erro ao gerar URL segura:', error);
+      // Em produção, se variáveis não estiverem configuradas, mostrar erro
+      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
+        return;
+      }
+      // Em desenvolvimento ou outros erros, usar fallback
+      if (isGeneralCard) {
+        navigate(`/pre-classificacao/${id}/cargos`);
+      } else {
+        navigate(`/ranking/${id}`);
+      }
     }
   };
 

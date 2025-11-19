@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudySession, SessionProgress } from '@/types/userStudy';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 
   createStudySessionFromProgress, 
   updateSessionWithProgress,
@@ -25,7 +26,7 @@ export const useStudySessions = () => {
       const sessionsData = await UserStudyService.getSessions(user.id);
       setSessions(sessionsData);
     } catch (error) {
-      console.error('Error fetching study sessions:', error);
+      devLog.error('Error fetching study sessions:', error);
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +90,7 @@ export const useStudySessions = () => {
       });
 
     } catch (error) {
-      console.error('Error creating/updating study session:', error);
+      devLog.error('Error creating/updating study session:', error);
       toast({
         title: "Erro",
         description: "Erro ao processar sessão de estudo",
@@ -115,7 +116,7 @@ export const useStudySessions = () => {
         }
       }
     } catch (error) {
-      console.error('Error updating session link:', error);
+      devLog.error('Error updating session link:', error);
     }
   };
 

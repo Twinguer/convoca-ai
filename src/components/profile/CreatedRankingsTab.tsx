@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface CreatedRankingsTabProps {
   userId: string;
 }
@@ -162,7 +163,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
                     const secureUrl = await generateSecureUrl(ranking.id, 'ranking');
                     navigate(secureUrl);
                   } catch (error) {
-                    console.error('Erro ao gerar URL segura:', error);
+                    devLog.error('Erro ao gerar URL segura:', error);
                   }
                 }}>
                   <Trophy className="h-4 w-4" />

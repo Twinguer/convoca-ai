@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SectionType } from '@/types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Type for storing questions by section
 export type SectionQuestions = {
@@ -43,7 +44,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
       .maybeSingle();
 
     if (error) {
-      console.error('[getQuestionStructureFromOfficialAnswers] Erro ao buscar respostas oficiais:', error);
+      devLog.error('[getQuestionStructureFromOfficialAnswers] Erro ao buscar respostas oficiais:', error);
       return { totalQuestions: 0, sectionQuestions: {}, questionMatrix: [], hasOfficialAnswers: false };
     }
 
@@ -52,9 +53,9 @@ export const getQuestionStructureFromOfficialAnswers = async (
       const availableBooklets = Object.keys(data?.official_answers || {});
       if (availableBooklets.length === 1) {
         bookletId = availableBooklets[0];
-        console.log('[getQuestionStructureFromOfficialAnswers] Usando único caderno disponível:', bookletId);
+        devLog.log('[getQuestionStructureFromOfficialAnswers] Usando único caderno disponível:', bookletId);
       } else {
-        console.log('[getQuestionStructureFromOfficialAnswers] Nenhuma resposta oficial encontrada para o caderno:', bookletId);
+        devLog.log('[getQuestionStructureFromOfficialAnswers] Nenhuma resposta oficial encontrada para o caderno:', bookletId);
         return { totalQuestions: 0, sectionQuestions: {}, questionMatrix: [], hasOfficialAnswers: false };
       }
     }
@@ -154,7 +155,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
       }
     } else {
       // Fallback: usar lógica baseada no número da questão
-      console.log('[getQuestionStructureFromOfficialAnswers] Usando distribuição por número da questão (fallback)');
+      devLog.log('[getQuestionStructureFromOfficialAnswers] Usando distribuição por número da questão (fallback)');
       
       questionNumbers.forEach(questionNumber => {
         const questionData = questions[questionNumber.toString()];
@@ -223,7 +224,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
     };
     
   } catch (error) {
-    console.error('[getQuestionStructureFromOfficialAnswers] Erro ao processar respostas oficiais:', error);
+    devLog.error('[getQuestionStructureFromOfficialAnswers] Erro ao processar respostas oficiais:', error);
     return { totalQuestions: 0, sectionQuestions: {}, questionMatrix: [], hasOfficialAnswers: false };
   }
 };
@@ -253,7 +254,7 @@ export const getNullifiedQuestionsFromOfficialAnswers = async (
       
     return nullifiedQuestions;
   } catch (error) {
-    console.error('[getNullifiedQuestionsFromOfficialAnswers] Erro ao buscar questões anuladas:', error);
+    devLog.error('[getNullifiedQuestionsFromOfficialAnswers] Erro ao buscar questões anuladas:', error);
     return [];
   }
 };

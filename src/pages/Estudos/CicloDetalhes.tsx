@@ -11,6 +11,7 @@ import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
 import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface CicloDetalhesProps {
   cycleId?: string;
@@ -50,7 +51,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken }) =
         toast.error('Dados de estudo não encontrados');
       }
     } catch (error) {
-      console.error('Error fetching cycle:', error);
+      devLog.error('Error fetching cycle:', error);
       toast.error('Erro ao carregar ciclo de estudos');
     } finally {
       setLoading(false);
@@ -70,7 +71,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken }) =
         toast.error('Erro ao atualizar ciclo');
       }
     } catch (error) {
-      console.error('Error updating cycle:', error);
+      devLog.error('Error updating cycle:', error);
       toast.error('Erro ao atualizar ciclo');
     }
   };

@@ -8,6 +8,7 @@ import { createStudyCycleV2 } from '@/utils/userStudyHelpers';
 import { generateId } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export interface SessionData {
   id: string;
@@ -65,7 +66,7 @@ export const useStudyCyclesV2 = () => {
         setCycles([]);
       }
     } catch (error) {
-      console.error('Error fetching cycles:', error);
+      devLog.error('Error fetching cycles:', error);
       toast.error('Erro ao carregar ciclos');
     } finally {
       setIsLoading(false);
@@ -154,7 +155,7 @@ export const useStudyCyclesV2 = () => {
         return null;
       }
     } catch (error: any) {
-      console.error('Error creating cycle:', error);
+      devLog.error('Error creating cycle:', error);
       
       // Verificar se o erro é sobre plano Free
       const errorMessage = error?.message || error?.error?.message || '';
@@ -241,7 +242,7 @@ export const useStudyCyclesV2 = () => {
         return false;
       }
     } catch (error) {
-      console.error('Error adding session:', error);
+      devLog.error('Error adding session:', error);
       toast.error('Erro ao adicionar tarefa');
       return false;
     }
@@ -397,7 +398,7 @@ export const useStudyCyclesV2 = () => {
         return false;
       }
     } catch (error) {
-      console.error('Error recording session:', error);
+      devLog.error('Error recording session:', error);
       toast.error('Erro ao registrar tarefa');
       return false;
     }
@@ -438,7 +439,7 @@ export const useStudyCyclesV2 = () => {
         return false;
       }
     } catch (error) {
-      console.error('Error removing session:', error);
+      devLog.error('Error removing session:', error);
       toast.error('Erro ao remover tarefa');
       return false;
     }
@@ -463,7 +464,7 @@ export const useStudyCyclesV2 = () => {
         return false;
       }
     } catch (error) {
-      console.error('Error updating cycle:', error);
+      devLog.error('Error updating cycle:', error);
       toast.error('Erro ao atualizar ciclo');
       return false;
     }
@@ -503,7 +504,7 @@ export const useStudyCyclesV2 = () => {
       const daySchedule = cycle.schedule_data.weekly_schedule?.find(d => d.day === dayOfWeek);
       return daySchedule?.sessions || [];
     } catch (error) {
-      console.error('Error getting sessions for day:', error);
+      devLog.error('Error getting sessions for day:', error);
       return [];
     }
   };
@@ -518,7 +519,7 @@ export const useStudyCyclesV2 = () => {
       }
       return allSessions;
     } catch (error) {
-      console.error('Error getting all sessions for day:', error);
+      devLog.error('Error getting all sessions for day:', error);
       return [];
     }
   };
@@ -539,7 +540,7 @@ export const useStudyCyclesV2 = () => {
         return false;
       }
     } catch (error) {
-      console.error('Error removing cycle:', error);
+      devLog.error('Error removing cycle:', error);
       toast.error('Erro ao remover ciclo');
       return false;
     }

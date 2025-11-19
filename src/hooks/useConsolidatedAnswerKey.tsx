@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAllBookletsAnswerKeys, saveBookletAnswerKeyLegacy } from '@/services/answerKeyService';
 import { toast } from 'sonner';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const useConsolidatedAnswerKey = (concursoId: string) => {
   const queryClient = useQueryClient();
@@ -44,7 +45,7 @@ export const useConsolidatedAnswerKey = (concursoId: string) => {
       queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
     },
     onError: (error) => {
-      console.error('Error saving booklet answer key:', error);
+      devLog.error('Error saving booklet answer key:', error);
       toast.error('Erro ao salvar gabarito do caderno');
     }
   });

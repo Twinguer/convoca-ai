@@ -3,6 +3,7 @@ import { getConsolidatedAnswerKey, getBookletAnswers } from './core';
 import { saveBookletAnswerKey, updateSingleAnswer } from './save';
 import { checkAnswerKeyCompleteness, getAnswerKeyStats } from './stats';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço principal
 const answerKeyService = {
@@ -41,7 +42,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
     // Debug logs removed for security
     return { success: true, data: answers };
   } catch (error: any) {
-    console.error('[getAnswerKeyForBooklet] Error:', error);
+    devLog.error('[getAnswerKeyForBooklet] Error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -54,11 +55,11 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
       return { success: true, data: null };
     }
 
-    console.log('[getAllBookletsAnswerKeys] Found consolidated data with', 
+    devLog.log('[getAllBookletsAnswerKeys] Found consolidated data with', 
       Object.keys(consolidatedData.booklets || {}).length, 'booklets');
     return { success: true, data: consolidatedData };
   } catch (error: any) {
-    console.error('[getAllBookletsAnswerKeys] Error:', error);
+    devLog.error('[getAllBookletsAnswerKeys] Error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -86,7 +87,7 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
     const result = await saveBookletAnswerKey(concursoId, bookletId, formattedAnswers);
     
     if (!result.success) {
-      console.error('[saveBookletAnswerKeyLegacy] Error using consolidated service:', result.error);
+      devLog.error('[saveBookletAnswerKeyLegacy] Error using consolidated service:', result.error);
       return { success: false, error: result.error };
     }
 
@@ -94,7 +95,7 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
     return { success: true, data: result.data };
 
   } catch (error: any) {
-    console.error('[saveBookletAnswerKeyLegacy] Exception:', error);
+    devLog.error('[saveBookletAnswerKeyLegacy] Exception:', error);
     return { success: false, error: error.message };
   }
 };

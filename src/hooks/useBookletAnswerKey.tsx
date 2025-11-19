@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface ExamBooklet {
   id: string;
@@ -27,7 +28,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
       const sortedData = (data as any[]).sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
 
       if (error) {
-        console.error('Erro ao buscar cadernos:', error);
+        devLog.error('Erro ao buscar cadernos:', error);
         throw error;
       }
       
@@ -147,7 +148,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
           // Log removido por segurança
         } catch (error) {
-          console.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
+          devLog.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
           allComplete = false;
           completionDetails.push({
             bookletId: booklet.id,

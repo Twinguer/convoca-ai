@@ -4,6 +4,7 @@ import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Shield, UserX } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface SecureUserRouteProps {
   children: React.ReactNode;
@@ -39,7 +40,7 @@ export const SecureUserRoute: React.FC<SecureUserRouteProps> = ({
         }
       } catch (err) {
         setError('Erro ao validar acesso');
-        console.error('Erro na validação de usuário:', err);
+        devLog.error('Erro na validação de usuário:', err);
       } finally {
         setIsValidating(false);
       }

@@ -15,6 +15,7 @@ import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager'
 import { useAuth } from '@/hooks/useAuth';
 import { useParticipantCount } from '@/hooks/useParticipantCount';
 import { useRankingCreatorInfo } from '@/hooks/useRankingCreatorInfo';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
@@ -39,13 +40,13 @@ const ListarConcursos: React.FC = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching concursos:', error);
+        devLog.error('Error fetching concursos:', error);
         throw error;
       }
       
       return data as Concurso[];
     } catch (err) {
-      console.error('Error in fetchConcursos:', err);
+      devLog.error('Error in fetchConcursos:', err);
       throw err;
     }
   };
@@ -56,7 +57,7 @@ const ListarConcursos: React.FC = () => {
     retry: 1,
     meta: {
       onError: (err: any) => {
-        console.error('Query error:', err);
+        devLog.error('Query error:', err);
         toast({
           title: 'Erro ao carregar rankings',
           description: 'Não foi possível carregar a lista de rankings.',
@@ -79,7 +80,7 @@ const ListarConcursos: React.FC = () => {
         
         refetch();
       } catch (error: any) {
-        console.error('Erro ao excluir ranking:', error);
+        devLog.error('Erro ao excluir ranking:', error);
         toast({
           title: 'Erro ao excluir ranking',
           description: error.message || 'Ocorreu um erro ao tentar excluir o ranking.',

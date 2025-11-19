@@ -14,6 +14,7 @@ import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { UserStudyService } from '@/services/userStudyService';
 import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
 import { StudyCycleV2 } from '@/types/userStudy';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const StudyDashboard = () => {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ const StudyDashboard = () => {
         setCycles(activeCycles);
       }
     } catch (error) {
-      console.error('Error:', error);
+      devLog.error('Error:', error);
     } finally {
       setLoadingCycles(false);
     }
@@ -88,7 +89,7 @@ const StudyDashboard = () => {
         setUpcomingSchedule(upcomingSessions.slice(0, 5));
       }
     } catch (error) {
-      console.error('Error loading upcoming schedule:', error);
+      devLog.error('Error loading upcoming schedule:', error);
     }
   };
 
@@ -138,7 +139,7 @@ const StudyDashboard = () => {
       setCycleToDelete(null);
       setConfirmText('');
     } catch (error) {
-      console.error('Error deleting cycle:', error);
+      devLog.error('Error deleting cycle:', error);
       toast({
         title: 'Erro ao excluir',
         description: 'Não foi possível excluir o ciclo. Tente novamente.',
@@ -248,7 +249,7 @@ const StudyDashboard = () => {
                         const secureUrl = await generateSecureUrl(cycle.id, user?.id || '', 'view');
                         navigate(secureUrl);
                       } catch (error) {
-                        console.error('Erro ao gerar URL segura:', error);
+                        devLog.error('Erro ao gerar URL segura:', error);
                         navigate('/estudos');
                       }
                     }} className="w-full sm:w-auto">
@@ -257,7 +258,18 @@ const StudyDashboard = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => navigate(`/estudos/editar-ciclo/${cycle.id}`)}
+                      onClick={async () => {
+                        if (!user?.id) return;
+                        try {
+                          const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
+                          const secureUrl = await StudyCycleUrlObfuscationService.generateSecureStudyCycleUrl(cycle.id, user.id, 'edit');
+                          navigate(secureUrl);
+                        } catch (error) {
+                          devLog.error('Erro ao gerar URL segura:', error);
+                          // Fallback apenas em caso de erro crítico
+                          navigate(`/estudos/editar-ciclo/${cycle.id}`);
+                        }
+                      }}
                       className="w-full sm:w-auto"
                     >
                       <Edit className="h-4 w-4 mr-2" />

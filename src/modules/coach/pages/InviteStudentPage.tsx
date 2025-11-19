@@ -14,6 +14,7 @@ import { ArrowLeft, Send, Search, User } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useDebounce } from '@/hooks/useDebounce';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const InviteStudentPage = () => {
   const navigate = useNavigate();
@@ -63,11 +64,11 @@ const InviteStudentPage = () => {
         .limit(10);
       
       if (error) {
-        console.error('Error searching users:', error);
+        devLog.error('Error searching users:', error);
         return [];
       }
       
-      console.log('Resultados da busca:', data);
+      devLog.log('Resultados da busca:', data);
       
       // Garantir que todos os resultados tenham nickname
       const resultsWithNickname = (data || []).map(user => {
@@ -86,7 +87,7 @@ const InviteStudentPage = () => {
         return user;
       });
       
-      console.log('Resultados com nickname:', resultsWithNickname);
+      devLog.log('Resultados com nickname:', resultsWithNickname);
       
       return resultsWithNickname;
     },
@@ -152,7 +153,7 @@ const InviteStudentPage = () => {
       navigate('/coach/dashboard');
 
     } catch (error: any) {
-      console.error('Erro ao convidar aluno:', error);
+      devLog.error('Erro ao convidar aluno:', error);
       toast({
         title: 'Erro ao convidar',
         description: error.message || 'Não foi possível convidar o aluno',
@@ -164,14 +165,14 @@ const InviteStudentPage = () => {
   };
 
   const handleSelectUser = React.useCallback((user: any) => {
-    console.log('Selecionando usuário - objeto completo:', user);
-    console.log('Nickname do usuário:', user?.nickname);
-    console.log('ID do usuário:', user?.id);
-    console.log('Nome do usuário:', user?.name);
+    devLog.log('Selecionando usuário - objeto completo:', user);
+    devLog.log('Nickname do usuário:', user?.nickname);
+    devLog.log('ID do usuário:', user?.id);
+    devLog.log('Nome do usuário:', user?.name);
     
     // Verificar se o usuário existe
     if (!user || !user.id) {
-      console.error('Usuário inválido - sem ID:', user);
+      devLog.error('Usuário inválido - sem ID:', user);
       toast({
         title: 'Erro',
         description: 'Usuário inválido. Tente novamente.',
@@ -192,7 +193,7 @@ const InviteStudentPage = () => {
       
       nicknameToUse = nameClean || `user${user.id.substring(0, 8)}`;
       
-      console.log('Nickname gerado:', nicknameToUse);
+      devLog.log('Nickname gerado:', nicknameToUse);
     }
     
     setSelectedUser({
@@ -272,13 +273,13 @@ const InviteStudentPage = () => {
                     key={user.id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('Click detectado no usuário:', user);
+                      devLog.log('Click detectado no usuário:', user);
                       handleSelectUser(user);
                     }}
                     onTouchStart={(e) => {
                       // Para mobile
                       e.stopPropagation();
-                      console.log('Touch detectado no usuário:', user);
+                      devLog.log('Touch detectado no usuário:', user);
                       handleSelectUser(user);
                     }}
                     className="w-full flex items-center gap-3 p-3 hover:bg-muted/80 active:bg-muted cursor-pointer transition-colors border-b last:border-b-0 select-none"

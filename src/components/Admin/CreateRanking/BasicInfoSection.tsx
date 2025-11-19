@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const ESTADOS_BRASILEIROS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
@@ -91,7 +92,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         description: 'A marca dágua foi enviada com sucesso.'
       });
     } catch (error: any) {
-      console.error('Erro ao fazer upload:', error);
+      devLog.error('Erro ao fazer upload:', error);
       toast({
         title: 'Erro ao fazer upload',
         description: error.message || 'Ocorreu um erro ao enviar a imagem. Tente novamente.',

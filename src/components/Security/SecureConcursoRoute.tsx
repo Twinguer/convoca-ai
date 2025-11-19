@@ -4,6 +4,7 @@ import { UrlObfuscationService } from '@/services/urlObfuscation';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Shield } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface SecureConcursoRouteProps {
   children: React.ReactNode;
@@ -39,7 +40,7 @@ export const SecureConcursoRoute: React.FC<SecureConcursoRouteProps> = ({
         }
       } catch (err) {
         setError('Erro ao validar acesso');
-        console.error('Erro na validação:', err);
+        devLog.error('Erro na validação:', err);
       } finally {
         setIsValidating(false);
       }

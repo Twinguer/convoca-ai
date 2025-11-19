@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { formatScore } from '@/lib/utils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -67,7 +68,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           for (const [rankingId, rankingData] of Object.entries(rankings as Record<string, any>)) {
             const concursoId = (rankingData as any).concurso_id;
             if (!concursoId) {
-              console.error('No concurso ID found for ranking');
+              devLog.error('No concurso ID found for ranking');
               continue;
             }
 
@@ -81,7 +82,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               
               // Se o concurso não existir, pular (ranking "fantasma")
               if (concursoCheckError || !concursoCheck) {
-                console.warn(`Ranking "fantasma" encontrado: concurso_id ${concursoId} não existe mais. Pulando...`);
+                devLog.warn(`Ranking "fantasma" encontrado: concurso_id ${concursoId} não existe mais. Pulando...`);
                 continue;
               }
               
@@ -138,7 +139,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
               rankingsWithPositions.push(mappedRanking);
             } catch (error) {
-              console.error('Erro ao calcular posição:', error);
+              devLog.error('Erro ao calcular posição:', error);
               // ✅ TAMBÉM VERIFICAR SE É CARD GERAL NO CATCH
               const { data: concursoCheck } = await supabase
                 .from('concursos')
@@ -218,14 +219,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               .maybeSingle();
             
             if (error || !data) {
-              console.error('Error fetching concurso exam_type:', error);
+              devLog.error('Error fetching concurso exam_type:', error);
               // Use default exam_type if we can't fetch it
               concursoData = { exam_type: 'Alternativas' };
             } else {
               concursoData = data;
             }
           } catch (err) {
-            console.error('Exception fetching concurso exam_type:', err);
+            devLog.error('Exception fetching concurso exam_type:', err);
             // Use default exam_type if we can't fetch it
             concursoData = { exam_type: 'Alternativas' };
           }
@@ -247,7 +248,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           const position = ranking.position || null;
           return { ...ranking, position, isEliminated: !isClassified };
         } catch (e) {
-          console.error('Erro ao calcular posição (props):', e);
+          devLog.error('Erro ao calcular posição (props):', e);
           // ✅ TAMBÉM VERIFICAR NO CATCH
           const { data: concursoCheck } = await supabase
             .from('concursos')
@@ -308,7 +309,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           .maybeSingle();
 
         if (findError || !userRanking) {
-          console.error('Erro ao buscar ranking do usuário:', findError);
+          devLog.error('Erro ao buscar ranking do usuário:', findError);
           throw new Error('Ranking do usuário não encontrado');
         }
 
@@ -337,7 +338,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           .maybeSingle();
         
         if (fetchError) {
-          console.error('Erro ao buscar dados do usuário:', fetchError);
+          devLog.error('Erro ao buscar dados do usuário:', fetchError);
           throw fetchError;
         }
 
@@ -355,7 +356,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             .eq('user_id', currentUserId);
           
           if (updateError) {
-            console.error('Erro ao atualizar dados consolidados:', updateError);
+            devLog.error('Erro ao atualizar dados consolidados:', updateError);
             throw updateError;
           }
         }
@@ -370,7 +371,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           .eq('user_ranking_id', currentUserId);
         
         if (logsError) {
-          console.error('Erro ao deletar score_calculation_logs:', logsError);
+          devLog.error('Erro ao deletar score_calculation_logs:', logsError);
         }
 
         // user_answers não é mais usado - dados estão em user_rankings consolidated_data
@@ -383,14 +384,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           .eq('user_id', currentUserId);
         
         if (rankingError) {
-          console.error('Erro ao deletar user_ranking:', rankingError);
+          devLog.error('Erro ao deletar user_ranking:', rankingError);
           throw rankingError;
         }
 
         // Log removido por segurança
         return { success: true };
       } catch (error) {
-        console.error('Erro ao sair do ranking:', error);
+        devLog.error('Erro ao sair do ranking:', error);
         throw error;
       }
     },
@@ -407,7 +408,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         description: "Erro ao deixar de participar do ranking. Tente novamente.",
         variant: "destructive",
       });
-      console.error('Erro ao deixar de participar:', error);
+      devLog.error('Erro ao deixar de participar:', error);
     }
   });
   if (showSkeleton) {
@@ -467,7 +468,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
                 const concursoId = ranking.concurso_id || ranking.concursos?.id;
                 if (!concursoId) {
-                  console.error('ConcursoId não encontrado:', ranking);
+                  devLog.error('ConcursoId não encontrado:', ranking);
                   toast({
                     title: "Erro",
                     description: "ID do concurso não encontrado. Tente novamente.",
@@ -487,7 +488,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                     // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
                     const concursoId = ranking.concurso_id || ranking.concursos?.id;
                     if (!concursoId || concursoId === 'undefined') {
-                      console.error('ConcursoId não encontrado:', ranking);
+                      devLog.error('ConcursoId não encontrado:', ranking);
                       toast({
                         title: "Erro",
                         description: "ID do concurso não encontrado. Tente novamente.",

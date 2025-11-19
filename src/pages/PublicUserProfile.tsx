@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface UserProfile {
   id: string;
   name: string;
@@ -86,7 +87,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           count: 'exact',
           head: true
         }).eq('user_id', id);
-        if (postError) console.error('Error counting posts:', postError);
+        if (postError) devLog.error('Error counting posts:', postError);
 
         // Try to get extended profile data from users_profiles table
         const {
@@ -138,7 +139,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           rotina_estudos: extendedData?.rotina_estudos || null
         } as UserProfile & { isCoach?: boolean };
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        devLog.error('Error fetching profile:', error);
         toast({
           title: 'Erro',
           description: 'Não foi possível carregar o perfil do usuário.',
@@ -204,7 +205,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               .maybeSingle();
             
             if (error) {
-              console.error('Error fetching concurso exam_type:', error);
+              devLog.error('Error fetching concurso exam_type:', error);
               // Use default exam_type if we can't fetch it
               rankingData = { exam_type: 'Alternativas' };
             } else if (!data) {
@@ -214,7 +215,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               rankingData = data;
             }
           } catch (err) {
-            console.error('Exception fetching concurso exam_type:', err);
+            devLog.error('Exception fetching concurso exam_type:', err);
             // Use default exam_type if we can't fetch it
             rankingData = { exam_type: 'Alternativas' };
           }
@@ -293,7 +294,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         
         return finalData;
       } catch (error) {
-        console.error('Error fetching rankings:', error);
+        devLog.error('Error fetching rankings:', error);
         return [];
       }
     },

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { generateId } from '@/lib/utils';
 import { logger } from '@/utils/logger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 
   UserStudy, 
   StudySession, 
@@ -137,7 +138,7 @@ export class UserStudyService {
       });
 
       if (error) {
-        console.error('Error upserting user study data: Database operation failed');
+        devLog.error('Error upserting user study data: Database operation failed');
         return false;
       }
 
@@ -147,7 +148,7 @@ export class UserStudyService {
 
       return true;
     } catch (error) {
-      console.error('Error upserting user study data: Database operation failed');
+      devLog.error('Error upserting user study data: Database operation failed');
       return false;
     }
   }
@@ -164,13 +165,13 @@ export class UserStudyService {
       });
 
       if (error) {
-        console.error('Error initializing user study data: Database operation failed');
+        devLog.error('Error initializing user study data: Database operation failed');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error initializing user study data: Database operation failed');
+      devLog.error('Error initializing user study data: Database operation failed');
       return false;
     }
   }
@@ -185,7 +186,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_sessions || [];
     } catch (error) {
-      console.error('Error fetching sessions: Database operation failed');
+      devLog.error('Error fetching sessions: Database operation failed');
       return [];
     }
   }
@@ -208,13 +209,13 @@ export class UserStudyService {
       });
 
       if (error) {
-        console.error('Error adding session: Database operation failed');
+        devLog.error('Error adding session: Database operation failed');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error adding session: Database operation failed');
+      devLog.error('Error adding session: Database operation failed');
       return false;
     }
   }
@@ -237,7 +238,7 @@ export class UserStudyService {
         study_sessions: updatedSessions
       });
     } catch (error) {
-      console.error('Error updating session: Database operation failed');
+      devLog.error('Error updating session: Database operation failed');
       return false;
     }
   }
@@ -250,7 +251,7 @@ export class UserStudyService {
       const sessions = await this.getSessions(userId);
       return sessions.find(session => session.schedule_session_id === scheduleSessionId) || null;
     } catch (error) {
-      console.error('Error getting session by schedule ID: Database operation failed');
+      devLog.error('Error getting session by schedule ID: Database operation failed');
       return null;
     }
   }
@@ -265,7 +266,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_schedule || [];
     } catch (error) {
-      console.error('Error fetching schedule: Database operation failed');
+      devLog.error('Error fetching schedule: Database operation failed');
       return [];
     }
   }
@@ -296,7 +297,7 @@ export class UserStudyService {
         study_schedule: updatedSchedule
       });
     } catch (error) {
-      console.error('Error adding schedule session: Database operation failed');
+      devLog.error('Error adding schedule session: Database operation failed');
       return false;
     }
   }
@@ -319,7 +320,7 @@ export class UserStudyService {
         study_schedule: updatedSchedule
       });
     } catch (error) {
-      console.error('Error updating schedule session: Database operation failed');
+      devLog.error('Error updating schedule session: Database operation failed');
       return false;
     }
   }
@@ -416,7 +417,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_statistics || null;
     } catch (error) {
-      console.error('Error fetching statistics: Database operation failed');
+      devLog.error('Error fetching statistics: Database operation failed');
       return null;
     }
   }
@@ -433,14 +434,14 @@ export class UserStudyService {
 
       if (error) {
         // Log sanitizado - sem exposição de dados sensíveis
-        console.error('Error updating statistics: Database operation failed');
+        devLog.error('Error updating statistics: Database operation failed');
         return false;
       }
 
       return true;
     } catch (error) {
       // Log sanitizado - sem exposição de dados sensíveis
-      console.error('Error updating statistics: Database operation failed');
+      devLog.error('Error updating statistics: Database operation failed');
       return false;
     }
   }
@@ -455,7 +456,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_cycles || [];
     } catch (error) {
-      console.error('Error fetching cycles: Database operation failed');
+      devLog.error('Error fetching cycles: Database operation failed');
       return [];
     }
   }
@@ -492,7 +493,7 @@ export class UserStudyService {
         study_cycles: updatedCycles
       });
     } catch (error) {
-      console.error('Error adding cycle: Database operation failed');
+      devLog.error('Error adding cycle: Database operation failed');
       return false;
     }
   }
@@ -515,7 +516,7 @@ export class UserStudyService {
         study_cycles: updatedCycles
       });
     } catch (error) {
-      console.error('Error updating cycle: Database operation failed');
+      devLog.error('Error updating cycle: Database operation failed');
       return false;
     }
   }
@@ -534,7 +535,7 @@ export class UserStudyService {
         study_cycles: updatedCycles
       });
     } catch (error) {
-      console.error('Error removing cycle: Database operation failed');
+      devLog.error('Error removing cycle: Database operation failed');
       return false;
     }
   }
@@ -549,7 +550,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_plans || [];
     } catch (error) {
-      console.error('Error fetching plans: Database operation failed');
+      devLog.error('Error fetching plans: Database operation failed');
       return [];
     }
   }
@@ -580,7 +581,7 @@ export class UserStudyService {
         study_plans: updatedPlans
       });
     } catch (error) {
-      console.error('Error adding plan: Database operation failed');
+      devLog.error('Error adding plan: Database operation failed');
       return false;
     }
   }
@@ -595,7 +596,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_subjects || [];
     } catch (error) {
-      console.error('Error fetching subjects: Database operation failed');
+      devLog.error('Error fetching subjects: Database operation failed');
       return [];
     }
   }
@@ -626,7 +627,7 @@ export class UserStudyService {
         study_subjects: updatedSubjects
       });
     } catch (error) {
-      console.error('Error adding subject: Database operation failed');
+      devLog.error('Error adding subject: Database operation failed');
       return false;
     }
   }
@@ -641,7 +642,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_goals || [];
     } catch (error) {
-      console.error('Error fetching goals: Database operation failed');
+      devLog.error('Error fetching goals: Database operation failed');
       return [];
     }
   }
@@ -654,7 +655,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_goals_tracking || {};
     } catch (error) {
-      console.error('Error fetching goals tracking: Database operation failed');
+      devLog.error('Error fetching goals tracking: Database operation failed');
       return {};
     }
   }
@@ -668,7 +669,7 @@ export class UserStudyService {
         study_goals_tracking: tracking
       });
     } catch (error) {
-      console.error('Error updating goals tracking: Database operation failed');
+      devLog.error('Error updating goals tracking: Database operation failed');
       return false;
     }
   }
@@ -683,7 +684,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_progress || [];
     } catch (error) {
-      console.error('Error fetching progress: Database operation failed');
+      devLog.error('Error fetching progress: Database operation failed');
       return [];
     }
   }
@@ -714,7 +715,7 @@ export class UserStudyService {
         study_progress: updatedProgress
       });
     } catch (error) {
-      console.error('Error adding progress: Database operation failed');
+      devLog.error('Error adding progress: Database operation failed');
       return false;
     }
   }
@@ -729,7 +730,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_reminders || [];
     } catch (error) {
-      console.error('Error fetching reminders: Database operation failed');
+      devLog.error('Error fetching reminders: Database operation failed');
       return [];
     }
   }
@@ -760,7 +761,7 @@ export class UserStudyService {
         study_reminders: updatedReminders
       });
     } catch (error) {
-      console.error('Error adding reminder: Database operation failed');
+      devLog.error('Error adding reminder: Database operation failed');
       return false;
     }
   }
@@ -775,7 +776,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.spaced_repetition_queue || [];
     } catch (error) {
-      console.error('Error fetching spaced repetition queue: Database operation failed');
+      devLog.error('Error fetching spaced repetition queue: Database operation failed');
       return [];
     }
   }
@@ -806,7 +807,7 @@ export class UserStudyService {
         spaced_repetition_queue: updatedQueue
       });
     } catch (error) {
-      console.error('Error adding spaced repetition item: Database operation failed');
+      devLog.error('Error adding spaced repetition item: Database operation failed');
       return false;
     }
   }
@@ -821,7 +822,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.user_study_days || [];
     } catch (error) {
-      console.error('Error fetching study days: Database operation failed');
+      devLog.error('Error fetching study days: Database operation failed');
       return [];
     }
   }
@@ -851,7 +852,7 @@ export class UserStudyService {
         user_study_days: updatedStudyDays
       });
     } catch (error) {
-      console.error('Error adding study day: Database operation failed');
+      devLog.error('Error adding study day: Database operation failed');
       return false;
     }
   }
@@ -866,7 +867,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data?.study_contests || [];
     } catch (error) {
-      console.error('Error fetching contests: Database operation failed');
+      devLog.error('Error fetching contests: Database operation failed');
       return [];
     }
   }
@@ -897,7 +898,7 @@ export class UserStudyService {
         study_contests: updatedContests
       });
     } catch (error) {
-      console.error('Error adding contest: Database operation failed');
+      devLog.error('Error adding contest: Database operation failed');
       return false;
     }
   }
@@ -915,13 +916,13 @@ export class UserStudyService {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error deleting user study data: Database operation failed');
+        devLog.error('Error deleting user study data: Database operation failed');
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error deleting user study data: Database operation failed');
+      devLog.error('Error deleting user study data: Database operation failed');
       return false;
     }
   }
@@ -934,7 +935,7 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       return data !== null;
     } catch (error) {
-      console.error('Error checking study data: Database operation failed');
+      devLog.error('Error checking study data: Database operation failed');
       return false;
     }
   }

@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyStatistics, defaultUserStudy } from '@/types/userStudy';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Mutex global para evitar operações simultâneas
 let globalUpdateInProgress = false;
@@ -34,7 +35,7 @@ export const useStudyStatistics = () => {
           // Salvar estatísticas recalculadas no banco em background
           // (não bloqueia a UI)
           UserStudyService.updateStatistics(user.id, calculatedStats).catch(err => {
-            console.error('Error updating statistics in background:', err);
+            devLog.error('Error updating statistics in background:', err);
           });
         } else {
           // Sem sessões, usar estatísticas vazias
@@ -46,7 +47,7 @@ export const useStudyStatistics = () => {
         setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
       }
     } catch (error) {
-      console.error('Error loading statistics:', error);
+      devLog.error('Error loading statistics:', error);
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +100,7 @@ export const useStudyStatistics = () => {
     try {
       await UserStudyService.updateStatistics(user.id, updatedStats);
     } catch (error) {
-      console.error('Error updating statistics:', error);
+      devLog.error('Error updating statistics:', error);
     } finally {
       globalUpdateInProgress = false;
       setIsUpdating(false);
@@ -216,7 +217,7 @@ export const useStudyStatistics = () => {
       await UserStudyService.initializeUserStudyData(user.id);
       setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
     } catch (error) {
-      console.error('Error resetting statistics:', error);
+      devLog.error('Error resetting statistics:', error);
     }
   };
 

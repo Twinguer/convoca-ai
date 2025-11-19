@@ -11,6 +11,7 @@ import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolid
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { showProRequiredToast } from '@/utils/planRestrictions';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const useSaveAnswers = ({
   rankingId,
@@ -103,7 +104,7 @@ export const useSaveAnswers = ({
             // Debug logs removed for security
           }
         } catch (error) {
-          console.error('[useSaveAnswers] Erro ao buscar cadernos:', error);
+          devLog.error('[useSaveAnswers] Erro ao buscar cadernos:', error);
         }
       }
 
@@ -125,7 +126,7 @@ export const useSaveAnswers = ({
         .maybeSingle();
 
       if (fetchError) {
-        console.error('[useSaveAnswers] Erro ao buscar dados do usuário:', fetchError);
+        devLog.error('[useSaveAnswers] Erro ao buscar dados do usuário:', fetchError);
         throw new Error('Erro ao buscar dados do usuário');
       }
 
@@ -229,7 +230,7 @@ export const useSaveAnswers = ({
       });
 
       if (updateError) {
-        console.error('[useSaveAnswers] Erro ao atualizar dados e recalcular:', updateError);
+        devLog.error('[useSaveAnswers] Erro ao atualizar dados e recalcular:', updateError);
         throw new Error('Erro ao salvar respostas e recalcular pontuações');
       }
 
@@ -244,7 +245,7 @@ export const useSaveAnswers = ({
           .eq('user_id', user.id);
 
         if (directUpdateError) {
-          console.error('[useSaveAnswers] Erro ao atualizar dados (fallback):', directUpdateError);
+          devLog.error('[useSaveAnswers] Erro ao atualizar dados (fallback):', directUpdateError);
           throw new Error('Erro ao salvar respostas');
         }
 
@@ -253,11 +254,11 @@ export const useSaveAnswers = ({
           const recalculationResult = await recalculateUserScore(user.id, concurso.id);
           
           if (!recalculationResult.success) {
-            console.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
+            devLog.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
             throw new Error(`Falha no recálculo de pontuações: ${recalculationResult.message}`);
           }
         } catch (recalculationError: any) {
-          console.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
+          devLog.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
           throw new Error(`Erro no recálculo de pontuações: ${recalculationError.message}`);
         }
       }
@@ -306,12 +307,12 @@ export const useSaveAnswers = ({
       const updatedBooklet = updatedRankingData?.selected_booklet_id;
 
       if (updatedBooklet) {
-        // console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedBooklet);
+        // devLog.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedBooklet);
         // Nota: setSelectedBookletId será chamado pelo componente pai se necessário
       }
 
     } catch (error: any) {
-      console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
+      devLog.error('[useSaveAnswers] Erro ao salvar respostas:', error);
       setError(error.message || "Erro ao salvar respostas");
       toast({
         title: "Erro ao salvar",

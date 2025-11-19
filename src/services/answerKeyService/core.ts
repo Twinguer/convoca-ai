@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ConsolidatedAnswerKey } from './types';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const getConsolidatedAnswerKey = async (concursoId: string): Promise<ConsolidatedAnswerKey | null> => {
   try {
@@ -13,7 +14,7 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
       .single();
 
     if (error) {
-      console.error('[getConsolidatedAnswerKey] Error fetching consolidated answer key:', error);
+      devLog.error('[getConsolidatedAnswerKey] Error fetching consolidated answer key:', error);
       return null;
     }
 
@@ -25,7 +26,7 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
     
     // Validar estrutura dos dados
     if (!officialAnswers || typeof officialAnswers !== 'object') {
-      console.warn('[getConsolidatedAnswerKey] Invalid official answers structure, initializing empty booklets');
+      devLog.warn('[getConsolidatedAnswerKey] Invalid official answers structure, initializing empty booklets');
       return {
         booklets: {},
         metadata: {
@@ -38,7 +39,7 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
     // Debug logs removed for security
     return { booklets: officialAnswers } as ConsolidatedAnswerKey;
   } catch (error) {
-    console.error('[getConsolidatedAnswerKey] Exception:', error);
+    devLog.error('[getConsolidatedAnswerKey] Exception:', error);
     return null;
   }
 };
@@ -48,16 +49,16 @@ export const getBookletAnswers = async (concursoId: string, bookletId: string) =
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets?.[bookletId]) {
-      console.log('[getBookletAnswers] No answers found for booklet:', bookletId);
+      devLog.log('[getBookletAnswers] No answers found for booklet:', bookletId);
       return {};
     }
 
     const booklet = consolidatedData.booklets[bookletId] as any;
     const answers = (booklet?.answers || booklet?.questions || {}) as Record<string, any>;
-    console.log('[getBookletAnswers] Found', Object.keys(answers).length, 'answers for booklet:', bookletId);
+    devLog.log('[getBookletAnswers] Found', Object.keys(answers).length, 'answers for booklet:', bookletId);
     return answers;
   } catch (error) {
-    console.error('[getBookletAnswers] Error:', error);
+    devLog.error('[getBookletAnswers] Error:', error);
     return {};
   }
 };

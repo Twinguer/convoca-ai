@@ -12,24 +12,31 @@ const IS_PRODUCTION = import.meta.env.PROD;
 export const devLog = {
   info: (...args: any[]) => {
     if (!IS_PRODUCTION) {
-      console.log('[DEV]', ...args);
+      console.log('[DEV]', ...args.map(arg => sanitizeForLog(arg)));
     }
   },
   
   warn: (...args: any[]) => {
     if (!IS_PRODUCTION) {
-      console.warn('[DEV]', ...args);
+      console.warn('[DEV]', ...args.map(arg => sanitizeForLog(arg)));
     }
   },
   
   error: (...args: any[]) => {
     // Erros sempre são logados, mas sanitizados
-    console.error('[ERROR]', ...args);
+    console.error('[ERROR]', ...args.map(arg => sanitizeForLog(arg)));
   },
   
   debug: (...args: any[]) => {
     if (!IS_PRODUCTION) {
-      console.debug('[DEBUG]', ...args);
+      console.debug('[DEBUG]', ...args.map(arg => sanitizeForLog(arg)));
+    }
+  },
+  
+  // Métodos de compatibilidade para substituir console.log diretamente
+  log: (...args: any[]) => {
+    if (!IS_PRODUCTION) {
+      console.log('[DEV]', ...args.map(arg => sanitizeForLog(arg)));
     }
   }
 };

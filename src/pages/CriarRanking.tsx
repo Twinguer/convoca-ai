@@ -17,6 +17,7 @@ import { getTotalQuestions } from '@/hooks/useAnswerSheet/questionCountUtils';
 import { useEditUrls } from '@/hooks/useEditUrls';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
   try {
@@ -175,7 +176,7 @@ const CriarRanking = () => {
             navigate('/criar-ranking');
           }
         } catch (error) {
-          console.error('Erro ao validar token de edição:', error);
+          devLog.error('Erro ao validar token de edição:', error);
           toast.error('Erro ao validar link de edição');
           navigate('/criar-ranking');
         } finally {
@@ -307,7 +308,7 @@ const CriarRanking = () => {
                 // Os dados do parent serão carregados automaticamente pelo BasicInfoSection
                 // através do useEffect que monitora parent_concurso_id
               } catch (error) {
-                console.error('Erro ao carregar parent:', error);
+                devLog.error('Erro ao carregar parent:', error);
               }
             }
             
@@ -378,7 +379,7 @@ const CriarRanking = () => {
             
           }
         } catch (error) {
-          console.error('Error loading existing ranking data:', error);
+          devLog.error('Error loading existing ranking data:', error);
           toast.error('Erro ao carregar dados do ranking');
         }
       }
@@ -481,12 +482,21 @@ const CriarRanking = () => {
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
         if (!editToken) {
           // Redirecionar para página de cargos apenas se for criação
-          navigate(`/pre-classificacao/${saveResult.id}/cargos`);
+          // Usar URL ofuscada para segurança
+          try {
+            const { UrlObfuscationService } = await import('@/services/urlObfuscation');
+            const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(saveResult.id);
+            navigate(secureUrl);
+          } catch (error) {
+            devLog.error('Erro ao gerar URL segura:', error);
+            // Fallback apenas em caso de erro crítico
+            navigate(`/pre-classificacao/${saveResult.id}/cargos`);
+          }
         }
         return;
       }
     } catch (error) {
-      console.error("Erro ao salvar card geral:", error);
+      devLog.error("Erro ao salvar card geral:", error);
       toast.error("Erro ao salvar card geral: " + (error as Error).message);
     } finally {
       setIsSubmitting(false);
@@ -536,7 +546,7 @@ const CriarRanking = () => {
         });
         return createdConcursoId; // quando editando, retorna o id já existente
       } catch (error) {
-        console.error("Erro ao salvar ranking:", error);
+        devLog.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
         return null;
       } finally {
@@ -569,7 +579,7 @@ const CriarRanking = () => {
         });
         return createdConcursoId; // quando editando sem novo id
       } catch (error) {
-        console.error("Erro ao salvar ranking:", error);
+        devLog.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
         return null;
       } finally {
@@ -651,7 +661,7 @@ const CriarRanking = () => {
       
       return true;
     } catch (error) {
-      console.error('Erro ao verificar gabaritos:', error);
+      devLog.error('Erro ao verificar gabaritos:', error);
       toast.error('Erro ao verificar gabaritos oficiais');
       return false;
     }

@@ -9,13 +9,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const ConcursoParticipation = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  console.log('[ConcursoParticipation] Concurso ID from params:', id);
+  devLog.log('[ConcursoParticipation] Concurso ID from params:', id);
 
   // Fetch concurso details with better error handling
   const {
@@ -29,9 +30,9 @@ const ConcursoParticipation = () => {
         throw new Error('ID do concurso não fornecido');
       }
       
-      console.log('[ConcursoParticipation] Fetching concurso with ID:', id);
+      devLog.log('[ConcursoParticipation] Fetching concurso with ID:', id);
       const result = await fetchConcursoById(id);
-      console.log('[ConcursoParticipation] Concurso fetched:', result);
+      devLog.log('[ConcursoParticipation] Concurso fetched:', result);
       return result;
     },
     enabled: !!id,
@@ -54,7 +55,7 @@ const ConcursoParticipation = () => {
         .maybeSingle();
       
       if (error) {
-        console.error('[ConcursoParticipation] Error checking participation:', error);
+        devLog.error('[ConcursoParticipation] Error checking participation:', error);
         throw error;
       }
       
@@ -83,7 +84,7 @@ const ConcursoParticipation = () => {
 
   // Handle errors
   if (concursoError) {
-    console.error('[ConcursoParticipation] Error loading concurso:', concursoError);
+    devLog.error('[ConcursoParticipation] Error loading concurso:', concursoError);
     
     return (
       <Card className="mx-auto max-w-4xl mt-6">

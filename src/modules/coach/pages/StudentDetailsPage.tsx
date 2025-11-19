@@ -19,12 +19,24 @@ import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import { UserStudyService } from '@/services/userStudyService';
 import type { StudyStatistics } from '@/types/userStudy';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
+import { devLog } from '@/utils/productionLogger';
+import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
+
+// Helper para verificar se é UUID válido
+const isValidUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
 
 const StudentDetailsPage = () => {
-  const { studentId } = useParams();
+  const { studentId: studentIdParam } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Estado para ID validado do aluno
+  const [validatedStudentId, setValidatedStudentId] = useState<string | null>(null);
+  const [isValidatingToken, setIsValidatingToken] = useState(false);
   
   // Estado para estatísticas completas do aluno
   const [studentStatistics, setStudentStatistics] = useState<StudyStatistics | null>(null);
@@ -38,11 +50,53 @@ const StudentDetailsPage = () => {
   
   const queryClient = useQueryClient();
 
+  // Validar token se necessário
+  useEffect(() => {
+    const validateId = async () => {
+      if (!studentIdParam) return;
+
+      // Se for UUID válido, usar diretamente
+      if (isValidUUID(studentIdParam)) {
+        setValidatedStudentId(studentIdParam);
+        return;
+      }
+
+      // Se não for UUID, provavelmente é um token ofuscado
+      setIsValidatingToken(true);
+      try {
+        const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
+        if (validatedUserId) {
+          setValidatedStudentId(validatedUserId);
+        } else {
+          devLog.error('Token inválido ou expirado');
+          toast({
+            title: 'Erro',
+            description: 'Token de acesso inválido ou expirado.',
+            variant: 'destructive'
+          });
+          navigate('/coach/dashboard');
+        }
+      } catch (error) {
+        devLog.error('Erro ao validar token:', error);
+        toast({
+          title: 'Erro',
+          description: 'Erro ao validar acesso ao aluno.',
+          variant: 'destructive'
+        });
+        navigate('/coach/dashboard');
+      } finally {
+        setIsValidatingToken(false);
+      }
+    };
+
+    validateId();
+  }, [studentIdParam, navigate, toast]);
+
   // Buscar dados do aluno específico
   const { data: student, isLoading } = useQuery({
-    queryKey: ['coach-student', user?.id, studentId],
+    queryKey: ['coach-student', user?.id, validatedStudentId],
     queryFn: async () => {
-      if (!user?.id || !studentId) return null;
+      if (!user?.id || !validatedStudentId) return null;
 
       // Buscar perfil do coach
       const { data: coachProfile, error: profileError } = await supabase
@@ -55,22 +109,30 @@ const StudentDetailsPage = () => {
 
       // Encontrar o aluno específico
       const students = coachProfile?.student_relationships || [];
-      const studentData = students.find((s: any) => s.student_id === studentId);
+      const studentData = students.find((s: any) => s.student_id === validatedStudentId);
 
-      if (!studentData) return null;
+      if (!studentData) {
+        toast({
+          title: 'Acesso negado',
+          description: 'Você não tem acesso a este aluno ou o aluno não faz parte da sua equipe.',
+          variant: 'destructive'
+        });
+        navigate('/coach/dashboard');
+        return null;
+      }
 
       // Buscar dados de estudos do aluno
       const { data: studyData } = await supabase
         .from('user_study_v2')
         .select('*')
-        .eq('user_id', studentId)
+        .eq('user_id', validatedStudentId)
         .single();
 
       // Buscar nome do aluno do perfil
       const { data: profileData } = await supabase
         .from('users_profiles')
         .select('name, email')
-        .eq('id', studentId)
+        .eq('id', validatedStudentId)
         .single();
 
       return {
@@ -80,16 +142,16 @@ const StudentDetailsPage = () => {
         studyData
       };
     },
-    enabled: !!user && !!studentId,
+    enabled: !!user && !!validatedStudentId,
   });
 
   // Buscar estatísticas completas do aluno
   const { data: fullStatistics, isLoading: loadingStats } = useQuery({
-    queryKey: ['coach-student-statistics', studentId],
+    queryKey: ['coach-student-statistics', validatedStudentId],
     queryFn: async () => {
-      if (!studentId) return null;
-      
-      const userStudyData = await UserStudyService.getUserStudyData(studentId);
+      if (!validatedStudentId) return null;
+
+      const userStudyData = await UserStudyService.getUserStudyData(validatedStudentId);
       if (!userStudyData) return null;
       
       // Calcular estatísticas como faz o useStudyStatistics
@@ -173,20 +235,20 @@ const StudentDetailsPage = () => {
       
       return null;
     },
-    enabled: !!studentId,
+    enabled: !!validatedStudentId,
   });
 
   // Mutation para enviar mensagem ao aluno (deve estar antes de qualquer return condicional)
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      if (!studentId || !user?.id) {
+      if (!validatedStudentId || !user?.id) {
         throw new Error('Dados insuficientes para enviar mensagem');
       }
 
       const { error } = await supabase
         .from('notifications')
         .insert({
-          user_id: studentId,
+          user_id: validatedStudentId,
           type: 'coach_message',
           title: 'Mensagem do Coach',
           message: message.trim(),
@@ -199,7 +261,7 @@ const StudentDetailsPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', studentId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', validatedStudentId] });
       toast({
         title: 'Mensagem enviada',
         description: 'A mensagem foi enviada com sucesso ao aluno.',
@@ -218,7 +280,7 @@ const StudentDetailsPage = () => {
 
   // Verificar se tem acesso
   useEffect(() => {
-    if (student === null && !isLoading) {
+    if (student === null && !isLoading && !isValidatingToken && validatedStudentId) {
       toast({
         title: 'Acesso negado',
         description: 'Você não tem acesso a este aluno ou o aluno não faz parte da sua equipe',
@@ -226,7 +288,20 @@ const StudentDetailsPage = () => {
       });
       navigate('/coach/dashboard');
     }
-  }, [student, isLoading, navigate, toast]);
+  }, [student, isLoading, isValidatingToken, validatedStudentId, navigate, toast]);
+
+  // Se estiver validando token, mostrar loading
+  if (isValidatingToken || !validatedStudentId) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p>Validando acesso...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -427,7 +502,20 @@ const StudentDetailsPage = () => {
         <Tabs defaultValue="study" className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <Button 
-              onClick={() => navigate(`/coach/student/${studentId}/create-cycle`)}
+              onClick={async () => {
+                if (!validatedStudentId) return;
+                try {
+                  const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
+                  navigate(`/coach/student/${studentToken}/create-cycle`);
+                } catch (error) {
+                  devLog.error('Erro ao gerar URL segura:', error);
+                  toast({
+                    title: 'Erro',
+                    description: 'Não foi possível gerar URL segura. Tente novamente.',
+                    variant: 'destructive'
+                  });
+                }
+              }}
               size="sm"
               className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600 md:order-2"
             >
@@ -486,7 +574,27 @@ const StudentDetailsPage = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => navigate(`/coach/student/${studentId}/cycle/${cycle.id}/schedule`)}
+                                onClick={async () => {
+                                  // Usar URL ofuscada para segurança
+                                  try {
+                                    const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
+                                    const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
+                                    
+                                    if (!validatedStudentId) return;
+                                    
+                                    const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
+                                    // ✅ CORREÇÃO: Passar validatedStudentId (dono do ciclo) em vez de user.id (coach)
+                                    const cycleToken = await StudyCycleUrlObfuscationService.generateStudyCycleToken(cycle.id, validatedStudentId);
+                                    navigate(`/coach/student/${studentToken}/cycle/${cycleToken}/schedule`);
+                                  } catch (error) {
+                                    devLog.error('Erro ao gerar URL segura:', error);
+                                    toast({
+                                      title: 'Erro',
+                                      description: 'Não foi possível gerar URL segura. Tente novamente.',
+                                      variant: 'destructive'
+                                    });
+                                  }
+                                }}
                                 className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
                               >
                                 <Calendar className="mr-2 h-4 w-4" />

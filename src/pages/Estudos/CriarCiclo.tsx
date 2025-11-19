@@ -16,6 +16,7 @@ import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { toast } from 'sonner';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { useSubscription } from '@/hooks/useSubscription';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface Discipline {
   id: string;
   name: string;
@@ -203,7 +204,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
       });
 
       if (newCycle) {
-        console.log('✅ Ciclo criado com sucesso:', newCycle);
+        devLog.log('✅ Ciclo criado com sucesso:', newCycle);
         toast.success('Ciclo de estudos criado com sucesso!');
         
         // Usar callback ou navegação padrão
@@ -216,7 +217,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
         }
       }
     } catch (error) {
-      console.error('Error creating study cycle:', error);
+      devLog.error('Error creating study cycle:', error);
       toast.error('Erro ao criar ciclo de estudos');
     } finally {
       setLoading(false);

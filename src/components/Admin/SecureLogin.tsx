@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const SecureAdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -57,7 +58,7 @@ export const SecureAdminLogin: React.FC = () => {
         navigate('/project/admin/man/dashboard');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      devLog.error('Login error:', error);
       toast.error('Erro interno do sistema');
     } finally {
       setIsLoading(false);

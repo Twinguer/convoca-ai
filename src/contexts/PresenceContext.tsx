@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface PresenceContextValue {
   onlineUserIds: Set<string>;
@@ -24,14 +25,14 @@ export const PresenceProvider: React.FC<React.PropsWithChildren> = ({ children }
           .eq('is_online', true);
         
         if (error) {
-          console.error('Error fetching online users:', error);
+          devLog.error('Error fetching online users:', error);
           return;
         }
         
         const userIds = data?.map(user => user.id) || [];
         setOnlineUserIds(new Set(userIds));
       } catch (error) {
-        console.error('Error in fetchOnlineUsers:', error);
+        devLog.error('Error in fetchOnlineUsers:', error);
       }
     };
 

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { rankingCache } from './rankingCache';
 import { buildRankingFromConsolidated } from './rankingFormatting';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Defining the Ranking interface to fix TypeScript errors
 export interface Ranking {
@@ -111,7 +112,7 @@ export const fetchUserRankings = async (
       
       // Se não encontrou todos os perfis, buscar individualmente
       if (profileMap.size < userIds.length) {
-        console.warn(`Found ${profileMap.size} profiles out of ${userIds.length}, searching for missing ones...`);
+        devLog.warn(`Found ${profileMap.size} profiles out of ${userIds.length}, searching for missing ones...`);
         for (const userId of userIds) {
           if (!profileMap.has(userId)) {
             try {
@@ -125,10 +126,10 @@ export const fetchUserRankings = async (
                 profileMap.set(userId, individualProfile);
                 // Debug logs removed for security
               } else {
-                console.warn(`No profile found for ${userId}`);
+                devLog.warn(`No profile found for ${userId}`);
               }
             } catch (err) {
-              console.warn(`Failed to fetch individual profile for ${userId}:`, err);
+              devLog.warn(`Failed to fetch individual profile for ${userId}:`, err);
             }
           }
         }
@@ -146,9 +147,9 @@ export const fetchUserRankings = async (
               const userProfile = profileMap.get(userRanking.user_id);
               
               if (!userProfile) {
-                console.error(`CRITICAL: Profile not found for user ${userRanking.user_id}`);
-                console.error('Available profiles:', Array.from(profileMap.keys()));
-                console.error('Looking for:', userRanking.user_id);
+                devLog.error(`CRITICAL: Profile not found for user ${userRanking.user_id}`);
+                devLog.error('Available profiles:', Array.from(profileMap.keys()));
+                devLog.error('Looking for:', userRanking.user_id);
                 continue; // Skip this ranking if no profile found
               }
               
@@ -209,7 +210,7 @@ export const fetchUserRankings = async (
         positionsMap = positionsData;
       }
     } catch (err) {
-      console.warn('Failed to fetch positions from backend, falling back to frontend calculation:', err);
+      devLog.warn('Failed to fetch positions from backend, falling back to frontend calculation:', err);
       // Fallback: calcular no frontend se backend falhar
       const quotaGroups: { [key: string]: typeof rankingData } = {};
       rankingData.forEach(ranking => {
@@ -365,7 +366,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
       .single();
     
     if (error) {
-      console.error('Error fetching concurso reservation types:', error);
+      devLog.error('Error fetching concurso reservation types:', error);
       return ['Ampla Concorrência'];
     }
     
@@ -382,7 +383,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     
     return types;
   } catch (error) {
-    console.error('Error determining available reservation types:', error);
+    devLog.error('Error determining available reservation types:', error);
     return ['Ampla Concorrência'];
   }
 };

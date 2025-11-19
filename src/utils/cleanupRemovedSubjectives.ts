@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export interface CleanupResult {
   success: boolean;
@@ -46,7 +47,7 @@ export const cleanupRankingSubjectives = async (
       other_subjective: concurso.subjects?.other === true
     };
     
-    console.log('[cleanupRankingSubjectives] Subjetivas ativas:', activeSubjectives);
+    devLog.log('[cleanupRankingSubjectives] Subjetivas ativas:', activeSubjectives);
     
     // Buscar dados do usuário
     const { data: userRanking, error: userError } = await supabase
@@ -84,7 +85,7 @@ export const cleanupRankingSubjectives = async (
       other_subjective: activeSubjectives.other_subjective ? (currentSubjectives.other_subjective || 0) : 0
     };
     
-    console.log('[cleanupRankingSubjectives] Limpeza realizada:', {
+    devLog.log('[cleanupRankingSubjectives] Limpeza realizada:', {
       antes: currentSubjectives,
       depois: cleanedSubjectives
     });
@@ -124,7 +125,7 @@ export const cleanupRankingSubjectives = async (
     };
     
   } catch (error: any) {
-    console.error('[cleanupRankingSubjectives] Erro:', error);
+    devLog.error('[cleanupRankingSubjectives] Erro:', error);
     return {
       success: false,
       message: 'Erro interno',
@@ -232,7 +233,7 @@ export const cleanupConcursoSubjectives = async (
     };
     
   } catch (error: any) {
-    console.error('[cleanupConcursoSubjectives] Erro:', error);
+    devLog.error('[cleanupConcursoSubjectives] Erro:', error);
     return {
       success: false,
       message: 'Erro interno',

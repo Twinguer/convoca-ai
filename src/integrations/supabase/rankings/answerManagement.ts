@@ -1,6 +1,7 @@
 
 import { supabase } from '../client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from './examStructure';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // FUNÇÃO ATUALIZADA PARA TRABALHAR COM DADOS CONSOLIDADOS
 export const saveUserAnswersData = async (
@@ -9,7 +10,7 @@ export const saveUserAnswersData = async (
   answers: { questionNumber: number; answer: string }[]
 ) => {
   try {
-    console.log('[answerManagement] Redirecionando para estrutura consolidada...');
+    devLog.log('[answerManagement] Redirecionando para estrutura consolidada...');
     
     // Carregar dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
@@ -36,7 +37,7 @@ export const saveUserAnswersData = async (
       };
     });
     
-    console.log('[answerManagement] Dados preparados para estrutura consolidada:', answersArray);
+    devLog.log('[answerManagement] Dados preparados para estrutura consolidada:', answersArray);
 
     // Usar a nova função RPC consolidada
     const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
@@ -51,14 +52,14 @@ export const saveUserAnswersData = async (
     });
     
     if (error) {
-      console.error('[answerManagement] Erro na função RPC consolidada:', error);
+      devLog.error('[answerManagement] Erro na função RPC consolidada:', error);
       throw error;
     }
     
-    console.log('[answerManagement] Respostas salvas com sucesso via estrutura consolidada');
+    devLog.log('[answerManagement] Respostas salvas com sucesso via estrutura consolidada');
     return answersArray;
   } catch (error: any) {
-    console.error('[answerManagement] Erro ao salvar respostas:', error);
+    devLog.error('[answerManagement] Erro ao salvar respostas:', error);
     throw error;
   }
 };
@@ -74,7 +75,7 @@ export const fetchUserAnswers = async (rankingId: string) => {
       .single();
       
     if (error) {
-      console.error('[answerManagement] Error fetching consolidated answers:', error);
+      devLog.error('[answerManagement] Error fetching consolidated answers:', error);
       return [];
     }
     
@@ -102,7 +103,7 @@ export const fetchUserAnswers = async (rankingId: string) => {
     
     return legacyAnswers;
   } catch (error) {
-    console.error('[answerManagement] Error fetching user answers:', error);
+    devLog.error('[answerManagement] Error fetching user answers:', error);
     return [];
   }
 };

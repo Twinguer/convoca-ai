@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface Discipline {
   id: string;
@@ -167,7 +168,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
         navigate('/estudos');
       }
     } catch (error) {
-      console.error('Error fetching cycle:', error);
+      devLog.error('Error fetching cycle:', error);
       toast.error('Erro ao carregar ciclo de estudos');
       navigate('/estudos');
     } finally {
@@ -322,7 +323,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
         toast.error('Erro ao atualizar ciclo de estudos');
       }
     } catch (error) {
-      console.error('Error updating study cycle:', error);
+      devLog.error('Error updating study cycle:', error);
       toast.error('Erro ao atualizar ciclo de estudos');
     } finally {
       setLoading(false);

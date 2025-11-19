@@ -16,6 +16,7 @@ import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
 import { QuotaSelector, QuotaType } from './QuotaSelector';
 import { BookletSelector } from './BookletSelector';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface ExamBooklet {
   id: string;
   name: string;
@@ -103,7 +104,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             }
           }
         } catch (error) {
-          console.error('[ParticipationForm] Erro ao carregar reservation_type existente:', error);
+          devLog.error('[ParticipationForm] Erro ao carregar reservation_type existente:', error);
         }
       }
     };
@@ -154,7 +155,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         setBooklets([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar cadernos:', error);
+      devLog.error('Erro ao carregar cadernos:', error);
       setBooklets([]);
     } finally {
       setIsLoadingBooklets(false);
@@ -221,7 +222,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Debug logs removed for security
       return true;
     } catch (error) {
-      console.error('[ParticipationForm] Erro ao verificar gabarito oficial:', error);
+      devLog.error('[ParticipationForm] Erro ao verificar gabarito oficial:', error);
       return false;
     }
   };
@@ -298,7 +299,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         .maybeSingle();
 
       if (participationError) {
-        console.error('Erro ao verificar participação:', participationError);
+        devLog.error('Erro ao verificar participação:', participationError);
         toast({
           title: "Erro",
           description: "Erro ao verificar participação no ranking.",
@@ -337,7 +338,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         });
 
         if (limitsError) {
-          console.error('[ParticipationForm] Erro ao verificar limites:', limitsError);
+          devLog.error('[ParticipationForm] Erro ao verificar limites:', limitsError);
           toast({
             title: "Erro",
             description: "Erro ao verificar limites de participação. Tente novamente.",
@@ -610,7 +611,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // States updated - should show AnswerSheet now
     } catch (error: any) {
       setIsLoading(false);
-      console.error('Error joining ranking:', error);
+      devLog.error('Error joining ranking:', error);
       toast({
         title: "Erro ao participar",
         description: error.message || "Não foi possível completar sua inscrição. Tente novamente.",

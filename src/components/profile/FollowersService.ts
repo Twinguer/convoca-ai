@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export interface Follower {
   id: string;
@@ -18,7 +19,7 @@ export const getFollowers = async (userId: string): Promise<Follower[]> => {
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching followers:', error);
+    devLog.error('Error fetching followers:', error);
     return [];
   }
 };
@@ -43,7 +44,7 @@ export const getRandomUsers = async (count: number = 10, excludeUserId?: string)
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching random users:', error);
+    devLog.error('Error fetching random users:', error);
     return [];
   }
 };
@@ -59,7 +60,7 @@ export const getFollowing = async (userId: string): Promise<Follower[]> => {
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching following:', error);
+    devLog.error('Error fetching following:', error);
     return [];
   }
 };
@@ -79,7 +80,7 @@ export const followUser = async (followerId: string, followedId: string): Promis
 
     return true;
   } catch (error) {
-    console.error('Error following user:', error);
+    devLog.error('Error following user:', error);
     return false;
   }
 };
@@ -98,7 +99,7 @@ export const unfollowUser = async (followerId: string, followedId: string): Prom
 
     return true;
   } catch (error) {
-    console.error('Error unfollowing user:', error);
+    devLog.error('Error unfollowing user:', error);
     return false;
   }
 };

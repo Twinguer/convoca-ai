@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { consolidatedAnswerService } from '@/services/consolidatedAnswerService';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface ExamBooklet {
   id: string;
@@ -88,11 +89,11 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
           queryKey: ['user-ranking', rankingId] 
         });
       } else {
-        console.error('[BookletSwitcher] Error switching booklet:', result.error);
+        devLog.error('[BookletSwitcher] Error switching booklet:', result.error);
         toast.error(result.error || 'Falha ao trocar caderno');
       }
     } catch (error: any) {
-      console.error('[BookletSwitcher] Error:', error);
+      devLog.error('[BookletSwitcher] Error:', error);
       toast.error('Erro inesperado ao trocar caderno');
     } finally {
       setIsSwitching(false);

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useQuery } from '@tanstack/react-query';
 import { getConsolidatedAnswerKey } from '@/services/answerKeyService';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string) => {
   return useQuery({
@@ -9,7 +10,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
       const consolidatedData = await getConsolidatedAnswerKey(concursoId);
       
       if (!consolidatedData) {
-        console.log('[useOfficialAnswerWeights] No consolidated data found');
+        devLog.log('[useOfficialAnswerWeights] No consolidated data found');
         return [];
       }
 
@@ -28,7 +29,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
           question_type: answerData.question_type
         }));
         
-        console.log('[useOfficialAnswerWeights] Found', answers.length, 'answers for booklet:', bookletId);
+        devLog.log('[useOfficialAnswerWeights] Found', answers.length, 'answers for booklet:', bookletId);
         return answers;
       }
 
@@ -51,7 +52,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
         });
       });
 
-      console.log('[useOfficialAnswerWeights] Found', allAnswers.length, 'total answers across all booklets');
+      devLog.log('[useOfficialAnswerWeights] Found', allAnswers.length, 'total answers across all booklets');
       return allAnswers;
     },
     enabled: !!concursoId,

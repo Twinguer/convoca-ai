@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface CreatorInfoResult {
   creatorName: string | null;
@@ -30,7 +31,7 @@ export function useRankingCreatorInfo(concurso: Concurso): CreatorInfoResult {
       .single();
       
     if (error) {
-      console.error('Error fetching creator info:', error);
+      devLog.error('Error fetching creator info:', error);
       throw error;
     }
     

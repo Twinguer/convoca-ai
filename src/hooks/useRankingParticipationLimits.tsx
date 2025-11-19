@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface ParticipationLimitsResult {
   allowed: boolean;
@@ -36,7 +37,7 @@ export const useRankingParticipationLimits = (concursoId?: string) => {
       });
 
       if (error) {
-        console.error('[useRankingParticipationLimits] Erro ao verificar limites:', error);
+        devLog.error('[useRankingParticipationLimits] Erro ao verificar limites:', error);
         throw error;
       }
 

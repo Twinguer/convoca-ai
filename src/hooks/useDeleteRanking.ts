@@ -2,13 +2,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const useDeleteRanking = () => {
   const queryClient = useQueryClient();
 
   const deleteRankingMutation = useMutation({
     mutationFn: async (concursoId: string) => {
-      // console.log('Iniciando exclusão do ranking:', concursoId);
+      // devLog.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
         // ✅ Verificar se é card geral e buscar cards filhos
@@ -19,7 +20,7 @@ export const useDeleteRanking = () => {
           .maybeSingle();
         
         if (checkError) {
-          console.error('Erro ao verificar tipo do ranking:', checkError);
+          devLog.error('Erro ao verificar tipo do ranking:', checkError);
         }
         
         // ✅ Se for card geral, buscar todos os cards filhos
@@ -32,7 +33,7 @@ export const useDeleteRanking = () => {
             .eq('parent_concurso_id', concursoId);
           
           if (childError) {
-            console.error('Erro ao buscar cards filhos:', childError);
+            devLog.error('Erro ao buscar cards filhos:', childError);
           } else if (childCards && childCards.length > 0) {
             // Adicionar IDs dos cards filhos à lista
             allConcursoIds = [concursoId, ...childCards.map(c => c.id)];
@@ -40,14 +41,14 @@ export const useDeleteRanking = () => {
         }
         
         // 1. Primeiro buscar os IDs dos user_rankings para deletar dependências
-        // console.log('Buscando user_rankings para deletar dependências...');
+        // devLog.log('Buscando user_rankings para deletar dependências...');
         const { data: userRankings, error: fetchError } = await supabase
           .from('user_rankings')
           .select('user_id, consolidated_data')
           .not('consolidated_data', 'is', null);
         
         if (fetchError) {
-          console.error('Erro ao buscar user_rankings:', fetchError);
+          devLog.error('Erro ao buscar user_rankings:', fetchError);
           throw fetchError;
         }
         
@@ -64,14 +65,14 @@ export const useDeleteRanking = () => {
           const userIds = relevantUserRankings.map(ur => ur.user_id);
           
           // 2. Deletar score_calculation_logs primeiro - CORREÇÃO CRUCIAL
-          console.log('Deletando score_calculation_logs...');
+          devLog.log('Deletando score_calculation_logs...');
           const { error: logsError } = await supabase
             .from('score_calculation_logs')
             .delete()
             .in('user_ranking_id', userIds);
           
           if (logsError) {
-            console.error('Erro ao deletar score_calculation_logs:', logsError);
+            devLog.error('Erro ao deletar score_calculation_logs:', logsError);
             throw logsError;
           }
 
@@ -113,27 +114,27 @@ export const useDeleteRanking = () => {
         }
 
         // 5. official_answer_weights agora são gerenciados via JSONB na tabela concursos
-        console.log('official_answer_weights são gerenciados via JSONB na tabela concursos - não precisa deletar');
+        devLog.log('official_answer_weights são gerenciados via JSONB na tabela concursos - não precisa deletar');
 
         // 6. Cadernos são gerenciados via JSONB na tabela concursos
-        console.log('Cadernos são gerenciados via JSONB na tabela concursos - não precisa deletar');
+        devLog.log('Cadernos são gerenciados via JSONB na tabela concursos - não precisa deletar');
 
         // 7. Finalmente deletar o concurso (o CASCADE vai deletar os filhos automaticamente se for card geral)
-        console.log('Deletando concurso...');
+        devLog.log('Deletando concurso...');
         const { error: concursoError } = await supabase
           .from('concursos')
           .delete()
           .eq('id', concursoId);
         
         if (concursoError) {
-          console.error('Erro ao deletar concurso:', concursoError);
+          devLog.error('Erro ao deletar concurso:', concursoError);
           throw concursoError;
         }
 
-        // console.log('Ranking deletado com sucesso:', concursoId);
+        // devLog.log('Ranking deletado com sucesso:', concursoId);
         return { success: true };
       } catch (error) {
-        console.error('Erro na exclusão do ranking:', error);
+        devLog.error('Erro na exclusão do ranking:', error);
         throw error;
       }
     },
@@ -145,7 +146,7 @@ export const useDeleteRanking = () => {
       queryClient.invalidateQueries({ queryKey: ['user-created-rankings'] });
     },
     onError: (error: any) => {
-      console.error('Erro ao deletar ranking:', error);
+      devLog.error('Erro ao deletar ranking:', error);
       toast.error(`Erro ao deletar ranking: ${error.message || 'Erro desconhecido'}`);
     }
   });

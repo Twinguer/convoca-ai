@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { showProRequiredToast } from '@/utils/planRestrictions';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface Concurso {
   id: string;
   titulo: string;
@@ -54,7 +55,7 @@ const RankingsPage = () => {
         return;
       }
     } catch (error) {
-      console.error('Erro ao verificar se é card geral:', error);
+      devLog.error('Erro ao verificar se é card geral:', error);
       // Continuar com o fluxo normal em caso de erro
     }
     
@@ -78,7 +79,7 @@ const RankingsPage = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Erro ao verificar participação:', error);
+        devLog.error('Erro ao verificar participação:', error);
         navigate(`/ranking/${concursoId}`);
         return;
       }
@@ -114,7 +115,7 @@ const RankingsPage = () => {
         });
 
         if (limitsError) {
-          console.error('[RankingsPage] Erro ao verificar limites:', limitsError);
+          devLog.error('[RankingsPage] Erro ao verificar limites:', limitsError);
           // Em caso de erro, redireciona para participar
           navigate(`/ranking/${concursoId}/participate`);
           return;
@@ -129,7 +130,7 @@ const RankingsPage = () => {
         }
       }
     } catch (error) {
-      console.error('Erro ao verificar participação:', error);
+      devLog.error('Erro ao verificar participação:', error);
       // Em caso de erro, permite acesso (não bloqueia)
       navigate(`/ranking/${concursoId}`);
     }
@@ -181,7 +182,7 @@ const RankingsPage = () => {
             .order('created_at', { ascending: false });
           
           if (fallbackError) {
-            console.error('Error loading concursos:', fallbackError);
+            devLog.error('Error loading concursos:', fallbackError);
             return;
           }
           
@@ -196,7 +197,7 @@ const RankingsPage = () => {
                 .rpc('get_general_card_participant_count', { p_general_card_id: concurso.id });
               
               if (generalError) {
-                console.error('Error fetching general card participant count:', generalError);
+                devLog.error('Error fetching general card participant count:', generalError);
                 // Fallback: tentar calcular manualmente somando filhos
                 const { data: childCards } = await supabase
                   .from('concursos')
@@ -222,7 +223,7 @@ const RankingsPage = () => {
                 .rpc('count_concurso_participants', { concurso_id: concurso.id });
               
               if (countError) {
-                console.error('Error fetching participant count:', countError);
+                devLog.error('Error fetching participant count:', countError);
                 participantCount = 0;
               } else {
                 participantCount = countData || 0;
@@ -239,7 +240,7 @@ const RankingsPage = () => {
           return;
         }
         
-        console.error('Error loading concursos:', error);
+        devLog.error('Error loading concursos:', error);
         return;
       }
 
@@ -258,7 +259,7 @@ const RankingsPage = () => {
             .rpc('get_general_card_participant_count', { p_general_card_id: concurso.id });
           
           if (generalError) {
-            console.error('Error fetching general card participant count:', generalError);
+            devLog.error('Error fetching general card participant count:', generalError);
             // Fallback: tentar calcular manualmente somando filhos
             const { data: childCards } = await supabase
               .from('concursos')
@@ -284,7 +285,7 @@ const RankingsPage = () => {
             .rpc('count_concurso_participants', { concurso_id: concurso.id });
           
           if (countError) {
-            console.error('Error fetching participant count:', countError);
+            devLog.error('Error fetching participant count:', countError);
             participantCount = 0;
           } else {
             participantCount = countData || 0;
@@ -301,7 +302,7 @@ const RankingsPage = () => {
       const filteredConcursos = concursosWithParticipants.filter(c => c !== null);
       setConcursos(filteredConcursos);
     } catch (error) {
-      console.error('Error:', error);
+      devLog.error('Error:', error);
     } finally {
       setLoading(false);
     }

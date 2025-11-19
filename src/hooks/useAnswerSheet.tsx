@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getNumericValue, isHierarchicalStructure, getDisciplines } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './useAnswerSheet/sectionUtils';
 import { fetchExistingAnswers as fetchExistingAnswersFromDB } from './useAnswerSheet/fetchExistingAnswers';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -30,7 +31,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
+      devLog.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
     }
   }, [concurso]);
 
@@ -39,7 +40,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
       // Buscar dados do usuário atual
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('User not authenticated');
+        devLog.log('User not authenticated');
         return;
       }
 
@@ -51,11 +52,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
         .maybeSingle();
 
       if (rankingError) {
-        console.log('No user ranking data found, using empty answers');
+        devLog.log('No user ranking data found, using empty answers');
         return;
       }
 
-      console.log('Fetched user ranking data:', userRankingData?.consolidated_data);
+      devLog.log('Fetched user ranking data:', userRankingData?.consolidated_data);
 
       // Extract user answers from consolidated data (flatten JSONB structure)
       const currentRankingData = userRankingData?.consolidated_data?.rankings?.[rankingId];
@@ -81,8 +82,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
             }
           });
 
-          console.log('Parsed answers map (flattened):', answersMap);
-          console.log('Parsed question types map (from disciplines):', typesMap);
+          devLog.log('Parsed answers map (flattened):', answersMap);
+          devLog.log('Parsed question types map (from disciplines):', typesMap);
 
           setAnswers(answersMap);
           setQuestionType(typesMap);
@@ -113,7 +114,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
           : null
       );
     } catch (error) {
-      console.error('Error fetching answers:', error);
+      devLog.error('Error fetching answers:', error);
     }
   };
 
@@ -121,13 +122,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     if (concurso && Object.keys(questionType).length === 0) {
       const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
       
-      console.log('[initializeQuestionTypes] Initializing question types for concurso:', concurso.id);
+      devLog.log('[initializeQuestionTypes] Initializing question types for concurso:', concurso.id);
 
       // Verificar se estamos usando a estrutura customizada
       // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
       if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
         const hierarchical = isHierarchicalStructure(concurso);
-        console.log('[initializeQuestionTypes] Using hierarchical structure:', hierarchical);
+        devLog.log('[initializeQuestionTypes] Using hierarchical structure:', hierarchical);
         
         let questionNumber = 1;
 
@@ -136,11 +137,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
           for (const block of concurso.disciplines) {
             // Use TypeGuard to check if this is a DisciplineBlock
             if (isDisciplineBlock(block)) {
-              console.log('[initializeQuestionTypes] Processing block:', block.name);
+              devLog.log('[initializeQuestionTypes] Processing block:', block.name);
               for (const discipline of block.disciplines) {
                 if (discipline.isEnabled) {
                   const questionCount = getNumericValue(discipline.questionCount);
-                  console.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from discipline ${discipline.name}`);
+                  devLog.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from discipline ${discipline.name}`);
                   
                   for (let i = 0; i < questionCount; i++) {
                     typesMap[questionNumber] = discipline.type;
@@ -155,7 +156,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
           for (const discipline of concurso.disciplines) {
             if (!isDisciplineBlock(discipline) && discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
-              console.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from flat discipline ${discipline.name}`);
+              devLog.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from flat discipline ${discipline.name}`);
               
               for (let i = 0; i < questionCount; i++) {
                 typesMap[questionNumber] = discipline.type;
@@ -170,7 +171,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
         if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
           const count = getNumericValue(concurso.basic_knowledge_questions);
-          console.log(`[initializeQuestionTypes] Adding ${count} basic knowledge questions`);
+          devLog.log(`[initializeQuestionTypes] Adding ${count} basic knowledge questions`);
           
           for (let i = 0; i < count; i++) {
             typesMap[questionNumber] = 'basic';
@@ -180,7 +181,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
         if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
           const count = getNumericValue(concurso.specific_knowledge_1_questions);
-          console.log(`[initializeQuestionTypes] Adding ${count} specific knowledge 1 questions`);
+          devLog.log(`[initializeQuestionTypes] Adding ${count} specific knowledge 1 questions`);
           
           for (let i = 0; i < count; i++) {
             typesMap[questionNumber] = 'specific1';
@@ -190,7 +191,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
         if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
           const count = getNumericValue(concurso.specific_knowledge_2_questions);
-          console.log(`[initializeQuestionTypes] Adding ${count} specific knowledge 2 questions`);
+          devLog.log(`[initializeQuestionTypes] Adding ${count} specific knowledge 2 questions`);
           
           for (let i = 0; i < count; i++) {
             typesMap[questionNumber] = 'specific2';
@@ -200,7 +201,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
         if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
           const count = getNumericValue(concurso.specific_knowledge_3_questions);
-          console.log(`[initializeQuestionTypes] Adding ${count} specific knowledge 3 questions`);
+          devLog.log(`[initializeQuestionTypes] Adding ${count} specific knowledge 3 questions`);
           
           for (let i = 0; i < count; i++) {
             typesMap[questionNumber] = 'specific3';
@@ -209,7 +210,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
         }
       }
 
-      console.log('Initialized question types mapping:', typesMap);
+      devLog.log('Initialized question types mapping:', typesMap);
       setQuestionType(typesMap);
     }
   };
@@ -242,7 +243,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   const getTotalQuestions = () => {
     if (!concurso) return 0;
     
-    console.log('[getTotalQuestions] Calculating total questions for concurso:', concurso.id);
+    devLog.log('[getTotalQuestions] Calculating total questions for concurso:', concurso.id);
 
     let total = 0;
 
@@ -250,7 +251,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
     if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const hierarchical = isHierarchicalStructure(concurso);
-      console.log('[getTotalQuestions] Using hierarchical structure:', hierarchical);
+      devLog.log('[getTotalQuestions] Using hierarchical structure:', hierarchical);
       
       if (hierarchical) {
         // Processar estrutura hierárquica (blocos -> disciplinas)
@@ -259,7 +260,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled && discipline.questionCount) {
                 const count = getNumericValue(discipline.questionCount);
-                console.log(`[getTotalQuestions] Adding ${count} questions from discipline ${discipline.name}`);
+                devLog.log(`[getTotalQuestions] Adding ${count} questions from discipline ${discipline.name}`);
                 total += count;
               }
             }
@@ -270,7 +271,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
         for (const discipline of concurso.disciplines) {
           if (!isDisciplineBlock(discipline) && discipline.isEnabled && discipline.questionCount) {
             const count = getNumericValue(discipline.questionCount);
-            console.log(`[getTotalQuestions] Adding ${count} questions from flat discipline ${discipline.name}`);
+            devLog.log(`[getTotalQuestions] Adding ${count} questions from flat discipline ${discipline.name}`);
             total += count;
           }
         }
@@ -279,30 +280,30 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
       // Processar estrutura tradicional (legacy)
       if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         const count = getNumericValue(concurso.basic_knowledge_questions);
-        console.log(`[getTotalQuestions] Adding ${count} basic knowledge questions`);
+        devLog.log(`[getTotalQuestions] Adding ${count} basic knowledge questions`);
         total += count;
       }
 
       if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
         const count = getNumericValue(concurso.specific_knowledge_1_questions);
-        console.log(`[getTotalQuestions] Adding ${count} specific knowledge 1 questions`);
+        devLog.log(`[getTotalQuestions] Adding ${count} specific knowledge 1 questions`);
         total += count;
       }
 
       if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
         const count = getNumericValue(concurso.specific_knowledge_2_questions);
-        console.log(`[getTotalQuestions] Adding ${count} specific knowledge 2 questions`);
+        devLog.log(`[getTotalQuestions] Adding ${count} specific knowledge 2 questions`);
         total += count;
       }
 
       if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
         const count = getNumericValue(concurso.specific_knowledge_3_questions);
-        console.log(`[getTotalQuestions] Adding ${count} specific knowledge 3 questions`);
+        devLog.log(`[getTotalQuestions] Adding ${count} specific knowledge 3 questions`);
         total += count;
       }
     }
 
-    console.log(`[getTotalQuestions] Total questions: ${total}`);
+    devLog.log(`[getTotalQuestions] Total questions: ${total}`);
     return total;
   };
 
@@ -320,24 +321,24 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   // Função para obter questões baseadas na seção selecionada
   const getSectionQuestions = () => {
     if (!concurso) {
-      console.log('[getSectionQuestions] No concurso available');
+      devLog.log('[getSectionQuestions] No concurso available');
       return [];
     }
 
-    console.log('[getSectionQuestions] Getting questions for section:', selectedSection);
+    devLog.log('[getSectionQuestions] Getting questions for section:', selectedSection);
     
     // ✅ USAR NOVA FUNÇÃO HELPER: Obter disciplinas de qualquer estrutura
     const disciplines = getDisciplines(concurso);
     
     if (disciplines.length > 0) {
-      console.log('[getSectionQuestions] Using helper function, found disciplines:', disciplines.length);
+      devLog.log('[getSectionQuestions] Using helper function, found disciplines:', disciplines.length);
       
       let startIndex = 1;
       
       for (const discipline of disciplines) {
         if (discipline.isEnabled) {
           const questionCount = getNumericValue(discipline.questionCount);
-          console.log(`[getSectionQuestions] Discipline ${discipline.name} (type: ${discipline.type}) has ${questionCount} questions`);
+          devLog.log(`[getSectionQuestions] Discipline ${discipline.name} (type: ${discipline.type}) has ${questionCount} questions`);
 
           if (discipline.type === selectedSection) {
             // Retornar o range de questões para esta disciplina
@@ -345,7 +346,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
               { length: questionCount },
               (_, i) => startIndex + i
             );
-            console.log(`[getSectionQuestions] Questions for discipline ${discipline.name} (type: ${discipline.type}):`, questions);
+            devLog.log(`[getSectionQuestions] Questions for discipline ${discipline.name} (type: ${discipline.type}):`, questions);
             return questions;
           }
 
@@ -355,7 +356,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
       }
     }
     
-    console.log('[getSectionQuestions] No questions found for section:', selectedSection);
+    devLog.log('[getSectionQuestions] No questions found for section:', selectedSection);
     return [];
   };
 
@@ -371,13 +372,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   };
 
   const createAnswerMatrix = () => {
-    console.log('[createAnswerMatrix] Creating matrix for section:', selectedSection);
+    devLog.log('[createAnswerMatrix] Creating matrix for section:', selectedSection);
     
     const sectionQuestions = getSectionQuestions();
-    console.log('[createAnswerMatrix] Section questions:', sectionQuestions);
+    devLog.log('[createAnswerMatrix] Section questions:', sectionQuestions);
     
     if (sectionQuestions.length === 0) {
-      console.log('[createAnswerMatrix] No questions found for section:', selectedSection);
+      devLog.log('[createAnswerMatrix] No questions found for section:', selectedSection);
       return [];
     }
 
@@ -399,7 +400,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
       matrix.push(rowData);
     }
 
-    console.log('[createAnswerMatrix] Matrix for section', selectedSection, ':', matrix);
+    devLog.log('[createAnswerMatrix] Matrix for section', selectedSection, ':', matrix);
     return matrix;
   };
 

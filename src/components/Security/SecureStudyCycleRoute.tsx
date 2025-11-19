@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield, AlertTriangle, BookOpen } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface SecureStudyCycleRouteProps {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ const SecureStudyCycleRoute: React.FC<SecureStudyCycleRouteProps> = ({ children,
           setError('Token de acesso inválido ou expirado');
         }
       } catch (err) {
-        console.error('Erro ao validar token de ciclo de estudo:', err);
+        devLog.error('Erro ao validar token de ciclo de estudo:', err);
         setError('Erro ao validar acesso ao ciclo de estudo');
       } finally {
         setIsValidating(false);

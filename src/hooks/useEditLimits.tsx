@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface EditLimitsResult {
   allowed: boolean;
@@ -37,7 +38,7 @@ export const useEditLimits = (rankingId?: string, currentEditCount?: number) => 
       });
 
       if (error) {
-        console.error('[useEditLimits] Erro ao verificar limites de edição:', error);
+        devLog.error('[useEditLimits] Erro ao verificar limites de edição:', error);
         throw error;
       }
 

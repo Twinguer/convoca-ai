@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Home, ListChecks, LogOut, ArrowLeft, Users, Plus, Gift } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const AdminLayout: React.FC = () => {
       toast.success('Logout realizado com sucesso');
       navigate('/project/admin/man/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      devLog.error('Logout error:', error);
       toast.error('Erro ao fazer logout');
     }
   };

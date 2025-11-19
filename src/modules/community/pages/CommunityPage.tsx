@@ -16,11 +16,15 @@ import { UserGrid } from '@/components/community/UserGrid';
 import { CommunitySectionHeader } from '@/components/community/CommunitySectionHeader';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { GroupsTab } from '@/components/studyGroups/GroupsTab';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { useToast } from '@/hooks/use-toast';
+
 const CommunityPage = () => {
   const {
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const {
     generateSecureUserUrl
   } = useSecureUserUrls();
@@ -99,9 +103,19 @@ const CommunityPage = () => {
     try {
       const secureUrl = await generateSecureUserUrl(userId, 'profile');
       navigate(secureUrl);
-    } catch (error) {
-      console.error('Erro ao gerar URL segura de usuário:', error);
-      navigate('/comunidade');
+    } catch (error: any) {
+      devLog.error('Erro ao gerar URL segura de usuário:', error);
+      // Em produção, se variáveis não estiverem configuradas, mostrar erro
+      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
+        toast({
+          title: 'Erro de configuração',
+          description: 'O sistema não está configurado corretamente. Entre em contato com o suporte.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      // Em desenvolvimento ou outros erros, usar fallback
+      navigate(`/usuario/profile/${userId}`);
     }
   };
   if (isLoading) return <CommunityLoadingState />;

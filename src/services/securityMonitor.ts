@@ -5,6 +5,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { featureFlags } from '@/config/featureFlags';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export interface SecurityAlert {
   id: string;
@@ -164,7 +165,7 @@ class SecurityMonitor {
       };
 
       this.alerts.push(alert);
-      console.warn('⚠️ PERFORMANCE ALERT:', alert);
+      devLog.warn('⚠️ PERFORMANCE ALERT:', alert);
     }
   }
 
@@ -176,7 +177,7 @@ class SecurityMonitor {
 
     this.metrics.errors++;
     
-    console.error('❌ SECURITY ERROR:', {
+    devLog.error('❌ SECURITY ERROR:', {
       message: error.message,
       stack: error.stack,
       context,
@@ -278,7 +279,7 @@ class SecurityMonitor {
           },
         });
     } catch (error) {
-      console.error('Erro ao persistir alerta:', error);
+      devLog.error('Erro ao persistir alerta:', error);
     }
   }
 }

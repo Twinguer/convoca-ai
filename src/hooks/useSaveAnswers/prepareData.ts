@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Concurso } from '@/types/concursos';
 import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Função auxiliar para obter valor numérico
 const getNumericValue = (value: any): number => {
@@ -25,7 +26,7 @@ export const prepareAnswersData = (
   
   // Validar que temos um caderno selecionado
   if (!selectedBookletId) {
-    console.error('[prepareAnswersData] selectedBookletId é obrigatório');
+    devLog.error('[prepareAnswersData] selectedBookletId é obrigatório');
     return { answers: {}, subjectScores: subjectScores || {} };
   }
   

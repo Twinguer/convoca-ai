@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSecureAdminUrls } from '@/services/adminUrlObfuscation';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, FileText, Users, Gift } from 'lucide-react';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const AdminMenu = () => {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ const AdminMenu = () => {
           vouchers: urls[3]
         });
       } catch (error) {
-        console.error('Erro ao gerar URLs seguras:', error);
+        devLog.error('Erro ao gerar URLs seguras:', error);
         // Fallback para URLs não ofuscadas
         setSecureUrls({
           dashboard: '/project/admin/man/dashboard',

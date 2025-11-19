@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ const AuthCallback: React.FC = () => {
               await supabase.rpc('ensure_user_profile', { p_user_id: userId });
             } catch (rpcError) {
               // Se a RPC falhar, não bloqueia o login - o trigger deve ter criado
-              console.warn('Erro ao garantir perfil via RPC (não crítico):', rpcError);
+              devLog.warn('Erro ao garantir perfil via RPC (não crítico):', rpcError);
             }
 
             setStatus('success');
@@ -83,7 +84,7 @@ const AuthCallback: React.FC = () => {
               await supabase.rpc('ensure_user_profile', { p_user_id: userId });
             } catch (rpcError) {
               // Se a RPC falhar, não bloqueia o login - o trigger deve ter criado
-              console.warn('Erro ao garantir perfil via RPC (não crítico):', rpcError);
+              devLog.warn('Erro ao garantir perfil via RPC (não crítico):', rpcError);
             }
 
             setStatus('success');

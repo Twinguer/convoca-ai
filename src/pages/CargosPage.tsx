@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Plus, Users, Trophy, MapPin, Calendar } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { UrlObfuscationService } from '@/services/urlObfuscation';
 
 const ESTADOS_BRASILEIROS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
@@ -16,12 +18,20 @@ const ESTADOS_BRASILEIROS = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
+// Helper para verificar se é UUID válido
+const isValidUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 const CargosPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: idParam } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
   const [selectedState, setSelectedState] = useState<string>(searchParams.get('state') || '');
+  const [validatedId, setValidatedId] = useState<string | null>(null);
+  const [isValidatingToken, setIsValidatingToken] = useState(false);
 
   // ✅ Verificar autenticação: usuários não cadastrados não podem acessar
   useEffect(() => {
@@ -30,14 +40,48 @@ const CargosPage = () => {
     }
   }, [user, navigate]);
 
+  // Validar token se necessário
+  useEffect(() => {
+    const validateId = async () => {
+      if (!idParam) return;
+
+      // Se for UUID válido, usar diretamente
+      if (isValidUUID(idParam)) {
+        setValidatedId(idParam);
+        return;
+      }
+
+      // Se não for UUID, provavelmente é um token ofuscado
+      setIsValidatingToken(true);
+      try {
+        const validatedConcursoId = await UrlObfuscationService.validateConcursoToken(idParam);
+        if (validatedConcursoId) {
+          setValidatedId(validatedConcursoId);
+        } else {
+          devLog.error('Token inválido ou expirado');
+          navigate('/pre-classificacao');
+        }
+      } catch (error) {
+        devLog.error('Erro ao validar token:', error);
+        navigate('/pre-classificacao');
+      } finally {
+        setIsValidatingToken(false);
+      }
+    };
+
+    validateId();
+  }, [idParam, navigate]);
+
   // Buscar informações do card geral
   const { data: generalCard, isLoading: loadingGeneral } = useQuery({
-    queryKey: ['general-card', id],
+    queryKey: ['general-card', validatedId],
     queryFn: async () => {
+      if (!validatedId) return null;
+
       const { data, error } = await supabase
         .from('concursos')
         .select('*')
-        .eq('id', id)
+        .eq('id', validatedId)
         .eq('is_general_card', true)
         .single();
 
@@ -53,13 +97,15 @@ const CargosPage = () => {
       // Garantir que is_unified existe
       return { ...data, is_unified: data.is_unified || false };
     },
-    enabled: !!id
+    enabled: !!validatedId
   });
 
   // Buscar cargos do card geral
   const { data: cargos, isLoading: loadingCargos } = useQuery({
-    queryKey: ['cargos', id, selectedState],
+    queryKey: ['cargos', validatedId, selectedState],
     queryFn: async () => {
+      if (!validatedId) return [];
+
       // Tentar buscar com todos os campos, se falhar, buscar sem os novos campos
       let query = supabase
         .from('concursos')
@@ -77,7 +123,7 @@ const CargosPage = () => {
           watermark_image_url,
           parent_concurso_id
         `)
-        .eq('parent_concurso_id', id);
+        .eq('parent_concurso_id', validatedId);
 
       // Se for unificado e tiver estado selecionado, filtrar por estado
       if (generalCard?.is_unified && selectedState) {
@@ -101,12 +147,23 @@ const CargosPage = () => {
       
       return cargosWithWatermark;
     },
-    enabled: !!id && !!generalCard
+    enabled: !!validatedId && !!generalCard
   });
 
   // ✅ Se não estiver autenticado, não mostrar conteúdo
   if (!user) {
     return null; // Será redirecionado pelo useEffect
+  }
+
+  // Se estiver validando token, mostrar loading
+  if (isValidatingToken || !validatedId) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <p className="text-lg">Validando acesso...</p>
+        </div>
+      </div>
+    );
   }
 
   if (loadingGeneral) {
@@ -141,8 +198,20 @@ const CargosPage = () => {
     );
   }
 
-  const handleCargoClick = (cargoId: string) => {
-    navigate(`/ranking/${cargoId}`);
+  const handleCargoClick = async (cargoId: string) => {
+    try {
+      const { UrlObfuscationService } = await import('@/services/urlObfuscation');
+      const secureUrl = await UrlObfuscationService.generateSecureRankingUrl(cargoId);
+      navigate(secureUrl);
+    } catch (error: any) {
+      devLog.error('Erro ao gerar URL segura:', error);
+      // Em produção, se variáveis não estiverem configuradas, mostrar erro
+      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
+        return;
+      }
+      // Em desenvolvimento ou outros erros, usar fallback
+      navigate(`/ranking/${cargoId}`);
+    }
   };
 
   return (
@@ -173,7 +242,7 @@ const CargosPage = () => {
             </div>
           </div>
           {user && !generalCard.is_unified && (
-            <Link to={`/criar-ranking?parent=${id}`}>
+            <Link to={`/criar-ranking?parent=${validatedId}`}>
               <Button className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Ranking do Cargo
@@ -181,7 +250,7 @@ const CargosPage = () => {
             </Link>
           )}
           {user && generalCard.is_unified && selectedState && (
-            <Link to={`/criar-ranking?parent=${id}&state=${selectedState}`}>
+            <Link to={`/criar-ranking?parent=${validatedId}&state=${selectedState}`}>
               <Button className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Ranking do Cargo
@@ -201,9 +270,17 @@ const CargosPage = () => {
               <Card
                 key={estado}
                 className="hover:shadow-lg transition-all duration-300 cursor-pointer hover:translate-y-[-4px]"
-                onClick={() => {
+                onClick={async () => {
                   setSelectedState(estado);
-                  navigate(`/pre-classificacao/${id}/cargos?state=${estado}`, { replace: true });
+                  // Usar URL ofuscada para segurança
+                  try {
+                    const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(validatedId, estado);
+                    navigate(secureUrl, { replace: true });
+                  } catch (error) {
+                    devLog.error('Erro ao gerar URL segura:', error);
+                    // Fallback apenas em caso de erro crítico
+                    navigate(`/pre-classificacao/${validatedId}/cargos?state=${estado}`, { replace: true });
+                  }
                 }}
               >
                 <CardContent className="p-4 text-center">
@@ -222,9 +299,17 @@ const CargosPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 setSelectedState('');
-                navigate(`/pre-classificacao/${id}/cargos`, { replace: true });
+                // Usar URL ofuscada para segurança
+                try {
+                  const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(validatedId);
+                  navigate(secureUrl, { replace: true });
+                } catch (error) {
+                  devLog.error('Erro ao gerar URL segura:', error);
+                  // Fallback apenas em caso de erro crítico
+                  navigate(`/pre-classificacao/${validatedId}/cargos`, { replace: true });
+                }
               }}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -252,7 +337,7 @@ const CargosPage = () => {
             const watermarkUrl = cargo.watermark_image_url || generalCard?.watermark_image_url;
             
             // Debug: verificar localidades disponíveis
-            // console.log('Cargo:', cargo.cargo, 'localidades:', cargo.localidades, 'generalCard localidades:', generalCard?.localidades);
+            // devLog.log('Cargo:', cargo.cargo, 'localidades:', cargo.localidades, 'generalCard localidades:', generalCard?.localidades);
             
             return (
               <div key={cargo.id} className="block h-full cursor-pointer" onClick={() => handleCargoClick(cargo.id)}>
@@ -373,8 +458,8 @@ const CargosPage = () => {
             </p>
             {user && (
               <Link to={generalCard.is_unified && selectedState 
-                ? `/criar-ranking?parent=${id}&state=${selectedState}`
-                : `/criar-ranking?parent=${id}`}>
+                ? `/criar-ranking?parent=${validatedId}&state=${selectedState}`
+                : `/criar-ranking?parent=${validatedId}`}>
                 <Button className="mt-4 bg-emerald-600 hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Primeiro Cargo

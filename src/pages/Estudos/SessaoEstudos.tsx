@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface Discipline {
   name: string;
   status: 'inProgress' | 'finished' | 'review';
@@ -79,7 +80,7 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
         });
       }
     } catch (error) {
-      console.error('Error fetching cycle:', error);
+      devLog.error('Error fetching cycle:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar o ciclo de estudos.',
@@ -104,7 +105,7 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
         description: 'Status da disciplina foi atualizado com sucesso.'
       });
     } catch (error) {
-      console.error('Error updating cycle:', error);
+      devLog.error('Error updating cycle:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível atualizar o progresso.',
@@ -126,7 +127,7 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
         description: 'Link foi salvo com sucesso.'
       });
     } catch (error) {
-      console.error('Error updating links:', error);
+      devLog.error('Error updating links:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível salvar o link.',

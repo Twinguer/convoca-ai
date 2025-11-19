@@ -3,6 +3,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -13,7 +14,7 @@ export function formatDate(dateString: string): string {
     const date = parseISO(dateString);
     return format(date, "dd/MM/yyyy", { locale: ptBR });
   } catch (error) {
-    console.error("Error formatting date:", error);
+    devLog.error("Error formatting date:", error);
     return dateString;
   }
 }
@@ -50,10 +51,10 @@ export async function adminOperation(supabaseClient: any, operation: string, par
   // For now, we're using a workaround to handle admin operations
   try {
     // Implementation depends on how your backend is set up
-    console.log(`Performing admin operation: ${operation}`, params);
+    devLog.log(`Performing admin operation: ${operation}`, params);
     return { success: true, data: null, error: null };
   } catch (error) {
-    console.error(`Error in admin operation ${operation}:`, error);
+    devLog.error(`Error in admin operation ${operation}:`, error);
     return { success: false, data: null, error };
   }
 }

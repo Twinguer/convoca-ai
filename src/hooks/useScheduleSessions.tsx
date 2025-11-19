@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StudySchedule } from '@/types/userStudy';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * Optimized hook for fetching schedule sessions using RPC function
@@ -25,7 +26,7 @@ export function useScheduleSessions(
       });
       
       if (error) {
-        console.error('Error fetching schedule sessions:', error);
+        devLog.error('Error fetching schedule sessions:', error);
         throw error;
       }
       
@@ -73,7 +74,7 @@ export function useScheduleByWeek(
       });
       
       if (error) {
-        console.error('Error fetching schedule by week:', error);
+        devLog.error('Error fetching schedule by week:', error);
         throw error;
       }
       

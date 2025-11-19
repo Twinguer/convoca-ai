@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Concurso, ConcursoFilter } from "@/types/concursos";
 import { fetchUserRankings as fetchRankingsFromService } from "./rankingService";
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**
  * Helper function para herdar dados do card geral (parent) para cards de cargo
@@ -47,7 +48,7 @@ export const inheritParentData = async (
         }
       }
     } catch (error) {
-      console.error('[inheritParentData] Erro ao buscar dados do parent:', error);
+      devLog.error('[inheritParentData] Erro ao buscar dados do parent:', error);
       // Continuar com os valores atuais em caso de erro
     }
   }
@@ -61,7 +62,7 @@ export const inheritParentData = async (
 
 export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
   try {
-    // console.log('[fetchConcursoById] Fetching concurso with ID:', id);
+    // devLog.log('[fetchConcursoById] Fetching concurso with ID:', id);
     
     // Nota: Função ensure_ranking_exists não existe mais, removida para simplificar
 
@@ -73,7 +74,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       .single();
 
     if (rankingError) {
-      console.error('[fetchConcursoById] Ranking error:', rankingError);
+      devLog.error('[fetchConcursoById] Ranking error:', rankingError);
       
       // Fallback: buscar do concurso original
       const { data: concursoData, error: concursoError } = await supabase
@@ -83,7 +84,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
         .single();
 
       if (concursoError) {
-        console.error('[fetchConcursoById] Concurso error:', concursoError);
+        devLog.error('[fetchConcursoById] Concurso error:', concursoError);
         
         if (concursoError.code === 'PGRST116') {
           throw new Error(`Concurso com ID ${id} não encontrado`);
@@ -96,7 +97,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
         throw new Error(`Concurso com ID ${id} não encontrado`);
       }
 
-      console.log('[fetchConcursoById] Concurso found (fallback):', concursoData);
+      devLog.log('[fetchConcursoById] Concurso found (fallback):', concursoData);
       return concursoData;
     }
 
@@ -126,16 +127,16 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
           .single();
         parentIsUnified = parentData?.is_unified || false;
       } catch (error) {
-        console.error('[fetchConcursoById] Erro ao verificar se parent é unificado:', error);
+        devLog.error('[fetchConcursoById] Erro ao verificar se parent é unificado:', error);
       }
     }
 
     // Converter ranking para formato de concurso
-    // console.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
-    // console.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
-    // console.log('[fetchConcursoById] ===== DADOS DO CRIADOR =====');
-    // console.log('[fetchConcursoById] rankingData.created_by_user_id:', rankingData.created_by_user_id);
-    // console.log('[fetchConcursoById] rankingData.is_admin_created:', rankingData.is_admin_created);
+    // devLog.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
+    // devLog.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
+    // devLog.log('[fetchConcursoById] ===== DADOS DO CRIADOR =====');
+    // devLog.log('[fetchConcursoById] rankingData.created_by_user_id:', rankingData.created_by_user_id);
+    // devLog.log('[fetchConcursoById] rankingData.is_admin_created:', rankingData.is_admin_created);
     
     const concursoData: Concurso = {
       id: rankingData.id,
@@ -225,16 +226,16 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       // quota_minimum_score_unit_type: removida - dados agora em JSONB
     };
 
-    // console.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);
-    // console.log('[fetchConcursoById] FINAL disciplines being returned:', concursoData.disciplines);
-    // console.log('[fetchConcursoById] FINAL has_custom_knowledge:', concursoData.has_custom_knowledge);
-    // console.log('[fetchConcursoById] FINAL has_basic_knowledge:', concursoData.has_basic_knowledge);
-    // console.log('[fetchConcursoById] ===== DADOS FINAIS DO CRIADOR =====');
-    // console.log('[fetchConcursoById] FINAL created_by_user_id:', concursoData.created_by_user_id);
-    // console.log('[fetchConcursoById] FINAL is_admin_created:', concursoData.is_admin_created);
+    // devLog.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);
+    // devLog.log('[fetchConcursoById] FINAL disciplines being returned:', concursoData.disciplines);
+    // devLog.log('[fetchConcursoById] FINAL has_custom_knowledge:', concursoData.has_custom_knowledge);
+    // devLog.log('[fetchConcursoById] FINAL has_basic_knowledge:', concursoData.has_basic_knowledge);
+    // devLog.log('[fetchConcursoById] ===== DADOS FINAIS DO CRIADOR =====');
+    // devLog.log('[fetchConcursoById] FINAL created_by_user_id:', concursoData.created_by_user_id);
+    // devLog.log('[fetchConcursoById] FINAL is_admin_created:', concursoData.is_admin_created);
     return concursoData;
   } catch (error: any) {
-    console.error('[fetchConcursoById] Error:', error);
+    devLog.error('[fetchConcursoById] Error:', error);
     throw error;
   }
 };
@@ -271,7 +272,7 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching concursos:', error);
+    devLog.error('Error fetching concursos:', error);
     return [];
   }
 };
@@ -286,7 +287,7 @@ export const getParticipantCount = async (concursoId: string): Promise<number> =
     if (error) throw error;
     return data || 0;
   } catch (error) {
-    console.error('Error fetching participant count:', error);
+    devLog.error('Error fetching participant count:', error);
     return 0;
   }
 };
@@ -338,7 +339,7 @@ export const fetchUserConcursoRankings = async (userId: string) => {
       };
     }) || [];
   } catch (error) {
-    console.error('Error fetching user concurso rankings:', error);
+    devLog.error('Error fetching user concurso rankings:', error);
     return [];
   }
 };

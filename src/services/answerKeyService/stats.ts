@@ -1,6 +1,7 @@
 
 import { AnswerKeyCompleteness, AnswerKeyStats } from './types';
 import { getConsolidatedAnswerKey } from './core';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const checkAnswerKeyCompleteness = async (
   concursoId: string, 
@@ -8,12 +9,12 @@ export const checkAnswerKeyCompleteness = async (
   expectedQuestions: number
 ): Promise<AnswerKeyCompleteness> => {
   try {
-    console.log('[answerKeyService] Checking answer key completeness using consolidated structure');
+    devLog.log('[answerKeyService] Checking answer key completeness using consolidated structure');
     
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets) {
-      console.log('[answerKeyService] No consolidated booklets data found');
+      devLog.log('[answerKeyService] No consolidated booklets data found');
       return {
         allComplete: false,
         details: bookletIds.map(id => ({
@@ -31,7 +32,7 @@ export const checkAnswerKeyCompleteness = async (
       const completed = booklet?.answers ? Object.keys(booklet.answers).length : 0;
       const isComplete = completed >= expectedQuestions;
 
-      console.log(`[answerKeyService] Booklet ${bookletId}: ${completed}/${expectedQuestions} questions (complete: ${isComplete})`);
+      devLog.log(`[answerKeyService] Booklet ${bookletId}: ${completed}/${expectedQuestions} questions (complete: ${isComplete})`);
 
       return {
         bookletId,
@@ -44,14 +45,14 @@ export const checkAnswerKeyCompleteness = async (
 
     const allComplete = details.every(detail => detail.isComplete);
 
-    console.log(`[answerKeyService] Answer key completeness check result: ${allComplete ? 'ALL COMPLETE' : 'INCOMPLETE'}`);
+    devLog.log(`[answerKeyService] Answer key completeness check result: ${allComplete ? 'ALL COMPLETE' : 'INCOMPLETE'}`);
 
     return {
       allComplete,
       details
     };
   } catch (error) {
-    console.error('[answerKeyService] Error checking completeness:', error);
+    devLog.error('[answerKeyService] Error checking completeness:', error);
     return {
       allComplete: false,
       details: bookletIds.map(id => ({
@@ -67,12 +68,12 @@ export const checkAnswerKeyCompleteness = async (
 
 export const getAnswerKeyStats = async (concursoId: string): Promise<AnswerKeyStats> => {
   try {
-    console.log('[answerKeyService] Getting answer key stats using consolidated structure');
+    devLog.log('[answerKeyService] Getting answer key stats using consolidated structure');
     
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets) {
-      console.log('[answerKeyService] No consolidated booklets data found for stats');
+      devLog.log('[answerKeyService] No consolidated booklets data found for stats');
       return {
         totalBooklets: 0,
         totalAnswers: 0,
@@ -90,7 +91,7 @@ export const getAnswerKeyStats = async (concursoId: string): Promise<AnswerKeySt
       }
     });
 
-    console.log(`[answerKeyService] Stats: ${totalBooklets} booklets, ${totalAnswers} total answers`);
+    devLog.log(`[answerKeyService] Stats: ${totalBooklets} booklets, ${totalAnswers} total answers`);
 
     return {
       totalBooklets,
@@ -98,7 +99,7 @@ export const getAnswerKeyStats = async (concursoId: string): Promise<AnswerKeySt
       lastUpdated: consolidatedData.metadata?.last_updated || null
     };
   } catch (error) {
-    console.error('[answerKeyService] Error getting stats:', error);
+    devLog.error('[answerKeyService] Error getting stats:', error);
     return {
       totalBooklets: 0,
       totalAnswers: 0,

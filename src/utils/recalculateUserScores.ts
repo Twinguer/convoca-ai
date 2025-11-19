@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
@@ -12,11 +13,11 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       .not('consolidated_data', 'is', null);
 
     if (userRankingsError) {
-      console.error('Erro ao buscar user_rankings:', userRankingsError);
+      devLog.error('Erro ao buscar user_rankings:', userRankingsError);
       return;
     }
 
-    console.log(`[recalculateAllUserScores] Encontrados ${userRankings.length} usuários`);
+    devLog.log(`[recalculateAllUserScores] Encontrados ${userRankings.length} usuários`);
 
     // Filtrar usuários que participam do concurso específico
     const usersInConcurso = userRankings.filter(userRanking => {
@@ -30,16 +31,16 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         const result = await recalculateUserScore(userRanking.user_id, concursoId);
         
         if (result.success) {
-          console.log(`[recalculateAllUserScores] ✅ Recálculo concluído com sucesso`);
+          devLog.log(`[recalculateAllUserScores] ✅ Recálculo concluído com sucesso`);
         } else {
-          console.error(`[recalculateAllUserScores] ❌ Erro no recálculo:`, result.message);
+          devLog.error(`[recalculateAllUserScores] ❌ Erro no recálculo:`, result.message);
         }
       } catch (error) {
-        console.error(`[recalculateAllUserScores] Erro ao recalcular usuário:`, error);
+        devLog.error(`[recalculateAllUserScores] Erro ao recalcular usuário:`, error);
       }
     }
   } catch (error) {
-    console.error('[recalculateAllUserScores] Erro geral:', error);
+    devLog.error('[recalculateAllUserScores] Erro geral:', error);
   }
 };
 
@@ -49,18 +50,18 @@ export const recalculateSpecificUserScore = async (userId: string, concursoId: s
     
     // Debug logs removed for security
     const result = await recalculateUserScore(userId, concursoId);
-    console.log(`[recalculateSpecificUserScore] 📊 Resultado do recalculateUserScore:`, result);
+    devLog.log(`[recalculateSpecificUserScore] 📊 Resultado do recalculateUserScore:`, result);
     
     if (result.success) {
       // Debug logs removed for security
       return result;
     } else {
-      console.error(`[recalculateSpecificUserScore] ❌ Erro para usuário ${userId}:`, result.message);
+      devLog.error(`[recalculateSpecificUserScore] ❌ Erro para usuário ${userId}:`, result.message);
       return result;
     }
   } catch (error) {
-    console.error(`[recalculateSpecificUserScore] ❌ Erro ao recalcular usuário ${userId}:`, error);
-    console.error(`[recalculateSpecificUserScore] ❌ Stack trace:`, error.stack);
+    devLog.error(`[recalculateSpecificUserScore] ❌ Erro ao recalcular usuário ${userId}:`, error);
+    devLog.error(`[recalculateSpecificUserScore] ❌ Stack trace:`, error.stack);
     return { success: false, message: error.message };
   }
 };

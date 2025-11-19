@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?: string) => {
   try {
@@ -9,7 +10,7 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
     // Buscar dados do usuário atual
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      console.error('[fetchExistingAnswers] Usuário não autenticado');
+      devLog.error('[fetchExistingAnswers] Usuário não autenticado');
       return {};
     }
 
@@ -21,7 +22,7 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
       .maybeSingle();
 
     if (rankingError || !rankingData) {
-      console.error('[fetchExistingAnswers] Erro ao buscar dados do ranking:', rankingError);
+      devLog.error('[fetchExistingAnswers] Erro ao buscar dados do ranking:', rankingError);
       return {};
     }
 
@@ -125,7 +126,7 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
     };
 
   } catch (error) {
-    console.error('[fetchExistingAnswers] Erro geral:', error);
+    devLog.error('[fetchExistingAnswers] Erro geral:', error);
     return {};
   }
 };

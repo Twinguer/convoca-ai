@@ -7,6 +7,7 @@ import { Plus, X, FileText, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface ExamBooklet {
   id?: string;
   name: string;
@@ -102,7 +103,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         error
       } = await supabase.from('concursos').select('exam_booklets').eq('id', concursoId).single();
       if (error) {
-        console.error('Erro ao carregar cadernos:', error);
+        devLog.error('Erro ao carregar cadernos:', error);
         throw error;
       }
       
@@ -125,7 +126,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         onBookletsSaved?.(false);
       }
     } catch (error) {
-      console.error('Erro ao carregar cadernos:', error);
+      devLog.error('Erro ao carregar cadernos:', error);
       toast({
         title: "Erro ao carregar cadernos",
         description: "Não foi possível carregar os cadernos existentes",
@@ -248,7 +249,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         .eq('id', concursoId);
 
       if (updateError) {
-        console.error('Erro ao atualizar cadernos:', updateError);
+        devLog.error('Erro ao atualizar cadernos:', updateError);
         throw updateError;
       }
 
@@ -265,7 +266,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       });
       return true;
     } catch (error: any) {
-      console.error('Erro ao salvar cadernos:', error);
+      devLog.error('Erro ao salvar cadernos:', error);
       toast({
         title: "Erro ao salvar",
         description: error.message || "Não foi possível salvar os cadernos",

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
         setIsAdmin(!!data && !error);
       } catch (error) {
-        console.error('Error checking admin role:', error);
+        devLog.error('Error checking admin role:', error);
         setIsAdmin(false);
       } finally {
         setAdminCheckLoading(false);

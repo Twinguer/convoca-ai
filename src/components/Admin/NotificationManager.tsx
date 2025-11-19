@@ -11,6 +11,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface SendNotificationData {
   targetType: 'all' | 'ranking' | 'user';
@@ -83,7 +84,7 @@ export const NotificationManager = () => {
       });
     },
     onError: (error) => {
-      console.error('Error sending notification:', error);
+      devLog.error('Error sending notification:', error);
       toast({
         title: "Erro",
         description: "Não foi possível enviar a notificação",

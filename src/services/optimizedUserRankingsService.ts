@@ -14,6 +14,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 
   ConsolidatedUserRankings, 
   UserRankingData, 
@@ -43,7 +44,7 @@ export class OptimizedUserRankingsService {
       if (error) throw error;
       return data?.consolidated_data || null;
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error fetching user rankings:', error);
+      devLog.error('[OptimizedUserRankingsService] Error fetching user rankings:', error);
       return null;
     }
   }
@@ -61,7 +62,7 @@ export class OptimizedUserRankingsService {
       if (error) throw error;
       return data || null;
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error fetching user ranking by concurso:', error);
+      devLog.error('[OptimizedUserRankingsService] Error fetching user ranking by concurso:', error);
       return null;
     }
   }
@@ -82,7 +83,7 @@ export class OptimizedUserRankingsService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error fetching concurso rankings:', error);
+      devLog.error('[OptimizedUserRankingsService] Error fetching concurso rankings:', error);
       return [];
     }
   }
@@ -120,7 +121,7 @@ export class OptimizedUserRankingsService {
       
       return summaries;
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error fetching ranking summaries:', error);
+      devLog.error('[OptimizedUserRankingsService] Error fetching ranking summaries:', error);
       return [];
     }
   }
@@ -187,7 +188,7 @@ export class OptimizedUserRankingsService {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error upserting user ranking:', error);
+      devLog.error('[OptimizedUserRankingsService] Error upserting user ranking:', error);
       return false;
     }
   }
@@ -210,7 +211,7 @@ export class OptimizedUserRankingsService {
       if (error) throw error;
       return data || false;
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error updating user ranking:', error);
+      devLog.error('[OptimizedUserRankingsService] Error updating user ranking:', error);
       return false;
     }
   }
@@ -246,7 +247,7 @@ export class OptimizedUserRankingsService {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error removing user ranking:', error);
+      devLog.error('[OptimizedUserRankingsService] Error removing user ranking:', error);
       return false;
     }
   }
@@ -301,7 +302,7 @@ export class OptimizedUserRankingsService {
       
       return { general, quotas };
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error calculating positions:', error);
+      devLog.error('[OptimizedUserRankingsService] Error calculating positions:', error);
       return { general: [], quotas: {} };
     }
   }
@@ -330,7 +331,7 @@ export class OptimizedUserRankingsService {
         max_score: quotaRankings[0]
       };
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error calculating quota statistics:', error);
+      devLog.error('[OptimizedUserRankingsService] Error calculating quota statistics:', error);
       return null;
     }
   }
@@ -408,7 +409,7 @@ export class OptimizedUserRankingsService {
       
       return { canParticipate: true };
     } catch (error) {
-      console.error('[OptimizedUserRankingsService] Error checking participation:', error);
+      devLog.error('[OptimizedUserRankingsService] Error checking participation:', error);
       return {
         canParticipate: false,
         reason: 'Erro interno ao verificar participação'

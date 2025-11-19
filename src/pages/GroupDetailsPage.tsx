@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { studyGroupService } from '@/integrations/supabase/studyGroups/groups';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -157,7 +158,7 @@ export const GroupDetailsPage: React.FC = () => {
         });
 
       if (uploadError) {
-        console.error("Upload error:", uploadError);
+        devLog.error("Upload error:", uploadError);
         throw uploadError;
       }
 
@@ -179,7 +180,7 @@ export const GroupDetailsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['study-group', groupId] });
       refetchGroup();
     } catch (error: any) {
-      console.error("Avatar upload error:", error);
+      devLog.error("Avatar upload error:", error);
       toast({
         title: 'Erro ao fazer upload',
         description: error.message || 'Ocorreu um erro ao enviar a imagem. Tente novamente.',
@@ -197,7 +198,7 @@ export const GroupDetailsPage: React.FC = () => {
       await leaveGroup.mutateAsync(groupId);
       navigate('/comunidade');
     } catch (error) {
-      console.error('Erro ao sair do grupo:', error);
+      devLog.error('Erro ao sair do grupo:', error);
     } finally {
       setIsLeaving(false);
     }

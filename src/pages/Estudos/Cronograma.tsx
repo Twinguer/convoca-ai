@@ -26,6 +26,7 @@ import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
 import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface StudySession {
   id: string;
   day: number; // 0-6 (Sunday to Saturday)
@@ -215,7 +216,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         setCycles(activeCycles);
       }
     } catch (error) {
-      console.error('Error fetching cycles:', error);
+      devLog.error('Error fetching cycles:', error);
       toast.error('Erro ao carregar ciclos de estudo');
     }
   };
@@ -285,7 +286,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       }
       setSessions(allSessions);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      devLog.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
     }
@@ -310,7 +311,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       }
       setSessions(newSessions);
     } catch (error) {
-      console.error('Error saving sessions:', error);
+      devLog.error('Error saving sessions:', error);
       toast.error('Erro ao salvar cronograma');
     }
   };
@@ -402,7 +403,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         toast.error('Erro ao adicionar tarefa');
       }
     } catch (error) {
-      console.error('Error adding session:', error);
+      devLog.error('Error adding session:', error);
       toast.error('Erro ao adicionar tarefa');
     }
   };
@@ -414,7 +415,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         return;
       }
       
-      console.log('🗑️ Removendo sessão:', { sessionId, targetUserId, coachMode });
+      devLog.log('🗑️ Removendo sessão:', { sessionId, targetUserId, coachMode });
       
       // Remove session from schedule
       const success = await UserStudyService.removeScheduleSession(targetUserId, sessionId);
@@ -428,11 +429,11 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         ]);
         toast.success('Tarefa removida do cronograma!');
       } else {
-        console.error('❌ Falha ao remover sessão do banco');
+        devLog.error('❌ Falha ao remover sessão do banco');
         toast.error('Erro ao remover tarefa. Verifique suas permissões.');
       }
     } catch (error: any) {
-      console.error('❌ Erro ao remover tarefa:', error);
+      devLog.error('❌ Erro ao remover tarefa:', error);
       toast.error(`Erro ao remover tarefa: ${error.message || 'Tente novamente'}`);
     }
   };
@@ -453,13 +454,13 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       input.value = '';
       // Garantir que o input não está desabilitado antes de clicar
       if (input.disabled) {
-        console.warn(`Input ${inputId} está desabilitado`);
+        devLog.warn(`Input ${inputId} está desabilitado`);
         toast.error('Não é possível fazer upload no momento');
         return;
       }
       input.click();
     } else {
-      console.error(`Input ${inputId} não encontrado`);
+      devLog.error(`Input ${inputId} não encontrado`);
       toast.error('Erro ao abrir seletor de arquivos');
     }
   };
@@ -617,7 +618,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       await fetchCycles();
       toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} removida`);
     } catch (error) {
-      console.error('Error removing PDF:', error);
+      devLog.error('Error removing PDF:', error);
       toast.error('Erro ao remover PDF');
     }
   };
@@ -675,7 +676,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       setLabelValue('');
       toast.success('Nome atualizado');
     } catch (error) {
-      console.error('Error saving label:', error);
+      devLog.error('Error saving label:', error);
       toast.error('Erro ao salvar nome');
     }
   };
@@ -809,7 +810,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         await fetchSessions();
       }
     } catch (error) {
-      console.error('Error recording session:', error);
+      devLog.error('Error recording session:', error);
       toast.error('Erro ao registrar tarefa');
     }
   };

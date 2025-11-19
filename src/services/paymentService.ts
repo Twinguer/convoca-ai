@@ -6,6 +6,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // ============================================
 // TIPOS E INTERFACES
@@ -39,7 +40,7 @@ async function ensureValidSession(): Promise<string> {
   let { data: { session }, error: sessionError } = await supabase.auth.getSession();
   
   if (sessionError) {
-    console.error("[paymentService] Erro ao validar sessão");
+    devLog.error("[paymentService] Erro ao validar sessão");
     throw new Error("Erro ao validar autenticação. Por favor, faça login novamente.");
   }
   
@@ -96,29 +97,29 @@ function handleApiError(error: any): Error {
   
   // Log genérico sem expor detalhes do backend
   if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
-    console.error("[paymentService] Erro de autenticação");
+    devLog.error("[paymentService] Erro de autenticação");
     return new Error("Erro de autenticação. Por favor, faça login novamente.");
   }
   
   if (errorMessage.includes("403") || errorMessage.includes("Forbidden")) {
-    console.error("[paymentService] Acesso negado");
+    devLog.error("[paymentService] Acesso negado");
     return new Error("Acesso negado. Verifique suas permissões.");
   }
   
   if (errorMessage.includes("400") || errorMessage.includes("Bad Request")) {
-    console.error("[paymentService] Dados inválidos");
+    devLog.error("[paymentService] Dados inválidos");
     // Tentar extrair detalhes do erro se disponível
     const errorDetails = error?.context?.body?.details || error?.message || "Dados inválidos";
     return new Error(`Erro: ${errorDetails}`);
   }
   
   if (errorMessage.includes("500") || errorMessage.includes("Internal Server")) {
-    console.error("[paymentService] Erro no servidor ao processar pagamento");
+    devLog.error("[paymentService] Erro no servidor ao processar pagamento");
     return new Error("Erro no servidor. Tente novamente em alguns instantes.");
   }
   
   // Erro genérico para outros casos
-  console.error("[paymentService] Erro ao processar requisição de pagamento");
+  devLog.error("[paymentService] Erro ao processar requisição de pagamento");
   return new Error("Erro ao processar pagamento. Tente novamente.");
 }
 
@@ -144,25 +145,25 @@ export const paymentService = {
       await ensureValidSession();
       
       // Usar supabase.functions.invoke para criar sessão de checkout no Stripe
-      console.log("[paymentService] Criando checkout no Stripe para plano:", planId);
-      console.log("[paymentService] Voucher:", voucherCode || "nenhum");
+      devLog.log("[paymentService] Criando checkout no Stripe para plano:", planId);
+      devLog.log("[paymentService] Voucher:", voucherCode || "nenhum");
       const body: any = { planId };
       if (voucherCode) {
         body.voucherCode = voucherCode;
       }
-      console.log("[paymentService] Body que será enviado:", JSON.stringify(body));
+      devLog.log("[paymentService] Body que será enviado:", JSON.stringify(body));
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body
       });
       
       // Log da resposta
       if (data) {
-        console.log("[paymentService] Resposta recebida:", data);
+        devLog.log("[paymentService] Resposta recebida:", data);
       }
       
       // Tratar erro
       if (error) {
-        console.error("[paymentService] Erro completo da API:", error);
+        devLog.error("[paymentService] Erro completo da API:", error);
         
         // Tentar ler o body da resposta para ver a mensagem de erro real
         if (error?.context) {
@@ -171,10 +172,10 @@ export const paymentService = {
             const response = error.context as Response;
             if (response && response.body) {
               const errorText = await response.clone().text();
-              console.error("[paymentService] Erro da função (texto):", errorText);
+              devLog.error("[paymentService] Erro da função (texto):", errorText);
               try {
                 const errorBody = JSON.parse(errorText);
-                console.error("[paymentService] Detalhes do erro da função:", errorBody);
+                devLog.error("[paymentService] Detalhes do erro da função:", errorBody);
                 if (errorBody.details) {
                   // Lançar erro com a mensagem detalhada
                   const detailedError = new Error(errorBody.details);
@@ -190,7 +191,7 @@ export const paymentService = {
             if (e instanceof Error && e.message) {
               throw e;
             }
-            console.error("[paymentService] Erro ao ler resposta:", e);
+            devLog.error("[paymentService] Erro ao ler resposta:", e);
           }
         }
         
@@ -208,7 +209,7 @@ export const paymentService = {
       }
       
       // Log genérico de sucesso (sem expor IDs específicos)
-      console.log("[paymentService] Sessão de checkout criada com sucesso");
+      devLog.log("[paymentService] Sessão de checkout criada com sucesso");
       
       return data as CreateCheckoutResponse;
       
@@ -227,7 +228,7 @@ export const paymentService = {
       }
       
       // Tratar erros desconhecidos (log genérico)
-      console.error("[paymentService] Erro ao processar pagamento");
+      devLog.error("[paymentService] Erro ao processar pagamento");
       throw new Error("Erro inesperado ao processar pagamento. Tente novamente.");
     }
   },
@@ -240,7 +241,7 @@ export const paymentService = {
     try {
       await ensureValidSession();
       
-      console.log("[paymentService] Verificando assinatura no Stripe...");
+      devLog.log("[paymentService] Verificando assinatura no Stripe...");
       const { data, error } = await supabase.functions.invoke('verify-stripe-subscription', {
         body: {}
       });
@@ -253,11 +254,11 @@ export const paymentService = {
         throw new Error("Resposta inválida do servidor");
       }
       
-      console.log("[paymentService] Verificação de assinatura concluída:", data);
+      devLog.log("[paymentService] Verificação de assinatura concluída:", data);
       return data as { success: boolean; message: string; plan_id?: string };
       
     } catch (error) {
-      console.error("[paymentService] Erro ao verificar assinatura:", error);
+      devLog.error("[paymentService] Erro ao verificar assinatura:", error);
       // Não lançar erro, apenas logar - o webhook pode processar depois
       return { 
         success: false, 

@@ -6,6 +6,7 @@ import { Eye, EyeOff, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface OfficialAnswerKeyProps {
   concurso: Concurso;
@@ -65,7 +66,7 @@ export const OfficialAnswerKey: React.FC<OfficialAnswerKeyProps> = ({
           setSelectedBookletId(bookletToUse);
         }
       } catch (error) {
-        console.error('Erro ao carregar gabarito oficial:', error);
+        devLog.error('Erro ao carregar gabarito oficial:', error);
         toast.error('Erro ao carregar gabarito oficial');
       } finally {
         setLoading(false);

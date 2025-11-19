@@ -12,6 +12,7 @@ import { UserStudyService } from '@/services/userStudyService';
 import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { logger } from '@/utils/logger';
+import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface StudyCycleProgress {
   cycle: StudyCycleV2;
   totalDisciplines: number;
@@ -262,7 +263,7 @@ const EstudosDashboard = () => {
                   const secureUrl = await generateSecureUrl(data.cycle.id, user?.id || '', 'session');
                   navigate(secureUrl);
                 } catch (error) {
-                  console.error('Erro ao gerar URL segura:', error);
+                  devLog.error('Erro ao gerar URL segura:', error);
                   navigate('/estudos');
                 }
               }} onDelete={async () => {
@@ -271,7 +272,7 @@ const EstudosDashboard = () => {
                   toast({ title: 'Ciclo excluído com sucesso!' });
                   fetchStudyCycles();
                 } catch (error) {
-                  console.error('Erro ao excluir ciclo:', error);
+                  devLog.error('Erro ao excluir ciclo:', error);
                   toast({ title: 'Erro ao excluir ciclo', variant: 'destructive' });
                 }
               }} />)}
@@ -420,12 +421,24 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
               <FileText className="h-4 w-4 mr-2" />
               Edital
             </Button>
-            <Link to={`/estudos/editar-ciclo/${cycle.id}`} className="flex-1">
-              <Button variant="outline" className="w-full">
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              className="w-full flex-1"
+              onClick={async () => {
+                if (!user?.id) return;
+                try {
+                  const secureUrl = await generateSecureUrl(cycle.id, user.id, 'edit');
+                  navigate(secureUrl);
+                } catch (error) {
+                  devLog.error('Erro ao gerar URL segura:', error);
+                  // Fallback apenas em caso de erro crítico
+                  navigate(`/estudos/editar-ciclo/${cycle.id}`);
+                }
+              }}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
           </div>
         </div>
       </CardContent>
