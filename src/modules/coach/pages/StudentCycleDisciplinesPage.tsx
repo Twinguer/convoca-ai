@@ -7,8 +7,6 @@ import { Alert } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CicloDetalhes from '@/pages/Estudos/CicloDetalhes';
-import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
-import { StudyCycleUrlObfuscationService } from '@/services/studyCycleUrlObfuscation';
 import { devLog } from '@/utils/productionLogger';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,6 +40,7 @@ const StudentCycleDisciplinesPage = () => {
         if (isValidUUID(studentIdParam)) {
           studentId = studentIdParam;
         } else {
+          const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
           const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
           if (!validatedUserId) {
             throw new Error('Token de aluno inválido');
@@ -54,6 +53,7 @@ const StudentCycleDisciplinesPage = () => {
         if (isValidUUID(cycleIdParam)) {
           cycleId = cycleIdParam;
         } else {
+          const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
           const validatedCycle = await StudyCycleUrlObfuscationService.validateStudyCycleToken(cycleIdParam, studentId);
           if (!validatedCycle) {
             throw new Error('Token de ciclo inválido');
@@ -153,6 +153,7 @@ const StudentCycleDisciplinesPage = () => {
             onClick={async () => {
               if (!validatedStudentId) return;
               try {
+                const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
                 const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
                 navigate(`/coach/student/${studentToken}`);
               } catch (error) {
