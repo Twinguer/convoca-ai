@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { StudyCycleUrlObfuscationService } from '@/services/studyCycleUrlObfuscation';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -29,6 +28,7 @@ const SecureStudyCycleRoute: React.FC<SecureStudyCycleRouteProps> = ({ children,
       }
 
       try {
+        const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
         const validatedCycleId = await StudyCycleUrlObfuscationService.validateStudyCycleToken(token, user.id);
         
         if (validatedCycleId) {

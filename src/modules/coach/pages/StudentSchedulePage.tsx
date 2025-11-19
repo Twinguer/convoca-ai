@@ -8,7 +8,6 @@ import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Cronograma from '@/pages/Estudos/Cronograma';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
-import { StudyCycleUrlObfuscationService } from '@/services/studyCycleUrlObfuscation';
 import { devLog } from '@/utils/productionLogger';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,6 +53,7 @@ const StudentSchedulePage = () => {
         if (isValidUUID(cycleIdParam)) {
           cycleId = cycleIdParam;
         } else {
+          const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
           const validatedCycle = await StudyCycleUrlObfuscationService.validateStudyCycleToken(cycleIdParam, studentId);
           if (!validatedCycle) {
             throw new Error('Token de ciclo inválido');
