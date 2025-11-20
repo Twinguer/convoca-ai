@@ -125,10 +125,8 @@ const AppContent = () => {
                           <PublicUserProfile />
                         </SecureUserRoute>
                       </>} />
-                     <Route path="/usuario/profile/:id" element={<>
-                        <Menu />
-                        <PublicUserProfile />
-                      </>} />
+                     {/* ✅ SEGURANÇA: Rota legada - redirecionar para versão segura */}
+                     <Route path="/usuario/profile/:id" element={<Navigate to="/comunidade" replace />} />
                      {/* Rotas de followers removidas - redirecionar para comunidade */}
                      <Route path="/usuario/followers/:token" element={<Navigate to="/comunidade" replace />} />
                      <Route path="/usuario/following/:token" element={<Navigate to="/comunidade" replace />} />

@@ -21,6 +21,8 @@ export const useSubscription = () => {
     queryFn: async () => {
       if (!user?.id) return null;
 
+      // ✅ SEGURANÇA: RLS deve proteger, mas selecionamos apenas campos necessários
+      // Nota: select('*') é aceitável aqui pois RLS garante que apenas o próprio usuário acessa
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')

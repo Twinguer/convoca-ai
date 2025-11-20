@@ -114,8 +114,9 @@ const CommunityPage = () => {
         });
         return;
       }
-      // Em desenvolvimento ou outros erros, usar fallback
-      navigate(`/usuario/profile/${userId}`);
+      // ✅ SEGURANÇA: Nunca usar fallback com UUID direto
+      // Em desenvolvimento, redirecionar para comunidade (não expor UUID)
+      navigate('/comunidade');
     }
   };
   if (isLoading) return <CommunityLoadingState />;

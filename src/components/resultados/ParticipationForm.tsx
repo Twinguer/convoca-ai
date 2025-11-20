@@ -527,45 +527,31 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         edit_count: 0
       };
 
-      // Debug logs removed for security
-      // Debug logs removed for security
+      // ✅ USAR FUNÇÃO RPC COM VALIDAÇÃO NO BACKEND
+      const { data: participateResult, error: participateError } = await supabase.rpc('participate_in_ranking', {
+        p_concurso_id: concurso.id,
+        p_reservation_type: selectedQuota,
+        p_selected_booklet_id: booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null,
+        p_ranking_data: newRankingData as any
+      });
 
-      // Check if user already has a user_rankings record
-      const { data: existingUserRanking } = await supabase
-        .from('user_rankings')
-        .select('consolidated_data')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      let consolidatedData;
-      if (existingUserRanking?.consolidated_data) {
-        // Update existing consolidated_data
-        consolidatedData = {
-          ...existingUserRanking.consolidated_data,
-          rankings: {
-            ...existingUserRanking.consolidated_data.rankings,
-            [rankingId]: newRankingData
-          }
-        };
-      } else {
-        // Create new consolidated_data
-        consolidatedData = {
-          rankings: {
-            [rankingId]: newRankingData
-          }
-        };
+      if (participateError) {
+        throw participateError;
       }
 
-      // Debug logs removed for security
-      
-      const {
-        data,
-        error
-      } = await supabase.from('user_rankings').upsert({
-        user_id: user.id,
-        consolidated_data: consolidatedData
-      }).select('user_id, consolidated_data').single();
-      if (error) throw error;
+      if (!participateResult || !participateResult.success) {
+        const errorMessage = participateResult?.error || 'Erro ao participar do ranking';
+        toast({
+          title: "Erro",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Usar ranking_key retornado pela função RPC
+      const finalRankingId = participateResult.ranking_key || rankingId;
       // Invalidar todas as queries relacionadas para garantir atualização automática
       // Debug logs removed for security
       await Promise.all([
@@ -604,7 +590,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
       // Em vez de recarregar, mostrar o AnswerSheet diretamente
       // Participation successful
-      setLocalUserRankingId(rankingId); // ✅ Usar o rankingId gerado, não data.id
+      setLocalUserRankingId(finalRankingId); // ✅ Usar o ranking_key retornado pela função RPC
       setLocalIsParticipating(true);
       setShowAnswerSheet(true);
       setIsLoading(false);

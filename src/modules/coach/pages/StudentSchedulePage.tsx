@@ -167,7 +167,7 @@ const StudentSchedulePage = () => {
             <h1 className="text-2xl font-bold">Cronograma de Estudos</h1>
             <p className="text-sm text-muted-foreground">
               Criando sessões para: <span className="font-semibold text-foreground">
-                {studentInfo?.name || studentInfo?.email || 'seu aluno'}
+                {studentInfo?.name || studentInfo?.email?.split('@')[0] || 'seu aluno'}
               </span>
             </p>
           </div>

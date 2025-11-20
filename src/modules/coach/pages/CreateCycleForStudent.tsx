@@ -154,7 +154,7 @@ const CreateCycleForStudent = () => {
             <h1 className="text-2xl font-bold">Criar Ciclo de Estudo</h1>
             <p className="text-sm text-muted-foreground">
               Criando ciclo para: <span className="font-semibold text-foreground">
-                {studentInfo?.name || studentInfo?.email || 'seu aluno'}
+                {studentInfo?.name || studentInfo?.email?.split('@')[0] || 'seu aluno'}
               </span>
             </p>
           </div>

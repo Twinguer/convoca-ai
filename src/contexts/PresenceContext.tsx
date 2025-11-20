@@ -19,19 +19,37 @@ export const PresenceProvider: React.FC<React.PropsWithChildren> = ({ children }
   useEffect(() => {
     const fetchOnlineUsers = async () => {
       try {
+        // Verificar se o cliente Supabase está configurado corretamente
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (!supabaseUrl || supabaseUrl.includes('xuovcuefnullpmpktrzd')) {
+          // Não tentar buscar se a URL estiver inválida
+          devLog.warn('Supabase não configurado corretamente. Pulando busca de usuários online.');
+          return;
+        }
+
         const { data, error } = await supabase
           .from('users_profiles')
           .select('id')
           .eq('is_online', true);
         
         if (error) {
+          // Não logar erros de rede como ERR_NAME_NOT_RESOLVED (URL inválida)
+          if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_NAME_NOT_RESOLVED')) {
+            devLog.warn('Erro de conexão ao buscar usuários online. Verifique a configuração do Supabase.');
+            return;
+          }
           devLog.error('Error fetching online users:', error);
           return;
         }
         
         const userIds = data?.map(user => user.id) || [];
         setOnlineUserIds(new Set(userIds));
-      } catch (error) {
+      } catch (error: any) {
+        // Não logar erros de rede como ERR_NAME_NOT_RESOLVED
+        if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_NAME_NOT_RESOLVED')) {
+          devLog.warn('Erro de conexão ao buscar usuários online. Verifique a configuração do Supabase.');
+          return;
+        }
         devLog.error('Error in fetchOnlineUsers:', error);
       }
     };
@@ -46,42 +64,59 @@ export const PresenceProvider: React.FC<React.PropsWithChildren> = ({ children }
   }, []);
 
   useEffect(() => {
+    // Verificar se o cliente Supabase está configurado corretamente
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl || supabaseUrl.includes('xuovcuefnullpmpktrzd')) {
+      // Não configurar WebSocket se a URL estiver inválida
+      devLog.warn('Supabase não configurado corretamente. Pulando configuração de WebSocket.');
+      return;
+    }
+
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let isMounted = true;
 
     const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-      channel = supabase.channel('online_users', {
-        config: {
-          presence: { key: user?.id || 'viewer' },
-        },
-      });
-
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          if (!isMounted) return;
-          const state = channel!.presenceState();
-          setOnlineUserIds(new Set(Object.keys(state)));
-        })
-        .on('presence', { event: 'join' }, () => {
-          if (!isMounted) return;
-          const state = channel!.presenceState();
-          setOnlineUserIds(new Set(Object.keys(state)));
-        })
-        .on('presence', { event: 'leave' }, () => {
-          if (!isMounted) return;
-          const state = channel!.presenceState();
-          setOnlineUserIds(new Set(Object.keys(state)));
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED' && user?.id) {
-            await channel!.track({
-              user_id: user.id,
-              online_at: new Date().toISOString(),
-            });
-          }
+        channel = supabase.channel('online_users', {
+          config: {
+            presence: { key: user?.id || 'viewer' },
+          },
         });
+
+        channel
+          .on('presence', { event: 'sync' }, () => {
+            if (!isMounted) return;
+            const state = channel!.presenceState();
+            setOnlineUserIds(new Set(Object.keys(state)));
+          })
+          .on('presence', { event: 'join' }, () => {
+            if (!isMounted) return;
+            const state = channel!.presenceState();
+            setOnlineUserIds(new Set(Object.keys(state)));
+          })
+          .on('presence', { event: 'leave' }, () => {
+            if (!isMounted) return;
+            const state = channel!.presenceState();
+            setOnlineUserIds(new Set(Object.keys(state)));
+          })
+          .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED' && user?.id) {
+              await channel!.track({
+                user_id: user.id,
+                online_at: new Date().toISOString(),
+              });
+            }
+          });
+      } catch (error: any) {
+        // Não logar erros de conexão WebSocket se a URL estiver inválida
+        if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_NAME_NOT_RESOLVED')) {
+          devLog.warn('Erro de conexão WebSocket. Verifique a configuração do Supabase.');
+          return;
+        }
+        devLog.error('Error setting up presence channel:', error);
+      }
     };
 
     setup();

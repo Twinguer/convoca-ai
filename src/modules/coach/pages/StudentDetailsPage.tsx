@@ -137,8 +137,10 @@ const StudentDetailsPage = () => {
 
       return {
         ...studentData,
-        student_name: profileData?.name || profileData?.email || studentData.student_email || 'Aluno',
-        student_email: profileData?.email || studentData.student_email,
+        // ✅ SEGURANÇA: Em modo coach, email pode ser usado internamente mas não deve ser exibido diretamente
+        // Usar apenas nome ou fallback genérico
+        student_name: profileData?.name || studentData.student_email?.split('@')[0] || 'Aluno',
+        student_email: profileData?.email || studentData.student_email, // Usado internamente apenas
         studyData
       };
     },

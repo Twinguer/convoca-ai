@@ -216,14 +216,18 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(secureUrl);
     } catch (error: any) {
       devLog.error('Erro ao gerar URL segura:', error);
-      // Em produção, se variáveis não estiverem configuradas, mostrar erro
-      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
-        // Em produção, não usar fallback inseguro - apenas mostrar erro
-        // O toast será mostrado pelo componente que chama
+      // ✅ SEGURANÇA: Nunca usar fallback com UUID direto
+      // Em produção, mostrar erro
+      if (import.meta.env.PROD) {
+        toast({
+          title: 'Erro de configuração',
+          description: 'O sistema não está configurado corretamente. Entre em contato com o suporte.',
+          variant: 'destructive'
+        });
         return;
       }
-      // Em desenvolvimento ou outros erros, usar fallback
-      navigate(`/usuario/profile/${userId}`);
+      // Em desenvolvimento, redirecionar para comunidade (não expor UUID)
+      navigate('/comunidade');
     }
   };
 

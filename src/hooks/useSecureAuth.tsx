@@ -92,12 +92,26 @@ export const useSecureAuth = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // ✅ DEBUG: Verificar se o cliente Supabase está configurado
+      if (!supabase) {
+        logError('Cliente Supabase não inicializado', {}, 'AUTH');
+        showErrorToast('Erro de configuração', 'O sistema não está configurado corretamente. Recarregue a página.');
+        setIsLoading(false);
+        return { success: false };
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
         password: password
       });
 
       if (error) {
+        // ✅ DEBUG: Log detalhado do erro
+        logError('Erro no login', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        }, 'AUTH');
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
 

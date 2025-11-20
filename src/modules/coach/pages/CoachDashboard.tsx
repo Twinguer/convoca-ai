@@ -184,7 +184,8 @@ const CoachDashboard = () => {
           
           return {
             ...student,
-            student_name: userData?.name || userData?.email || 'Aluno #' + student.student_id.slice(0, 8),
+            // ✅ SEGURANÇA: Não expor email completo, usar apenas parte local
+            student_name: userData?.name || userData?.email?.split('@')[0] || 'Aluno #' + student.student_id.slice(0, 8),
             student_email: student.student_email || userData?.email,
             avatar_url: userData?.avatar_url,
             performance: {

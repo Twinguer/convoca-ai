@@ -187,8 +187,9 @@ const UserFollowers = () => {
       navigate(secureUrl);
     } catch (error) {
       devLog.error('Erro ao gerar URL segura de usuário:', error);
-      // Fallback para URL não ofuscada em caso de erro
-      navigate(`/usuario/profile/${userId}`);
+      // ✅ SEGURANÇA: Nunca usar fallback com UUID direto
+      // Redirecionar para comunidade (não expor UUID)
+      navigate('/comunidade');
     }
   };
   

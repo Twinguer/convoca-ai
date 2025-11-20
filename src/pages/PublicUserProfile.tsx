@@ -16,6 +16,14 @@ import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
+
+// Helper para verificar se é UUID válido
+const isValidUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 interface UserProfile {
   id: string;
   name: string;
@@ -57,12 +65,57 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast(); // ✅ CORREÇÃO: Declarar toast antes de usar no useEffect
+  const [validatedUserId, setValidatedUserId] = React.useState<string | null>(null);
+  const [isValidatingToken, setIsValidatingToken] = React.useState(false);
   
-  // Usar userId passado como prop ou do URL
-  const id = userId || urlId;
-  const {
-    toast
-  } = useToast();
+  // ✅ SEGURANÇA: Validar token ofuscado se necessário
+  React.useEffect(() => {
+    const validateId = async () => {
+      const idToValidate = userId || urlId;
+      if (!idToValidate) {
+        navigate('/comunidade');
+        return;
+      }
+
+      // Se for UUID válido, usar diretamente (compatibilidade com rotas antigas)
+      if (isValidUUID(idToValidate)) {
+        setValidatedUserId(idToValidate);
+        return;
+      }
+
+      // Se não for UUID, provavelmente é um token ofuscado
+      setIsValidatingToken(true);
+      try {
+        const realUserId = await UserUrlObfuscationService.validateUserToken(idToValidate);
+        if (realUserId) {
+          setValidatedUserId(realUserId);
+        } else {
+          toast({
+            title: 'Acesso negado',
+            description: 'O link de acesso é inválido ou expirado.',
+            variant: 'destructive',
+          });
+          navigate('/comunidade');
+        }
+      } catch (error) {
+        devLog.error('Erro ao validar token na PublicUserProfile:', error);
+        toast({
+          title: 'Erro de segurança',
+          description: 'Não foi possível validar o acesso. Tente novamente.',
+          variant: 'destructive',
+        });
+        navigate('/comunidade');
+      } finally {
+        setIsValidatingToken(false);
+      }
+    };
+
+    validateId();
+  }, [userId, urlId, navigate, toast]);
+
+  // Usar userId validado
+  const id = validatedUserId;
   const {
     data: profile,
     isLoading: profileLoading
@@ -70,6 +123,9 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     queryKey: ['public-user-profile', id],
     queryFn: async () => {
       if (!id) return null;
+      
+      // ✅ SEGURANÇA: Não fazer query se ainda está validando token
+      if (isValidatingToken) return null;
       try {
         // Fetch basic profile info from public view
         const {
@@ -79,20 +135,20 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         if (profileError) throw profileError;
         if (!profileData) throw new Error('User profile not found');
 
-        // Get post count (rankings)
+        // ✅ SEGURANÇA: Contar rankings sem expor consolidated_data completo
         const {
           count: postCount,
           error: postError
-        } = await supabase.from('user_rankings').select('consolidated_data', {
+        } = await supabase.from('user_rankings').select('id', {
           count: 'exact',
           head: true
         }).eq('user_id', id);
         if (postError) devLog.error('Error counting posts:', postError);
 
-        // Try to get extended profile data from users_profiles table
+        // ✅ SEGURANÇA: Buscar apenas campos públicos necessários (não usar select('*'))
         const {
           data: extendedData
-        } = await supabase.from('users_profiles').select('*').eq('id', id).maybeSingle();
+        } = await supabase.from('users_profiles').select('bio, estado, formacao, cargo_atual, area_estudos, especialidade, curso_preparatorio, rotina_estudos, concursos_aprovados, concursos_participando, status_concurseiro, profile_text').eq('id', id).maybeSingle();
         
         // Check if user is a coach using RPC function (has active coach subscription)
         let isCoach = false;
@@ -156,6 +212,9 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     queryKey: ['public-user-rankings', id],
     queryFn: async () => {
       if (!id) return [];
+      
+      // ✅ SEGURANÇA: Não fazer query se ainda está validando token
+      if (isValidatingToken) return [];
       try {
         const {
           data,
@@ -305,10 +364,19 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-  if (profileLoading) {
+  // ✅ SEGURANÇA: Mostrar loading enquanto valida token
+  if (isValidatingToken || profileLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-primary rounded-full border-t-transparent"></div>
+        <p className="ml-4 text-muted-foreground">
+          {isValidatingToken ? 'Validando acesso...' : 'Carregando perfil...'}
+        </p>
       </div>;
+  }
+  
+  // ✅ SEGURANÇA: Se não conseguiu validar, não mostrar nada
+  if (!validatedUserId || !id) {
+    return null;
   }
   if (!profile) {
     return <div className="container mx-auto p-4 py-8">
