@@ -139,7 +139,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const {
           count: postCount,
           error: postError
-        } = await supabase.from('user_rankings').select('id', {
+        } = await supabase.from('user_rankings').select('user_id', {
           count: 'exact',
           head: true
         }).eq('user_id', id);
