@@ -1,73 +1,124 @@
-# Welcome to your Lovable project
+# Convoca AI - Plataforma de Rankings de Concursos Públicos
 
-## Project info
+Plataforma completa para visualização e análise de rankings de concursos públicos, com funcionalidades de estudo, coach mode, e comunidade.
 
-**URL**: https://lovable.dev/projects/22dea332-4990-43c9-82f4-da1e0311a6f8
+## 🚀 Tecnologias
 
-## How can I edit this code?
+Este projeto é construído com:
 
-There are several ways of editing your application.
+- **Vite** - Build tool e dev server
+- **TypeScript** - Tipagem estática
+- **React** - Biblioteca UI
+- **shadcn-ui** - Componentes UI
+- **Tailwind CSS** - Estilização
+- **Supabase** - Backend e banco de dados
+- **React Router** - Roteamento
+- **TanStack Query** - Gerenciamento de estado do servidor
 
-**Use Lovable**
+## 📋 Pré-requisitos
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/22dea332-4990-43c9-82f4-da1e0311a6f8) and start prompting.
+- Node.js (versão 18 ou superior)
+- npm ou yarn
+- Conta no Supabase (para backend)
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## 🛠️ Instalação
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# 1. Clone o repositório
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Navegue até o diretório do projeto
+cd convoca-ai
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Instale as dependências
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# 4. Configure as variáveis de ambiente
+# Copie o arquivo .env.example para .env e configure as variáveis necessárias
+cp .env.example .env
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Configuração
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Configure as seguintes variáveis de ambiente no arquivo `.env`:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+VITE_OBFUSCATION_KEY=sua_chave_de_ofuscacao
+VITE_URL_OBFUSCATION_KEY=sua_chave_de_ofuscacao_url
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Para mais detalhes sobre configuração, consulte `docs/ENV_SETUP.md`.
 
-## What technologies are used for this project?
+## 🏃 Executando o Projeto
 
-This project is built with:
+```sh
+# Modo desenvolvimento
+npm run dev
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Modo desenvolvimento (branch nomeia-ai)
+npm run dev:nomeia
 
-## How can I deploy this project?
+# Build de produção
+npm run build
 
-Simply open [Lovable](https://lovable.dev/projects/22dea332-4990-43c9-82f4-da1e0311a6f8) and click on Share -> Publish.
+# Preview do build de produção
+npm run preview
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 🧪 Testes
 
-Yes it is!
+```sh
+# Executar testes
+npm test
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Executar testes em modo watch
+npm run test:watch
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# Executar testes com cobertura
+npm run test:coverage
+
+# Executar testes com UI
+npm run test:ui
+```
+
+## 📦 Deploy
+
+Para fazer deploy em produção, consulte a documentação em `docs/DEPLOY_PRODUCTION.md`.
+
+### Deploy Rápido
+
+```sh
+# No servidor de produção
+git pull origin main
+npm install
+npm run build
+# Reinicie o servidor web (Nginx, PM2, etc.)
+```
+
+## 📚 Documentação Adicional
+
+- `docs/ENV_SETUP.md` - Configuração de variáveis de ambiente
+- `docs/DEPLOY_PRODUCTION.md` - Guia completo de deploy
+- `docs/DEPLOY_RAPIDO.md` - Referência rápida de deploy
+
+## 🤝 Contribuindo
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto é privado e proprietário.
+
+## 👥 Desenvolvimento
+
+Desenvolvido por **Tryts Br**
+
+## 📝 Sobre
+
+Plataforma desenvolvida para Nomeia Aí / Convoca AI
