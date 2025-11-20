@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { UserStudyService } from '@/services/userStudyService';
-import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
+import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { logger } from '@/utils/logger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';

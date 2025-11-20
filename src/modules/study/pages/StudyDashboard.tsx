@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { UserStudyService } from '@/services/userStudyService';
-import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
+import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
