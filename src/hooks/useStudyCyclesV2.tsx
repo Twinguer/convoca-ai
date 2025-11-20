@@ -191,6 +191,7 @@ export const useStudyCyclesV2 = () => {
         day_of_week: dayOfWeek,
         start_time: sessionData.start_time,
         end_time: sessionData.end_time,
+        duration_minutes: sessionData.duration_minutes, // Para tarefas de duração livre
         discipline_name: sessionData.discipline_name,
         block_name: sessionData.block_name,
         session_link: sessionData.session_link,

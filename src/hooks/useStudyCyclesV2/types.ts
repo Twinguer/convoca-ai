@@ -1,7 +1,8 @@
 export interface SessionData {
   id: string;
-  start_time: string;
-  end_time: string;
+  start_time?: string; // Opcional para tarefas de duração livre
+  end_time?: string; // Opcional para tarefas de duração livre
+  duration_minutes?: number; // Para tarefas de duração livre (sem horário fixo)
   discipline_name: string;
   block_name: string;
   session_link?: string;
@@ -69,8 +70,9 @@ export interface CreateCycleInput {
 }
 
 export interface AddSessionInput {
-  start_time: string;
-  end_time: string;
+  start_time?: string; // Opcional para tarefas de duração livre
+  end_time?: string; // Opcional para tarefas de duração livre
+  duration_minutes?: number; // Para tarefas de duração livre (sem horário fixo)
   discipline_name: string;
   block_name: string;
   session_link?: string;

@@ -42,8 +42,9 @@ export interface StudySchedule {
   schedule_session_id?: string;
   cycle_id?: string; // ✅ Referência ao ciclo
   day_of_week: number;
-  start_time: string;
-  end_time: string;
+  start_time?: string; // Opcional para tarefas de duração livre
+  end_time?: string; // Opcional para tarefas de duração livre
+  duration_minutes?: number; // Para tarefas de duração livre (sem horário fixo)
   is_active?: boolean;
   discipline_name?: string;
   block_name?: string;

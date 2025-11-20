@@ -31,8 +31,9 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface StudySession {
   id: string;
   day: number; // 0-6 (Sunday to Saturday)
-  startTime: string;
-  endTime: string;
+  startTime?: string; // Opcional para tarefas de duração
+  endTime?: string; // Opcional para tarefas de duração
+  durationMinutes?: number; // Para tarefas de duração livre
   disciplineName: string;
   blockName: string;
   cycleId: string;
@@ -88,6 +89,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const [customDiscipline, setCustomDiscipline] = useState<string>('');
   const [startTime, setStartTime] = useState<string>('08:00');
   const [endTime, setEndTime] = useState<string>('09:00');
+  const [sessionTimeMode, setSessionTimeMode] = useState<'time' | 'duration'>('time');
+  const [durationMinutes, setDurationMinutes] = useState<number>(90);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -257,6 +260,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
               day: dayOfWeek,
               startTime: session.start_time,
               endTime: session.end_time,
+              durationMinutes: session.duration_minutes,
               disciplineName: session.discipline_name || 'Disciplina',
               blockName: session.block_name || 'Bloco',
               cycleId: session.cycle_id!,
@@ -277,6 +281,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   day: daySchedule.day,
                   startTime: session.start_time,
                   endTime: session.end_time,
+                  durationMinutes: session.duration_minutes,
                   disciplineName: session.discipline_name || 'Disciplina',
                   blockName: session.block_name || 'Bloco',
                   cycleId: cycle.id,
@@ -304,6 +309,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
             day_of_week: session.day,
             start_time: session.startTime,
             end_time: session.endTime,
+            duration_minutes: session.durationMinutes,
             discipline_name: session.disciplineName,
             block_name: session.blockName,
             cycle_id: session.cycleId,
@@ -371,16 +377,31 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       return;
     }
     
-    // Validar horários
-    if (endTime <= startTime) {
-      toast.error('O horário de fim deve ser posterior ao horário de início');
-      return;
+    // Se modo duração, não precisa de horários
+    if (sessionTimeMode === 'duration') {
+      // Validar duração mínima
+      if (durationMinutes < 5) {
+        toast.error('A duração mínima é de 5 minutos');
+        return;
+      }
+      if (durationMinutes > 480) {
+        toast.error('A duração máxima é de 480 minutos (8 horas)');
+        return;
+      }
+    } else {
+      // Validar horários para modo time
+      if (endTime <= startTime) {
+        toast.error('O horário de fim deve ser posterior ao horário de início');
+        return;
+      }
     }
+    
     try {
       // Adicionar sessão ao cronograma usando o hook useStudyCyclesV2
       const success = await addScheduleSession(selectedCycle, selectedDay, {
-        start_time: startTime,
-        end_time: endTime,
+        start_time: sessionTimeMode === 'time' ? startTime : undefined,
+        end_time: sessionTimeMode === 'time' ? endTime : undefined,
+        duration_minutes: sessionTimeMode === 'duration' ? durationMinutes : undefined,
         discipline_name: finalDiscipline,
         block_name: finalBlock,
         session_link: sessionLink
@@ -400,6 +421,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         setStartTime('08:00');
         setEndTime('09:00');
         setSessionLink('');
+        setSessionTimeMode('time');
+        setDurationMinutes(90);
         setShowAddModal(false);
         toast.success('Tarefa adicionada ao cronograma!');
       } else {
@@ -692,7 +715,20 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
   };
   const getSessionsForDay = (day: number) => {
-    return sessions.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+    return sessions.filter(s => s.day === day).sort((a, b) => {
+      // Tarefas com horário vêm primeiro, ordenadas por horário
+      if (a.startTime && b.startTime) {
+        return a.startTime.localeCompare(b.startTime);
+      }
+      // Tarefas sem horário (duração livre) vêm depois
+      if (a.startTime && !b.startTime) return -1;
+      if (!a.startTime && b.startTime) return 1;
+      // Se ambas são de duração livre, ordenar por duração
+      if (!a.startTime && !b.startTime) {
+        return (a.durationMinutes || 0) - (b.durationMinutes || 0);
+      }
+      return 0;
+    });
   };
   const isSessionCompleted = (sessionId: string) => {
     const savedSessions = localStorage.getItem(`completed_sessions_${user?.id}`);
@@ -1441,16 +1477,68 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Horário de Início</label>
-                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded-md" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Horário de Fim</label>
-                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded-md" />
+                {/* Seletor de Modo de Agendamento */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Tipo de Agendamento</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={sessionTimeMode === 'time' ? 'default' : 'outline'}
+                      onClick={() => setSessionTimeMode('time')}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <Clock className="h-4 w-4 mr-2" />
+                      Horário de Estudos
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={sessionTimeMode === 'duration' ? 'default' : 'outline'}
+                      onClick={() => setSessionTimeMode('duration')}
+                      className="flex-1"
+                      size="sm"
+                    >
+                      <Timer className="h-4 w-4 mr-2" />
+                      Tempo de Estudos
+                    </Button>
                   </div>
                 </div>
+
+                {/* Renderização Condicional */}
+                {sessionTimeMode === 'time' ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Horário de Início</label>
+                      <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Horário de Fim</label>
+                      <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded-md" />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm font-medium">Duração (minutos)</label>
+                    <Input 
+                      type="number" 
+                      min="5" 
+                      max="480" 
+                      step="5"
+                      value={durationMinutes} 
+                      onChange={e => {
+                        const value = Number(e.target.value);
+                        if (value >= 5 && value <= 480) {
+                          setDurationMinutes(value);
+                        }
+                      }} 
+                      placeholder="90"
+                      className="w-full" 
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Duração entre 5 e 480 minutos (8 horas). Você pode iniciar quando quiser.
+                    </p>
+                  </div>
+                )}
 
 
                 <div>
@@ -1483,7 +1571,18 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                 <div className="text-sm font-medium">{editingSession.disciplineName}</div>
                 <div className="text-xs text-muted-foreground">{editingSession.blockName}</div>
                 <div className="text-xs text-muted-foreground">
-                  {editingSession.startTime} - {editingSession.endTime}
+                  {editingSession.durationMinutes ? (
+                    <span className="flex items-center gap-1">
+                      <Timer className="h-3 w-3" />
+                      {editingSession.durationMinutes}min
+                    </span>
+                  ) : (
+                    editingSession.startTime && editingSession.endTime ? (
+                      `${editingSession.startTime} - ${editingSession.endTime}`
+                    ) : (
+                      'Horário livre'
+                    )
+                  )}
                 </div>
               </div>
 
@@ -1690,16 +1789,67 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Horário de Início</label>
-                      <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Horário de Fim</label>
-                      <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                  {/* Seletor de Modo de Agendamento */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Tipo de Agendamento</label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={sessionTimeMode === 'time' ? 'default' : 'outline'}
+                        onClick={() => setSessionTimeMode('time')}
+                        className="flex-1"
+                        size="sm"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Horário de Estudos
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={sessionTimeMode === 'duration' ? 'default' : 'outline'}
+                        onClick={() => setSessionTimeMode('duration')}
+                        className="flex-1"
+                        size="sm"
+                      >
+                        <Timer className="h-4 w-4 mr-2" />
+                        Tempo de Estudos
+                      </Button>
                     </div>
                   </div>
+
+                  {/* Renderização Condicional */}
+                  {sessionTimeMode === 'time' ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Horário de Início</label>
+                        <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Horário de Fim</label>
+                        <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-sm font-medium">Duração (minutos)</label>
+                      <Input 
+                        type="number" 
+                        min="5" 
+                        max="480" 
+                        step="5"
+                        value={durationMinutes} 
+                        onChange={e => {
+                          const value = Number(e.target.value);
+                          if (value >= 5 && value <= 480) {
+                            setDurationMinutes(value);
+                          }
+                        }} 
+                        placeholder="90"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Duração entre 5 e 480 minutos (8 horas). Você pode iniciar quando quiser.
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-sm font-medium">Link da Tarefa (opcional)</label>
@@ -1743,10 +1893,21 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   openEditModal(session);
                 }}>
                             <div className="space-y-3 h-full flex flex-col">
-                              {/* Header com horário e botão de deletar */}
+                              {/* Header com horário/duração e botão de deletar */}
                               <div className="flex justify-between items-center">
                                 <div className="text-sm font-medium text-muted-foreground">
-                                  {session.startTime.substring(0, 5)} - {session.endTime.substring(0, 5)}
+                                  {session.durationMinutes ? (
+                                    <span className="flex items-center gap-1">
+                                      <Timer className="h-3 w-3" />
+                                      {session.durationMinutes}min
+                                    </span>
+                                  ) : (
+                                    session.startTime && session.endTime ? (
+                                      `${session.startTime.substring(0, 5)} - ${session.endTime.substring(0, 5)}`
+                                    ) : (
+                                      'Horário livre'
+                                    )
+                                  )}
                                 </div>
                                 <div className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10" onClick={e => {
                         e.stopPropagation();
@@ -1837,7 +1998,18 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                        </p>
                       </div>
                     <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                      {sessionData.session.startTime} - {sessionData.session.endTime}
+                      {sessionData.session.duration ? (
+                        <span className="flex items-center gap-1">
+                          <Timer className="h-3 w-3" />
+                          {sessionData.session.duration}min
+                        </span>
+                      ) : (
+                        sessionData.session.startTime && sessionData.session.endTime ? (
+                          `${sessionData.session.startTime} - ${sessionData.session.endTime}`
+                        ) : (
+                          'Horário livre'
+                        )
+                      )}
                     </span>
                   </div>
                   
