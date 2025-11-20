@@ -126,15 +126,26 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Debug logs removed for security
+      // ✅ VALIDAÇÃO: Validar inputs antes de enviar
+      const { RPCValidator } = await import('@/utils/rpcValidator');
+      const validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
+      const validatedUserId = RPCValidator.validateUUID(userId, 'ID do usuário');
+      
+      // Validar pontuações
+      const validatedScores = RPCValidator.validateSubjectiveScores({
+        discursive: values.discursive_score || 0,
+        case_study_1: values.case_study_1_score || 0,
+        case_study_2: values.case_study_2_score || 0,
+        case_study_3: values.case_study_3_score || 0
+      });
       
       // Chamar função RPC do backend para calcular pontuações com pesos
       const { data: calculationResult, error: calculationError } = await supabase.rpc(
         'calculate_weighted_scores',
         {
-          p_concurso_id: concurso.id,
-          p_scores: values,
-          p_user_id: userId
+          p_concurso_id: validatedConcursoId,
+          p_scores: { ...values, ...validatedScores },
+          p_user_id: validatedUserId
         }
       );
 

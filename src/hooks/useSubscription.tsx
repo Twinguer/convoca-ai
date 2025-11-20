@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { RPCValidator } from '@/utils/rpcValidator';
 
 export type SubscriptionPlan = 'free' | 'pro';
 
@@ -57,8 +58,11 @@ export const useSubscription = () => {
   const maxEditCount = isPro ? Infinity : 3; // Pro = ilimitado, Free = 3
 
   const applyVoucher = async (code: string) => {
+    // ✅ VALIDAÇÃO: Validar código antes de enviar
+    const validatedCode = RPCValidator.validateVoucherCode(code);
+
     const { data, error } = await supabase.rpc('apply_voucher', {
-      voucher_code_param: code
+      voucher_code_param: validatedCode
     });
 
     if (error) throw error;
@@ -68,8 +72,11 @@ export const useSubscription = () => {
   };
 
   const validateDiscountVoucher = async (code: string) => {
+    // ✅ VALIDAÇÃO: Validar código antes de enviar
+    const validatedCode = RPCValidator.validateVoucherCode(code);
+
     const { data, error } = await supabase.rpc('validate_discount_voucher', {
-      voucher_code_param: code.trim().toUpperCase()
+      voucher_code_param: validatedCode
     });
 
     if (error) throw error;

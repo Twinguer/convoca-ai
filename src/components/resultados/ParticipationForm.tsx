@@ -527,12 +527,21 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         edit_count: 0
       };
 
+      // ✅ VALIDAÇÃO: Validar inputs antes de enviar
+      const { RPCValidator } = await import('@/utils/rpcValidator');
+      const validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
+      const validatedReservationType = RPCValidator.validateReservationType(selectedQuota);
+      const validatedBookletId = RPCValidator.validateBookletId(
+        booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null
+      );
+      const validatedRankingData = RPCValidator.validateRankingData(newRankingData);
+
       // ✅ USAR FUNÇÃO RPC COM VALIDAÇÃO NO BACKEND
       const { data: participateResult, error: participateError } = await supabase.rpc('participate_in_ranking', {
-        p_concurso_id: concurso.id,
-        p_reservation_type: selectedQuota,
-        p_selected_booklet_id: booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null,
-        p_ranking_data: newRankingData as any
+        p_concurso_id: validatedConcursoId,
+        p_reservation_type: validatedReservationType,
+        p_selected_booklet_id: validatedBookletId,
+        p_ranking_data: validatedRankingData
       });
 
       if (participateError) {

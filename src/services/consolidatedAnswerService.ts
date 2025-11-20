@@ -186,28 +186,39 @@ export const consolidatedAnswerService = {
       // devLog.log('[consolidatedAnswerService] Answers count:', answers.length);
       // devLog.log('[consolidatedAnswerService] Respostas a salvar:', answers);
 
-      // Garantir que bookletId seja string
-      const bookletIdString = String(bookletId);
-
-      // Converter formato das respostas para a função consolidada
+      // ✅ VALIDAÇÃO: Validar todos os inputs antes de enviar
+      const { RPCValidator } = await import('@/utils/rpcValidator');
+      
+      const validatedRankingId = RPCValidator.validateUUID(rankingId, 'ID do ranking');
+      const validatedConcursoId = RPCValidator.validateUUID(concursoId, 'ID do concurso');
+      const validatedBookletId = RPCValidator.validateBookletId(bookletId);
+      
+      // Converter e validar respostas
       const answersObject: { [key: string]: string } = {};
       answers.forEach(answer => {
         answersObject[answer.questionNumber.toString()] = answer.answer;
       });
+      const validatedAnswers = RPCValidator.validateAnswersJSONB(answersObject);
+      
+      // Validar pontuações subjetivas
+      const validatedSubjectiveScores = RPCValidator.validateSubjectiveScores({
+        discursive: discursiveScore,
+        case_study_1: caseStudy1Score,
+        case_study_2: caseStudy2Score,
+        case_study_3: caseStudy3Score
+      });
+      
+      // Validar contador de edições
+      const validatedEditCount = RPCValidator.validateEditCount(editCount);
 
-        const { data, error } = await supabase.rpc('save_user_answers_v3', {
-          p_ranking_id: rankingId,
-          p_concurso_id: concursoId,
-          p_booklet_id: bookletIdString,
-          p_answers: answersObject,
-          p_subjective_scores: {
-            'discursive': discursiveScore,
-            'case_study_1': caseStudy1Score,
-            'case_study_2': caseStudy2Score,
-            'case_study_3': caseStudy3Score
-          },
-          p_current_edit_count: editCount
-        });
+      const { data, error } = await supabase.rpc('save_user_answers_v3', {
+        p_ranking_id: validatedRankingId,
+        p_concurso_id: validatedConcursoId,
+        p_booklet_id: validatedBookletId,
+        p_answers: validatedAnswers,
+        p_subjective_scores: validatedSubjectiveScores,
+        p_current_edit_count: validatedEditCount
+      });
 
       if (error) {
         devLog.error('[consolidatedAnswerService] RPC Error:', error);
