@@ -14,11 +14,16 @@ import { RefreshCw, UserPlus, LogIn, UserMinus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 // ✅ REMOVIDO: useSubscription não é mais necessário - verificação no backend
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useSubscription } from '@/hooks/useSubscription';
 import { logger } from '@/utils/logger';
+import { devLog } from '@/utils/productionLogger';
 import { supabase } from '@/integrations/supabase/client';
 import { rankingCache } from '@/services/rankingCache';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 import { toast as sonnerToast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Lock } from 'lucide-react';
 // ✅ REMOVIDO: showProRequiredToast não é mais necessário - rankings são públicos
 import {
   AlertDialog,
@@ -41,8 +46,10 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  // ✅ REMOVIDO: isPro não é mais necessário - verificação é feita no backend
   const { currentRankingCount } = usePlanLimits();
+  const { isPro } = useSubscription();
+  const [canViewRanking, setCanViewRanking] = useState<boolean | null>(null);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const toastShownRef = useRef(false);
   
   // Usar ID da URL ou prop
@@ -67,8 +74,62 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
     recalculationProgress
   } = useResultadosData(finalRankingId);
 
-  // ✅ Rankings são públicos para visualização
-  // Verificações de subscription serão feitas apenas em funcionalidades premium (ex: criar múltiplos rankings)
+  // ✅ Verificar se usuário Free pode ver a classificação
+  // Free users só podem ver classificação se participam ou criaram o ranking
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!concurso || !user) {
+        // Se não há concurso ou usuário, permitir visualização (usuário não autenticado pode ver)
+        setCanViewRanking(true);
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // Se for Pro, sempre pode ver
+      if (isPro) {
+        setCanViewRanking(true);
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // Para Free users, verificar se participa ou criou
+      try {
+        // Verificar se criou o ranking
+        const { data: concursoData } = await supabase
+          .from('concursos')
+          .select('created_by_user_id')
+          .eq('id', concurso.id)
+          .maybeSingle();
+
+        const isCreator = concursoData?.created_by_user_id === user.id;
+
+        // Se criou, pode ver
+        if (isCreator) {
+          setCanViewRanking(true);
+          setIsCheckingAccess(false);
+          return;
+        }
+
+        // Verificar se participa
+        if (isParticipating) {
+          setCanViewRanking(true);
+          setIsCheckingAccess(false);
+          return;
+        }
+
+        // Não participa e não criou - não pode ver classificação
+        setCanViewRanking(false);
+        setIsCheckingAccess(false);
+      } catch (error) {
+        devLog.error('Erro ao verificar acesso à classificação:', error);
+        // Em caso de erro, permitir visualização (não bloquear)
+        setCanViewRanking(true);
+        setIsCheckingAccess(false);
+      }
+    };
+
+    checkAccess();
+  }, [concurso, user, isPro, isParticipating]);
   
   // Usar rankings do hook principal
   const paginatedRankings = rankings;
@@ -195,14 +256,63 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
     });
   };
 
-  // ✅ REMOVIDO: Não há mais bloqueio de acesso - rankings são públicos
-  // Verificações de subscription serão feitas apenas em funcionalidades premium
-
-  if (isLoading) {
+  if (isLoading || isCheckingAccess) {
     return <LoadingState />;
   }
 
-  // ✅ REMOVIDO: Não há mais bloqueio de acesso - rankings são públicos para visualização
+  // ✅ BLOQUEIO PARA USUÁRIOS FREE: Não podem ver classificação se não participam e não criaram
+  if (canViewRanking === false && user) {
+    return (
+      <div className="page-content-container">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+          <div className="flex gap-1 sm:gap-2 flex-wrap">
+            <Button 
+              onClick={() => navigate(`/ranking/${concurso?.id}/participate`)} 
+              className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" 
+              size="sm"
+            >
+              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+              Participar do Ranking
+            </Button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mb-2">
+          <RankingCard participantCount={participantCount} userRanking={userRanking} inscritos={concurso?.inscritos} />
+          {concurso && <ConcursoInfoCard concurso={concurso} creatorName={creatorName} />}
+        </div>
+
+        <Alert variant="destructive" className="mt-4">
+          <Lock className="h-4 w-4" />
+          <AlertTitle>Acesso Restrito</AlertTitle>
+          <AlertDescription>
+            <p className="mb-2">
+              Usuários Free só podem visualizar a classificação de rankings que participam ou criaram.
+            </p>
+            <p className="mb-3">
+              Você pode participar de até <strong>2 rankings que não criou</strong> ou participar de <strong>todos os rankings que criar</strong>.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <Button 
+                onClick={() => navigate(`/ranking/${concurso?.id}/participate`)} 
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                Participar do Ranking
+              </Button>
+              <Button 
+                onClick={() => showProRequiredToast(navigate, 'Visualizar Classificações Ilimitadas')} 
+                size="sm"
+                variant="outline"
+              >
+                Assinar Plano Pro
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return <div className="page-content-container">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
