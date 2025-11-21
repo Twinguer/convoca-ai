@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:nomeia": "VITE_BRANCH=nomeia-ai vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-html-order.js",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

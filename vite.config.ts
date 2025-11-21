@@ -12,30 +12,35 @@ export default defineConfig(({ mode }) => ({
     react(),
     {
       name: 'ensure-react-vendor-first',
-      writeBundle(options, bundle) {
-        // Modificar o HTML após o build para garantir ordem correta
-        const htmlPath = path.resolve(options.dir || 'dist', 'index.html');
+      closeBundle() {
+        // Modificar o HTML após o build ser completamente finalizado
+        const htmlPath = path.resolve('dist', 'index.html');
         try {
           let html = readFileSync(htmlPath, 'utf-8');
           
-          // Encontrar o react-vendor e o script principal
+          // Encontrar o react-vendor, vendor e o script principal
           const reactVendorMatch = html.match(/<link[^>]*react-vendor[^>]*href=["']([^"']+)["'][^>]*>/);
+          const vendorPreload = html.match(/<link[^>]*vendor[^>]*href=["']([^"']+)["'][^>]*>/);
           const scriptTag = html.match(/<script[^>]*type=["']module["'][^>]*src=["']([^"']*index[^"']*)["'][^>]*>/);
           
           if (reactVendorMatch && scriptTag) {
             const reactVendorPath = reactVendorMatch[1];
             
-            // Remover o modulepreload do react-vendor
-            html = html.replace(/<link[^>]*react-vendor[^>]*>/g, '');
+            // Remover todos os modulepreloads
+            html = html.replace(/<link[^>]*rel=["']modulepreload["'][^>]*>/g, '');
             
-            // Inserir script tag ANTES do script principal
-            html = html.replace(
-              scriptTag[0],
-              `<script type="module" crossorigin src="${reactVendorPath}"></script>\n    ${scriptTag[0]}`
-            );
+            // Inserir scripts na ordem correta: react-vendor PRIMEIRO, depois vendor (se existir), depois index
+            let newScripts = `<script type="module" crossorigin src="${reactVendorPath}"></script>`;
+            if (vendorPreload) {
+              newScripts += `\n    <script type="module" crossorigin src="${vendorPreload[1]}"></script>`;
+            }
+            newScripts += `\n    ${scriptTag[0]}`;
+            
+            html = html.replace(scriptTag[0], newScripts);
             
             // Escrever o HTML modificado
             writeFileSync(htmlPath, html, 'utf-8');
+            console.log('✅ HTML modificado: react-vendor será carregado antes de vendor e index');
           }
         } catch (error) {
           console.warn('Failed to modify index.html:', error);

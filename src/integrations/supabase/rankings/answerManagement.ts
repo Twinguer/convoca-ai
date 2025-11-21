@@ -2,6 +2,7 @@
 import { supabase } from '../client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from './examStructure';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { RPCValidator } from '@/utils/rpcValidator';
 
 // FUNÇÃO ATUALIZADA PARA TRABALHAR COM DADOS CONSOLIDADOS
 export const saveUserAnswersData = async (
@@ -39,16 +40,49 @@ export const saveUserAnswersData = async (
     
     devLog.log('[answerManagement] Dados preparados para estrutura consolidada:', answersArray);
 
-    // Usar a nova função RPC consolidada
+    // ✅ VALIDAÇÃO: Validar todos os inputs antes de enviar
+    let validatedConcursoId: string;
+    let validatedBookletId: string | null;
+    let validatedAnswers: Record<string, string>;
+    let validatedSubjectiveScores: any;
+    let validatedEditCount: number;
+    
+    try {
+      validatedConcursoId = RPCValidator.validateUUID(concursoId, 'ID do concurso');
+      validatedBookletId = RPCValidator.validateBookletId('default');
+      
+      // Converter respostas para formato JSONB
+      const answersObject: { [key: string]: string } = {};
+      answersArray.forEach(answer => {
+        answersObject[answer.questionNumber.toString()] = answer.answer;
+      });
+      validatedAnswers = RPCValidator.validateAnswersJSONB(answersObject);
+      
+      // Validar pontuações subjetivas
+      validatedSubjectiveScores = RPCValidator.validateSubjectiveScores({
+        discursive: 0,
+        case_study_1: 0,
+        case_study_2: 0,
+        case_study_3: 0
+      });
+      
+      // Validar contador de edições
+      validatedEditCount = RPCValidator.validateEditCount(0);
+    } catch (validationError: any) {
+      devLog.error('[answerManagement] Validation error:', validationError);
+      throw new Error(validationError.message || 'Dados inválidos');
+    }
+
+    // Usar a nova função RPC consolidada com dados validados
     const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
-      p_concurso_id: concursoId,
-      p_booklet_id: 'default', // Caderno padrão para compatibilidade
-      p_answers: answersArray,
-      p_discursive_score: 0,
-      p_case_study_1_score: 0,
-      p_case_study_2_score: 0,
-      p_case_study_3_score: 0,
-      p_current_edit_count: 0
+      p_concurso_id: validatedConcursoId,
+      p_booklet_id: validatedBookletId,
+      p_answers: validatedAnswers,
+      p_discursive_score: validatedSubjectiveScores.discursive,
+      p_case_study_1_score: validatedSubjectiveScores.case_study_1,
+      p_case_study_2_score: validatedSubjectiveScores.case_study_2,
+      p_case_study_3_score: validatedSubjectiveScores.case_study_3,
+      p_current_edit_count: validatedEditCount
     });
     
     if (error) {
