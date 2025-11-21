@@ -55,6 +55,9 @@ export default defineConfig(({ mode }) => ({
       // Isso força todos os imports de React a apontarem para o mesmo módulo
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      // Forçar @radix-ui e outras libs a usar o mesmo React
+      "@radix-ui/react-dialog": path.resolve(__dirname, "./node_modules/@radix-ui/react-dialog"),
+      "@radix-ui/react-slot": path.resolve(__dirname, "./node_modules/@radix-ui/react-slot"),
     },
     dedupe: ["react", "react-dom"], // Garantir que não haja duplicatas
   },

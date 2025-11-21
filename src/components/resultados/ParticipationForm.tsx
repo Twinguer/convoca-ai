@@ -534,14 +534,41 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       let validatedBookletId: string | null;
       let validatedRankingData: any;
       
+      devLog.log('[ParticipationForm] Iniciando validação de inputs para participate_in_ranking...');
+      devLog.log('[ParticipationForm] Dados recebidos:', {
+        concursoId: concurso.id?.substring(0, 8) + '...',
+        selectedQuota,
+        selectedBooklet,
+        bookletsCount: booklets.length,
+        newRankingDataKeys: Object.keys(newRankingData || {})
+      });
+      
       try {
+        devLog.log('[ParticipationForm] Validando concursoId...');
         validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
+        devLog.log('[ParticipationForm] concursoId validado');
+        
+        devLog.log('[ParticipationForm] Validando reservationType...');
         validatedReservationType = RPCValidator.validateReservationType(selectedQuota);
+        devLog.log('[ParticipationForm] reservationType validado:', validatedReservationType);
+        
+        devLog.log('[ParticipationForm] Validando bookletId...');
         validatedBookletId = RPCValidator.validateBookletId(
           booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null
         );
+        devLog.log('[ParticipationForm] bookletId validado:', validatedBookletId);
+        
+        devLog.log('[ParticipationForm] Validando rankingData...');
         validatedRankingData = RPCValidator.validateRankingData(newRankingData);
+        devLog.log('[ParticipationForm] rankingData validado');
+        
+        devLog.log('[ParticipationForm] ✅ Todas as validações passaram');
       } catch (validationError: any) {
+        devLog.error('[ParticipationForm] ❌ ERRO DE VALIDAÇÃO:', {
+          message: validationError.message,
+          stack: validationError.stack,
+          error: validationError
+        });
         toast({
           title: "Erro de validação",
           description: validationError.message || "Dados inválidos. Verifique os campos e tente novamente.",
@@ -552,12 +579,33 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       }
 
       // ✅ USAR FUNÇÃO RPC COM VALIDAÇÃO NO BACKEND
-      const { data: participateResult, error: participateError } = await supabase.rpc('participate_in_ranking', {
+      const rpcParams = {
         p_concurso_id: validatedConcursoId,
         p_reservation_type: validatedReservationType,
         p_selected_booklet_id: validatedBookletId,
         p_ranking_data: validatedRankingData
+      };
+      
+      devLog.log('[ParticipationForm] Chamando RPC participate_in_ranking com parâmetros:', {
+        p_concurso_id: rpcParams.p_concurso_id.substring(0, 8) + '...',
+        p_reservation_type: rpcParams.p_reservation_type,
+        p_selected_booklet_id: rpcParams.p_selected_booklet_id,
+        p_ranking_data: rpcParams.p_ranking_data
       });
+      
+      const { data: participateResult, error: participateError } = await supabase.rpc('participate_in_ranking', rpcParams);
+      
+      if (participateError) {
+        devLog.error('[ParticipationForm] ❌ ERRO na chamada RPC:', {
+          error: participateError,
+          message: participateError.message,
+          details: participateError.details,
+          hint: participateError.hint,
+          code: participateError.code
+        });
+      } else {
+        devLog.log('[ParticipationForm] ✅ RPC chamado com sucesso:', { result: participateResult });
+      }
 
       if (participateError) {
         throw participateError;

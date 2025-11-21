@@ -5,32 +5,42 @@
 
 import { SecurityValidators } from './securityValidators';
 import { EnhancedInputValidator } from './enhancedInputValidation';
+import { devLog } from './productionLogger';
 
 export class RPCValidator {
   /**
    * Valida código de voucher
    */
   static validateVoucherCode(code: string): string {
+    devLog.log('[RPCValidator] validateVoucherCode chamado com:', { code: code?.substring(0, 10) + '...', type: typeof code });
+    
     if (!code || typeof code !== 'string') {
+      devLog.error('[RPCValidator] validateVoucherCode: código inválido ou não é string');
       throw new Error('Código de voucher é obrigatório');
     }
 
     // 1. Validar input básico (SQL injection, XSS)
     const basicValidation = SecurityValidators.validateInput(code);
     if (!basicValidation.isValid) {
+      devLog.error('[RPCValidator] validateVoucherCode: validação básica falhou', { reason: basicValidation.reason });
       throw new Error(`Código inválido: ${basicValidation.reason}`);
     }
 
     // 2. Validar formato (apenas letras, números, hífen)
     const trimmed = code.trim().toUpperCase();
+    devLog.log('[RPCValidator] validateVoucherCode: código após trim', { trimmed: trimmed.substring(0, 10) + '...', length: trimmed.length });
+    
     if (trimmed.length < 3 || trimmed.length > 50) {
+      devLog.error('[RPCValidator] validateVoucherCode: tamanho inválido', { length: trimmed.length });
       throw new Error('Código deve ter entre 3 e 50 caracteres');
     }
 
     if (!/^[A-Z0-9-]+$/.test(trimmed)) {
+      devLog.error('[RPCValidator] validateVoucherCode: formato inválido', { trimmed: trimmed.substring(0, 20) });
       throw new Error('Código deve conter apenas letras, números e hífens');
     }
 
+    devLog.log('[RPCValidator] validateVoucherCode: validação bem-sucedida');
     return trimmed;
   }
 
@@ -38,14 +48,19 @@ export class RPCValidator {
    * Valida UUID
    */
   static validateUUID(id: string, fieldName: string = 'ID'): string {
+    devLog.log('[RPCValidator] validateUUID chamado', { fieldName, id: id?.substring(0, 8) + '...', type: typeof id });
+    
     if (!id || typeof id !== 'string') {
+      devLog.error('[RPCValidator] validateUUID: ID inválido ou não é string', { fieldName, id, type: typeof id });
       throw new Error(`${fieldName} é obrigatório`);
     }
 
     if (!SecurityValidators.validateUUID(id)) {
+      devLog.error('[RPCValidator] validateUUID: formato UUID inválido', { fieldName, id });
       throw new Error(`${fieldName} possui formato inválido`);
     }
 
+    devLog.log('[RPCValidator] validateUUID: validação bem-sucedida', { fieldName });
     return id;
   }
 
