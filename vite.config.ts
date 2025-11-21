@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -12,48 +12,46 @@ export default defineConfig(({ mode }) => ({
     react(),
     {
       name: 'ensure-react-vendor-first',
-      generateBundle(options, bundle) {
-        // Garantir que react-vendor seja o primeiro chunk a ser carregado
-        const reactVendorChunk = Object.keys(bundle).find(key => 
-          key.includes('react-vendor')
-        );
-        if (reactVendorChunk) {
-          // Marcar como prioritário
-          const chunk = bundle[reactVendorChunk];
-          if (chunk.type === 'chunk') {
-            chunk.isEntry = false; // Não é entry, mas será preloadado primeiro
+      writeBundle(options, bundle) {
+        // Modificar o HTML após o build para garantir ordem correta
+        const htmlPath = path.resolve(options.dir || 'dist', 'index.html');
+        try {
+          let html = readFileSync(htmlPath, 'utf-8');
+          
+          // Encontrar o react-vendor e o script principal
+          const reactVendorMatch = html.match(/<link[^>]*react-vendor[^>]*href=["']([^"']+)["'][^>]*>/);
+          const scriptTag = html.match(/<script[^>]*type=["']module["'][^>]*src=["']([^"']*index[^"']*)["'][^>]*>/);
+          
+          if (reactVendorMatch && scriptTag) {
+            const reactVendorPath = reactVendorMatch[1];
+            
+            // Remover o modulepreload do react-vendor
+            html = html.replace(/<link[^>]*react-vendor[^>]*>/g, '');
+            
+            // Inserir script tag ANTES do script principal
+            html = html.replace(
+              scriptTag[0],
+              `<script type="module" crossorigin src="${reactVendorPath}"></script>\n    ${scriptTag[0]}`
+            );
+            
+            // Escrever o HTML modificado
+            writeFileSync(htmlPath, html, 'utf-8');
           }
+        } catch (error) {
+          console.warn('Failed to modify index.html:', error);
         }
-      },
-      transformIndexHtml(html) {
-        // Garantir que react-vendor seja preloadado ANTES de vendor e outros chunks
-        const reactVendorPreload = html.match(/<link[^>]*react-vendor[^>]*>/);
-        const vendorPreload = html.match(/<link[^>]*vendor[^>]*>/);
-        const scriptTag = html.match(/<script[^>]*type="module"[^>]*src="[^"]*index[^"]*"[^>]*>/);
-        
-        if (reactVendorPreload && vendorPreload && scriptTag) {
-          // Remover todos os preloads existentes
-          html = html.replace(/<link[^>]*rel="modulepreload"[^>]*>/g, '');
-          
-          // Reinserir na ordem correta: react-vendor PRIMEIRO, depois vendor, depois outros
-          const allPreloads = html.match(/<link[^>]*rel="modulepreload"[^>]*>/g) || [];
-          const otherPreloads = allPreloads.filter(p => 
-            !p.includes('react-vendor') && !p.includes('vendor')
-          ).join('\n    ');
-          
-          // Inserir na ordem: react-vendor, vendor, outros chunks, script
-          html = html.replace(
-            scriptTag[0],
-            `${reactVendorPreload[0]}\n    ${vendorPreload[0]}${otherPreloads ? '\n    ' + otherPreloads : ''}\n    ${scriptTag[0]}`
-          );
-        }
-        
-        return html;
       }
     }
   ],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: { 
+      "@": path.resolve(__dirname, "./src"),
+      // ✅ CRÍTICO: Garantir que React seja sempre um singleton
+      // Isso força todos os imports de React a apontarem para o mesmo módulo
+      "react": path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+    },
+    dedupe: ["react", "react-dom"], // Garantir que não haja duplicatas
   },
   build: {
     target: "esnext",
