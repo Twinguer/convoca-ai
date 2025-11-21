@@ -17,6 +17,7 @@ import { AnswerSheet } from './AnswerSheet';
 import { QuotaSelector, QuotaType } from './QuotaSelector';
 import { BookletSelector } from './BookletSelector';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { RPCValidator } from '@/utils/rpcValidator';
 interface ExamBooklet {
   id: string;
   name: string;
@@ -528,13 +529,27 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       };
 
       // ✅ VALIDAÇÃO: Validar inputs antes de enviar
-      const { RPCValidator } = await import('@/utils/rpcValidator');
-      const validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
-      const validatedReservationType = RPCValidator.validateReservationType(selectedQuota);
-      const validatedBookletId = RPCValidator.validateBookletId(
-        booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null
-      );
-      const validatedRankingData = RPCValidator.validateRankingData(newRankingData);
+      let validatedConcursoId: string;
+      let validatedReservationType: string | null;
+      let validatedBookletId: string | null;
+      let validatedRankingData: any;
+      
+      try {
+        validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
+        validatedReservationType = RPCValidator.validateReservationType(selectedQuota);
+        validatedBookletId = RPCValidator.validateBookletId(
+          booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null
+        );
+        validatedRankingData = RPCValidator.validateRankingData(newRankingData);
+      } catch (validationError: any) {
+        toast({
+          title: "Erro de validação",
+          description: validationError.message || "Dados inválidos. Verifique os campos e tente novamente.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // ✅ USAR FUNÇÃO RPC COM VALIDAÇÃO NO BACKEND
       const { data: participateResult, error: participateError } = await supabase.rpc('participate_in_ranking', {

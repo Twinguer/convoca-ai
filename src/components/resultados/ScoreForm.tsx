@@ -14,6 +14,7 @@ import { Concurso } from '@/types/concursos';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { RPCValidator } from '@/utils/rpcValidator';
 
 interface ScoreFormProps {
   concurso: Concurso;
@@ -127,17 +128,30 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
     setIsSubmitting(true);
     try {
       // ✅ VALIDAÇÃO: Validar inputs antes de enviar
-      const { RPCValidator } = await import('@/utils/rpcValidator');
-      const validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
-      const validatedUserId = RPCValidator.validateUUID(userId, 'ID do usuário');
+      let validatedConcursoId: string;
+      let validatedUserId: string;
+      let validatedScores: any;
       
-      // Validar pontuações
-      const validatedScores = RPCValidator.validateSubjectiveScores({
-        discursive: values.discursive_score || 0,
-        case_study_1: values.case_study_1_score || 0,
-        case_study_2: values.case_study_2_score || 0,
-        case_study_3: values.case_study_3_score || 0
-      });
+      try {
+        validatedConcursoId = RPCValidator.validateUUID(concurso.id, 'ID do concurso');
+        validatedUserId = RPCValidator.validateUUID(userId, 'ID do usuário');
+        
+        // Validar pontuações
+        validatedScores = RPCValidator.validateSubjectiveScores({
+          discursive: values.discursive_score || 0,
+          case_study_1: values.case_study_1_score || 0,
+          case_study_2: values.case_study_2_score || 0,
+          case_study_3: values.case_study_3_score || 0
+        });
+      } catch (validationError: any) {
+        toast({
+          title: "Erro de validação",
+          description: validationError.message || "Dados inválidos. Verifique os campos e tente novamente.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
       // Chamar função RPC do backend para calcular pontuações com pesos
       const { data: calculationResult, error: calculationError } = await supabase.rpc(

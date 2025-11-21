@@ -2,6 +2,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { RPCValidator } from '@/utils/rpcValidator';
 
 // Interface para trabalhar com a estrutura consolidada
 interface ConsolidatedAnswerData {
@@ -187,29 +188,39 @@ export const consolidatedAnswerService = {
       // devLog.log('[consolidatedAnswerService] Respostas a salvar:', answers);
 
       // ✅ VALIDAÇÃO: Validar todos os inputs antes de enviar
-      const { RPCValidator } = await import('@/utils/rpcValidator');
+      let validatedRankingId: string;
+      let validatedConcursoId: string;
+      let validatedBookletId: string | null;
+      let validatedAnswers: Record<string, string>;
+      let validatedSubjectiveScores: any;
+      let validatedEditCount: number;
       
-      const validatedRankingId = RPCValidator.validateUUID(rankingId, 'ID do ranking');
-      const validatedConcursoId = RPCValidator.validateUUID(concursoId, 'ID do concurso');
-      const validatedBookletId = RPCValidator.validateBookletId(bookletId);
-      
-      // Converter e validar respostas
-      const answersObject: { [key: string]: string } = {};
-      answers.forEach(answer => {
-        answersObject[answer.questionNumber.toString()] = answer.answer;
-      });
-      const validatedAnswers = RPCValidator.validateAnswersJSONB(answersObject);
-      
-      // Validar pontuações subjetivas
-      const validatedSubjectiveScores = RPCValidator.validateSubjectiveScores({
-        discursive: discursiveScore,
-        case_study_1: caseStudy1Score,
-        case_study_2: caseStudy2Score,
-        case_study_3: caseStudy3Score
-      });
-      
-      // Validar contador de edições
-      const validatedEditCount = RPCValidator.validateEditCount(editCount);
+      try {
+        validatedRankingId = RPCValidator.validateUUID(rankingId, 'ID do ranking');
+        validatedConcursoId = RPCValidator.validateUUID(concursoId, 'ID do concurso');
+        validatedBookletId = RPCValidator.validateBookletId(bookletId);
+        
+        // Converter e validar respostas
+        const answersObject: { [key: string]: string } = {};
+        answers.forEach(answer => {
+          answersObject[answer.questionNumber.toString()] = answer.answer;
+        });
+        validatedAnswers = RPCValidator.validateAnswersJSONB(answersObject);
+        
+        // Validar pontuações subjetivas
+        validatedSubjectiveScores = RPCValidator.validateSubjectiveScores({
+          discursive: discursiveScore,
+          case_study_1: caseStudy1Score,
+          case_study_2: caseStudy2Score,
+          case_study_3: caseStudy3Score
+        });
+        
+        // Validar contador de edições
+        validatedEditCount = RPCValidator.validateEditCount(editCount);
+      } catch (validationError: any) {
+        devLog.error('[consolidatedAnswerService] Validation error:', validationError);
+        return { success: false, error: validationError.message || 'Dados inválidos' };
+      }
 
       const { data, error } = await supabase.rpc('save_user_answers_v3', {
         p_ranking_id: validatedRankingId,

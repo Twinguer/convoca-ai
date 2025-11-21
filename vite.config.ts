@@ -19,7 +19,12 @@ export default defineConfig(({ mode }) => ({
       external: ["ioredis"],
       output: {
         manualChunks: (id) => {
-          // Apenas separar vendor do código da aplicação
+          // Separar React e React-DOM em chunk próprio para garantir disponibilidade
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+            return "react-vendor";
+          }
+          
+          // Separar outras dependências vendor
           if (id.includes("node_modules")) {
             return "vendor";
           }

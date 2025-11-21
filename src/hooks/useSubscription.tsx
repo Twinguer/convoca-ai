@@ -58,29 +58,45 @@ export const useSubscription = () => {
   const maxEditCount = isPro ? Infinity : 3; // Pro = ilimitado, Free = 3
 
   const applyVoucher = async (code: string) => {
-    // ✅ VALIDAÇÃO: Validar código antes de enviar
-    const validatedCode = RPCValidator.validateVoucherCode(code);
+    try {
+      // ✅ VALIDAÇÃO: Validar código antes de enviar
+      const validatedCode = RPCValidator.validateVoucherCode(code);
 
-    const { data, error } = await supabase.rpc('apply_voucher', {
-      voucher_code_param: validatedCode
-    });
+      const { data, error } = await supabase.rpc('apply_voucher', {
+        voucher_code_param: validatedCode
+      });
 
-    if (error) throw error;
-    
-    await refetch();
-    return data;
+      if (error) throw error;
+      
+      await refetch();
+      return data;
+    } catch (error: any) {
+      // Re-throw com mensagem mais clara se for erro de validação
+      if (error.message && (error.message.includes('Código') || error.message.includes('inválido'))) {
+        throw new Error(error.message);
+      }
+      throw error;
+    }
   };
 
   const validateDiscountVoucher = async (code: string) => {
-    // ✅ VALIDAÇÃO: Validar código antes de enviar
-    const validatedCode = RPCValidator.validateVoucherCode(code);
+    try {
+      // ✅ VALIDAÇÃO: Validar código antes de enviar
+      const validatedCode = RPCValidator.validateVoucherCode(code);
 
-    const { data, error } = await supabase.rpc('validate_discount_voucher', {
-      voucher_code_param: validatedCode
-    });
+      const { data, error } = await supabase.rpc('validate_discount_voucher', {
+        voucher_code_param: validatedCode
+      });
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      // Re-throw com mensagem mais clara se for erro de validação
+      if (error.message && (error.message.includes('Código') || error.message.includes('inválido'))) {
+        throw new Error(error.message);
+      }
+      throw error;
+    }
   };
 
   return {
