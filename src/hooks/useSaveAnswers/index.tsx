@@ -41,14 +41,9 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Validar dados de entrada (passando isPro para verificar limite de edições)
-      const validation = validateSaveAnswers(editCount, selectedBookletId, isPro);
+      // ✅ SEGURANÇA: Validação de formato apenas (limite de edições validado no backend)
+      const validation = validateSaveAnswers(editCount, selectedBookletId);
       if (!validation.isValid) {
-        // Se o erro for sobre limite de edições, usar toast padronizado
-        if (validation.errorMessage?.includes('plano Pro')) {
-          showProRequiredToast(navigate, 'Edições Ilimitadas no Cartão de Respostas');
-          return;
-        }
         setError(validation.errorMessage!);
         return;
       }

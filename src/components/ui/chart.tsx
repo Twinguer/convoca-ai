@@ -65,6 +65,29 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = "Chart"
 
+/**
+ * Sanitiza CSS para prevenir XSS
+ * Remove caracteres e padrões perigosos que poderiam ser injetados
+ */
+const sanitizeCSS = (css: string): string => {
+  // Remove tags HTML (especialmente </style> que poderia fechar o tag prematuramente)
+  let sanitized = css.replace(/<\/?[^>]+(>|$)/g, '')
+  
+  // Remove javascript: e data: URLs perigosas
+  sanitized = sanitized.replace(/javascript:/gi, '')
+  sanitized = sanitized.replace(/data:text\/html/gi, '')
+  
+  // Remove expressões perigosas
+  sanitized = sanitized.replace(/expression\s*\(/gi, '')
+  sanitized = sanitized.replace(/@import/gi, '')
+  
+  // Garantir que apenas caracteres válidos de CSS permaneçam
+  // Permitir: letras, números, espaços, quebras de linha, caracteres CSS válidos
+  sanitized = sanitized.replace(/[^\w\s\n\r:;{}\[\]().,#%\-]/g, '')
+  
+  return sanitized
+}
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([_, config]) => config.theme || config.color
@@ -74,12 +97,10 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
+  // ✅ SEGURANÇA: Sanitizar CSS antes de injetar
+  const cssContent = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
@@ -91,8 +112,15 @@ ${colorConfig
   .join("\n")}
 }
 `
-          )
-          .join("\n"),
+    )
+    .join("\n")
+
+  const sanitizedCSS = sanitizeCSS(cssContent)
+
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: sanitizedCSS,
       }}
     />
   )

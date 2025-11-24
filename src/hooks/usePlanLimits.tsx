@@ -1,132 +1,121 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useSubscription } from './useSubscription';
 import { useAuth } from './useAuth';
-import { UserStudyService } from '@/services/userStudyService';
-import { PLAN_LIMITS } from '@/utils/planRestrictions';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
+interface PlanLimitsResponse {
+  is_pro: boolean;
+  is_coach: boolean;
+  can_create_ranking: boolean;
+  can_participate_in_ranking: boolean;
+  can_create_cycle: boolean;
+  can_create_study_group: boolean;
+  can_be_coach_student: boolean;
+  can_access_study_groups: boolean;
+  limits: {
+    max_rankings_created: number | null;
+    max_rankings_participation: number | null;
+    max_edits_per_answer_sheet: number | null;
+    can_create_study_groups: boolean;
+    can_be_student_in_coach_mode: boolean;
+  };
+  current_usage: {
+    created_rankings_count: number;
+    participation_data: {
+      total: number;
+      created: number;
+      others: number;
+    };
+    cycle_count: number;
+  };
+}
+
+/**
+ * Hook que busca limites de plano do backend
+ * ✅ SEGURANÇA: Todas as validações são feitas no backend via RPC
+ */
 export const usePlanLimits = () => {
   const { user } = useAuth();
-  const { isPro } = useSubscription();
 
-  // Verificar quantos rankings o usuário criou
-  const { data: createdRankingsCount, isLoading: isLoadingCreated } = useQuery({
-    queryKey: ['user-created-rankings-count', user?.id],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['user-plan-limits', user?.id],
     queryFn: async () => {
-      if (!user?.id) return 0;
-
-      const { count, error } = await supabase
-        .from('concursos')
-        .select('*', { count: 'exact', head: true })
-        .eq('created_by_user_id', user.id);
-
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Verificar quantos rankings o usuário participa (total)
-  const { data: participationData, isLoading: isLoadingParticipation } = useQuery({
-    queryKey: ['user-rankings-participation', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return { total: 0, created: 0, others: 0 };
-
-      // Buscar dados consolidados do usuário
-      const { data: userRankingData, error } = await supabase
-        .from('user_rankings')
-        .select('consolidated_data')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (!userRankingData?.consolidated_data?.rankings) {
-        return { total: 0, created: 0, others: 0 };
+      if (!user?.id) {
+        return null;
       }
 
-      const rankings = userRankingData.consolidated_data.rankings as Record<string, any>;
-      const rankingIds = Object.keys(rankings);
-      
-      if (rankingIds.length === 0) {
-        return { total: 0, created: 0, others: 0 };
+      const { data: result, error: rpcError } = await supabase.rpc('get_user_plan_limits', {
+        p_user_id: user.id,
+      });
+
+      if (rpcError) {
+        devLog.error('[usePlanLimits] Erro ao buscar limites:', rpcError);
+        throw rpcError;
       }
 
-      // Buscar concursos para verificar quais foram criados pelo usuário
-      const { data: concursos, error: concursosError } = await supabase
-        .from('concursos')
-        .select('id, created_by_user_id')
-        .in('id', rankingIds.map(id => rankings[id].concurso_id).filter(Boolean));
-
-      if (concursosError) throw concursosError;
-
-      const createdByUser = concursos?.filter(c => c.created_by_user_id === user.id).length || 0;
-      const total = rankingIds.length;
-      const others = total - createdByUser;
-
-      return { total, created: createdByUser, others };
+      return result as PlanLimitsResponse;
     },
     enabled: !!user?.id,
+    staleTime: 30000, // Cache por 30 segundos
+    retry: 1,
   });
 
-  // Verificar quantos ciclos ativos o usuário tem
-  const { data: cycleCount, isLoading: isLoadingCycles } = useQuery({
-    queryKey: ['user-cycle-count', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return 0;
-
-      try {
-        const userStudyData = await UserStudyService.getUserStudyData(user.id);
-        if (!userStudyData?.study_cycles) return 0;
-        return userStudyData.study_cycles.filter(cycle => cycle.is_active).length;
-      } catch (error) {
-        devLog.debug('[usePlanLimits] Erro ao buscar ciclos:', error);
-        return 0;
-      }
+  // Valores padrão enquanto carrega
+  const defaults = {
+    is_pro: false,
+    is_coach: false,
+    can_create_ranking: true,
+    can_participate_in_ranking: false,
+    can_create_cycle: false,
+    can_create_study_group: false,
+    can_be_coach_student: false,
+    can_access_study_groups: false,
+    limits: {
+      max_rankings_created: null,
+      max_rankings_participation: 2,
+      max_edits_per_answer_sheet: 3,
+      can_create_study_groups: false,
+      can_be_student_in_coach_mode: false,
     },
-    enabled: !!user?.id,
-    retry: false,
-  });
+    current_usage: {
+      created_rankings_count: 0,
+      participation_data: {
+        total: 0,
+        created: 0,
+        others: 0,
+      },
+      cycle_count: 0,
+    },
+  };
 
-  const limits = isPro ? PLAN_LIMITS.PRO : PLAN_LIMITS.FREE;
-  
-  // Usuários Free podem criar rankings ilimitados
-  const canCreateRanking = true;
-  
-  // Usuários Free podem participar de rankings que criaram + até 2 que não criaram
-  const canParticipateInRanking = isPro || 
-    (participationData?.others || 0) < PLAN_LIMITS.FREE.MAX_RANKINGS_PARTICIPATION;
-
-  const canCreateCycle = isPro;
-  const canCreateStudyGroup = isPro || PLAN_LIMITS.FREE.CAN_CREATE_STUDY_GROUPS;
-  const canBeCoachStudent = isPro || PLAN_LIMITS.FREE.CAN_BE_STUDENT_IN_COACH_MODE;
+  const planData = data || defaults;
 
   return {
     // Rankings
-    canCreateRanking,
-    canParticipateInRanking,
-    currentCreatedRankingsCount: createdRankingsCount || 0,
-    currentParticipatingCount: participationData?.total || 0,
-    participatingInOthersCount: participationData?.others || 0,
-    maxParticipationInOthers: limits.MAX_RANKINGS_PARTICIPATION,
+    canCreateRanking: planData.can_create_ranking,
+    canParticipateInRanking: planData.can_participate_in_ranking,
+    currentCreatedRankingsCount: planData.current_usage.created_rankings_count,
+    currentParticipatingCount: planData.current_usage.participation_data.total,
+    participatingInOthersCount: planData.current_usage.participation_data.others,
+    maxParticipationInOthers: planData.limits.max_rankings_participation || 2,
     
     // Ciclos
-    canCreateCycle,
-    currentCycleCount: cycleCount || 0,
+    canCreateCycle: planData.can_create_cycle,
+    currentCycleCount: planData.current_usage.cycle_count,
     
     // Grupos de estudo
-    canCreateStudyGroup,
+    canCreateStudyGroup: planData.can_create_study_group,
     
     // Coach
-    canBeCoachStudent,
+    canBeCoachStudent: planData.can_be_coach_student,
     
     // Edições
-    maxEditsPerAnswerSheet: limits.MAX_EDITS_PER_ANSWER_SHEET,
+    maxEditsPerAnswerSheet: planData.limits.max_edits_per_answer_sheet || 3,
     
     // Status
-    isPro,
-    isLoading: isLoadingCreated || isLoadingParticipation || isLoadingCycles,
+    isPro: planData.is_pro,
+    isLoading,
+    error,
   };
 };
 

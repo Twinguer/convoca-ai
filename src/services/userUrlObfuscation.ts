@@ -52,38 +52,86 @@ export class UserUrlObfuscationService {
     }
   }
   
-  // Decodificar token e validar acesso
+  // ✅ SEGURANÇA: Validar token via RPC no backend
   static async validateUserToken(token: string): Promise<string | null> {
     try {
-      // Decodificar o token
-      const decodedToken = atob(token);
-      const [userId, timestamp, key] = decodedToken.split(':');
+      // ✅ SEGURANÇA: Tentar função segura primeiro
+      const { data: secureData, error: secureError } = await supabase.rpc('validate_user_token_secure', {
+        p_token: token
+      });
       
-      // Validar a chave
-      if (key !== this.getOBFUSCATION_KEY()) {
-        throw new Error('Token inválido');
+      // Log detalhado em desenvolvimento
+      if (import.meta.env.DEV) {
+        devLog.log('[validateUserToken] Resultado da função segura:', {
+          hasData: !!secureData,
+          hasError: !!secureError,
+          data: secureData,
+          dataType: typeof secureData,
+          error: secureError ? {
+            message: secureError.message,
+            code: secureError.code,
+            details: secureError.details
+          } : null
+        });
       }
       
-      // Verificar se o token não é muito antigo (24 horas)
-      const tokenAge = Date.now() - parseInt(timestamp);
-      const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-      
-      if (tokenAge > maxAge) {
-        throw new Error('Token expirado');
+      if (secureError) {
+        // Em desenvolvimento, tentar debug para diagnóstico
+        if (import.meta.env.DEV) {
+          try {
+            const { data: debugData } = await supabase.rpc('debug_validate_user_token', {
+              p_token: token
+            });
+            devLog.error('[validateUserToken] Erro na função segura, debug:', {
+              secureError: secureError.message,
+              debugInfo: debugData
+            });
+            
+            // Se debug funcionou, usar o resultado dele
+            if (debugData && debugData.success === true && debugData.user_id) {
+              devLog.log('[validateUserToken] ✅ Usando resultado do debug como fallback, user_id:', debugData.user_id);
+              return debugData.user_id;
+            }
+          } catch (debugError) {
+            // Ignorar erro de debug
+          }
+        }
+        logError('Failed to validate user token via secure RPC', { error: secureError.message }, 'URL_OBFUSCATION');
+        return null;
       }
       
-      // Verificar se o usuário ainda existe (verificação básica)
-      const { data: userProfile, error } = await supabase
-        .from('users_profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
-      
-      if (error || !userProfile) {
-        throw new Error('Perfil de usuário não encontrado');
+      // Função segura retorna TEXT diretamente
+      if (secureData && typeof secureData === 'string' && secureData.trim() !== '') {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(secureData.trim())) {
+          if (import.meta.env.DEV) {
+            devLog.log('[validateUserToken] ✅ Token válido via função segura, user_id:', secureData);
+          }
+          return secureData.trim();
+        }
       }
       
-      return userId;
+      // Se retornou null, tentar debug como fallback em desenvolvimento
+      if (import.meta.env.DEV && secureData === null) {
+        try {
+          const { data: debugData } = await supabase.rpc('debug_validate_user_token', {
+            p_token: token
+          });
+          
+          if (debugData && debugData.success === true && debugData.user_id) {
+            devLog.warn('[validateUserToken] ⚠️ Função segura retornou null, mas debug funcionou. Usando debug como fallback.');
+            return debugData.user_id;
+          }
+        } catch (debugError) {
+          // Ignorar
+        }
+      }
+      
+      // Se retornou null, token inválido
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateUserToken] Token inválido ou expirado - função segura retornou null');
+      }
+      return null;
     } catch (error) {
       logError('Failed to validate user token', { token: token.substring(0, 10) + '...' }, 'URL_OBFUSCATION');
       return null;
@@ -93,13 +141,14 @@ export class UserUrlObfuscationService {
   // Armazenar token temporariamente (opcional)
   private static async storeToken(token: string, userId: string): Promise<void> {
     try {
-      // Armazenar no localStorage com expiração
+      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
+      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
       const tokenData = {
         userId,
         expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
       };
       
-      localStorage.setItem(`user_token_${token}`, JSON.stringify(tokenData));
+      sessionStorage.setItem(`user_token_${token}`, JSON.stringify(tokenData));
     } catch (error) {
       // Falha silenciosa - não é crítico
       logWarn('Failed to store user token', { userId }, 'URL_OBFUSCATION');

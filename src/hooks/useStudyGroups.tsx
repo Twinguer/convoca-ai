@@ -76,31 +76,31 @@ export const useCreateGroup = () => {
 
   return useMutation({
     mutationFn: async (input: CreateGroupInput) => {
-      // VALIDAÇÃO: Verificar plano antes de criar grupo
+      // ✅ SEGURANÇA: Validação no backend
       if (!user?.id) {
         throw new Error('Usuário não autenticado');
       }
 
-      // Verificar subscription diretamente (APENAS Pro)
-      const { data: subscription } = await supabase
-        .from('user_subscriptions')
-        .select('plan, is_active')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
-      
-      // APENAS Pro pode criar grupos (Coach NÃO pode)
-      if (!userIsPro) {
+      // Verificar se pode criar grupo via RPC do backend
+      const { data: canCreate, error: checkError } = await supabase.rpc('check_can_create_study_group', {
+        p_user_id: user.id,
+      });
+
+      if (checkError) {
+        devLog.error('[useCreateGroup] Erro ao verificar permissão:', checkError);
+        throw new Error('Erro ao verificar permissão para criar grupo.');
+      }
+
+      if (!canCreate?.allowed) {
         toast({
           title: 'Grupos disponíveis apenas no plano Pro',
-          description: 'Faça upgrade para Pro para criar grupos de estudos.',
+          description: canCreate?.message || 'Faça upgrade para Pro para criar grupos de estudos.',
           variant: 'destructive',
         });
         setTimeout(() => {
           navigate('/planos');
         }, 2000);
-        throw new Error('Grupos de estudos estão disponíveis apenas no plano Pro.');
+        throw new Error(canCreate?.message || 'Grupos de estudos estão disponíveis apenas no plano Pro.');
       }
 
       return studyGroupService.createGroup(input);

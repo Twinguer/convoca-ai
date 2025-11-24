@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "prepare": "husky"
+    "prepare": "husky",
+    "config:obfuscation-key": "node scripts/get-obfuscation-key-from-env.js",
+    "setup:production-key": "bash scripts/setup-production-key.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

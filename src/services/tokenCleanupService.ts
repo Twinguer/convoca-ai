@@ -38,27 +38,48 @@ export class TokenCleanupService {
       const now = Date.now();
       let cleanedCount = 0;
 
-      // Limpar tokens do localStorage
-      const keysToRemove: string[] = [];
-      
+      // ✅ SEGURANÇA: Limpar tokens de ambos localStorage e sessionStorage
+      // Limpar tokens do localStorage (legado - manter por compatibilidade)
+      const keysToRemoveLocal: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && this.isTokenKey(key)) {
           try {
             const tokenData = JSON.parse(localStorage.getItem(key) || '{}');
             if (tokenData.expiresAt && now > tokenData.expiresAt) {
-              keysToRemove.push(key);
+              keysToRemoveLocal.push(key);
             }
           } catch (error) {
             // Token inválido, remover
-            keysToRemove.push(key);
+            keysToRemoveLocal.push(key);
+          }
+        }
+      }
+
+      // Limpar tokens do sessionStorage (novo padrão)
+      const keysToRemoveSession: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && this.isTokenKey(key)) {
+          try {
+            const tokenData = JSON.parse(sessionStorage.getItem(key) || '{}');
+            if (tokenData.expiresAt && now > tokenData.expiresAt) {
+              keysToRemoveSession.push(key);
+            }
+          } catch (error) {
+            // Token inválido, remover
+            keysToRemoveSession.push(key);
           }
         }
       }
 
       // Remover tokens expirados
-      keysToRemove.forEach(key => {
+      keysToRemoveLocal.forEach(key => {
         localStorage.removeItem(key);
+        cleanedCount++;
+      });
+      keysToRemoveSession.forEach(key => {
+        sessionStorage.removeItem(key);
         cleanedCount++;
       });
 
@@ -84,20 +105,34 @@ export class TokenCleanupService {
   // Limpar todos os tokens (para logout)
   static clearAllTokens(): void {
     try {
-      const keysToRemove: string[] = [];
+      const keysToRemoveLocal: string[] = [];
+      const keysToRemoveSession: string[] = [];
       
+      // Limpar do localStorage (legado)
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && this.isTokenKey(key)) {
-          keysToRemove.push(key);
+          keysToRemoveLocal.push(key);
         }
       }
 
-      keysToRemove.forEach(key => {
+      // Limpar do sessionStorage (novo padrão)
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && this.isTokenKey(key)) {
+          keysToRemoveSession.push(key);
+        }
+      }
+
+      keysToRemoveLocal.forEach(key => {
         localStorage.removeItem(key);
       });
+      keysToRemoveSession.forEach(key => {
+        sessionStorage.removeItem(key);
+      });
 
-      logInfo('Cleared all tokens', { count: keysToRemove.length }, 'TOKEN_CLEANUP');
+      const totalCount = keysToRemoveLocal.length + keysToRemoveSession.length;
+      logInfo('Cleared all tokens', { count: totalCount }, 'TOKEN_CLEANUP');
     } catch (error) {
       logWarn('Error clearing all tokens', { error: error instanceof Error ? error.message : 'Unknown error' }, 'TOKEN_CLEANUP');
     }
@@ -110,12 +145,31 @@ export class TokenCleanupService {
     let expired = 0;
     let valid = 0;
 
+    // Contar tokens do localStorage (legado)
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && this.isTokenKey(key)) {
         total++;
         try {
           const tokenData = JSON.parse(localStorage.getItem(key) || '{}');
+          if (tokenData.expiresAt && now > tokenData.expiresAt) {
+            expired++;
+          } else {
+            valid++;
+          }
+        } catch (error) {
+          expired++; // Token inválido conta como expirado
+        }
+      }
+    }
+
+    // Contar tokens do sessionStorage (novo padrão)
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && this.isTokenKey(key)) {
+        total++;
+        try {
+          const tokenData = JSON.parse(sessionStorage.getItem(key) || '{}');
           if (tokenData.expiresAt && now > tokenData.expiresAt) {
             expired++;
           } else {

@@ -82,23 +82,29 @@ const CreateCycleForStudent = () => {
     enabled: !!validatedStudentId,
   });
 
-  // Verificar acesso ao aluno
-  const { data: hasAccess, isLoading } = useQuery({
+  // ✅ SEGURANÇA: Validação no backend via RPC
+  const { data: accessCheck, isLoading } = useQuery({
     queryKey: ['coach-has-access', user?.id, validatedStudentId],
     queryFn: async () => {
-      if (!user?.id || !validatedStudentId) return false;
+      if (!user?.id || !validatedStudentId) return null;
       
-      const { data: coachProfile } = await supabase
-        .from('coach_profiles')
-        .select('student_relationships')
-        .eq('coach_id', user.id)
-        .single();
-      
-      const students = coachProfile?.student_relationships || [];
-      return students.some((s: any) => s.student_id === validatedStudentId && s.status === 'active');
+      const { data, error } = await supabase.rpc('check_coach_has_student_access', {
+        p_coach_id: user.id,
+        p_student_id: validatedStudentId,
+      });
+
+      if (error) {
+        devLog.error('[CreateCycleForStudent] Erro ao verificar acesso:', error);
+        throw error;
+      }
+
+      return data as { allowed: boolean; reason?: string; message?: string };
     },
     enabled: !!user && !!validatedStudentId,
+    retry: 1,
   });
+
+  const hasAccess = accessCheck?.allowed ?? false;
 
   // Provider para passar contexto do aluno para o CriarCiclo
   if (isValidatingToken || !validatedStudentId) {

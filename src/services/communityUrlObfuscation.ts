@@ -52,38 +52,28 @@ export class CommunityUrlObfuscationService {
     }
   }
   
-  // Decodificar token e validar acesso
+  // ✅ SEGURANÇA: Validar token via RPC no backend
   static async validateCommunityToken(token: string): Promise<{userId: string, action: string} | null> {
     try {
-      // Decodificar o token
-      const decodedToken = atob(token);
-      const [userId, action, timestamp, key] = decodedToken.split(':');
+      // Chamar RPC no backend para validar token
+      const { data, error } = await supabase.rpc('validate_community_token', {
+        p_token: token
+      });
       
-      // Validar a chave
-      if (key !== this.getOBFUSCATION_KEY()) {
-        throw new Error('Token inválido');
+      if (error) {
+        logError('Failed to validate community token via RPC', { error: error.message }, 'COMMUNITY_URL_OBFUSCATION');
+        return null;
       }
       
-      // Verificar se o token não é muito antigo (24 horas)
-      const tokenAge = Date.now() - parseInt(timestamp);
-      const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-      
-      if (tokenAge > maxAge) {
-        throw new Error('Token expirado');
+      // RPC retorna JSONB com user_id e action se válido, NULL se inválido
+      if (!data) {
+        return null;
       }
       
-      // Verificar se o usuário ainda existe (verificação básica)
-      const { data: userProfile, error } = await supabase
-        .from('users_profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
-      
-      if (error || !userProfile) {
-        throw new Error('Perfil de usuário não encontrado');
-      }
-      
-      return { userId, action };
+      return {
+        userId: data.user_id,
+        action: data.action
+      };
     } catch (error) {
       logError('Failed to validate community token', { token: token.substring(0, 10) + '...' }, 'COMMUNITY_URL_OBFUSCATION');
       return null;
@@ -93,14 +83,15 @@ export class CommunityUrlObfuscationService {
   // Armazenar token temporariamente
   private static async storeToken(token: string, userId: string, action: string): Promise<void> {
     try {
-      // Armazenar no localStorage com expiração
+      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
+      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
       const tokenData = {
         userId,
         action,
         expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
       };
       
-      localStorage.setItem(`community_token_${token}`, JSON.stringify(tokenData));
+      sessionStorage.setItem(`community_token_${token}`, JSON.stringify(tokenData));
     } catch (error) {
       // Falha silenciosa - não é crítico
       logWarn('Failed to store community token', { userId, action }, 'COMMUNITY_URL_OBFUSCATION');

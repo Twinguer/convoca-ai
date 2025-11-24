@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,6 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { studyGroupService } from '@/integrations/supabase/studyGroups/groups';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 export const GroupDetailsPage: React.FC = () => {
@@ -46,52 +46,38 @@ export const GroupDetailsPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // VALIDAÇÃO: Verificar se usuário tem qualquer assinatura ativa antes de carregar dados
+  // ✅ SEGURANÇA: Validação no backend via RPC
+  const { data: accessCheck, isLoading: isLoadingAccess } = useQuery({
+    queryKey: ['check-study-groups-access', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase.rpc('check_can_access_study_groups', {
+        p_user_id: user.id,
+      });
+
+      if (error) {
+        devLog.error('[GroupDetailsPage] Erro ao verificar acesso:', error);
+        throw error;
+      }
+
+      return data as { allowed: boolean; reason?: string; message?: string };
+    },
+    enabled: !!user?.id,
+    retry: 1,
+  });
+
+  // Redirecionar se não tiver acesso
   React.useEffect(() => {
-    const checkUserPlan = async () => {
-      if (!user?.id) return;
-      
-      // Verificar se tem assinatura Pro ativa
-      const { data: subscription } = await supabase
-        .from('user_subscriptions')
-        .select('plan, is_active, expires_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      const userIsPro = subscription?.plan === 'pro' 
-        && subscription?.is_active === true
-        && (!subscription?.expires_at || new Date(subscription.expires_at) > new Date());
-      
-      // Verificar se tem assinatura Coach ativa
-      let userIsCoach = false;
-      try {
-      const { data: coachSubscription } = await supabase
-        .from('coach_subscriptions')
-          .select('status, expires_at')
-        .eq('coach_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-      
-        userIsCoach = !!coachSubscription 
-          && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
-      } catch (error) {
-        // Se der erro ao buscar (ex: RLS), considerar como não Coach
-        // Erro silencioso - não é crítico para o funcionamento da página
-      }
-      
-      // Qualquer assinante (Pro ou Coach) pode acessar grupos
-      if (!userIsPro && !userIsCoach) {
-        toast({
-          title: 'Grupos disponíveis apenas para assinantes',
-          description: 'Faça upgrade para acessar grupos de estudos.',
-          variant: 'destructive',
-        });
-        navigate('/planos');
-      }
-    };
-    
-    checkUserPlan();
-  }, [user?.id, navigate, toast]);
+    if (!isLoadingAccess && accessCheck && !accessCheck.allowed) {
+      toast({
+        title: 'Grupos disponíveis apenas para assinantes',
+        description: accessCheck.message || 'Faça upgrade para acessar grupos de estudos.',
+        variant: 'destructive',
+      });
+      navigate('/planos');
+    }
+  }, [accessCheck, isLoadingAccess, navigate, toast]);
   
   const { group, isLoading: isLoadingGroup, isError: isErrorGroup, refetch: refetchGroup } = useStudyGroup(groupId);
   const { posts, isLoading: isLoadingPosts, refetch: refetchPosts, isError: isErrorPosts } = useGroupFeed(groupId);

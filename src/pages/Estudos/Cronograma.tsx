@@ -390,10 +390,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       }
     } else {
       // Validar horários para modo time
-      if (endTime <= startTime) {
-        toast.error('O horário de fim deve ser posterior ao horário de início');
-        return;
-      }
+    if (endTime <= startTime) {
+      toast.error('O horário de fim deve ser posterior ao horário de início');
+      return;
+    }
     }
     
     try {
@@ -1506,16 +1506,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
                 {/* Renderização Condicional */}
                 {sessionTimeMode === 'time' ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Horário de Início</label>
-                      <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded-md" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Horário de Fim</label>
-                      <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded-md" />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Horário de Início</label>
+                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded-md" />
                   </div>
+                  <div>
+                    <label className="text-sm font-medium">Horário de Fim</label>
+                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded-md" />
+                  </div>
+                </div>
                 ) : (
                   <div>
                     <label className="text-sm font-medium">Duração (minutos)</label>
@@ -1818,16 +1818,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
                   {/* Renderização Condicional */}
                   {sessionTimeMode === 'time' ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium">Horário de Início</label>
-                        <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium">Horário de Fim</label>
-                        <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Horário de Início</label>
+                      <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
                     </div>
+                    <div>
+                      <label className="text-sm font-medium">Horário de Fim</label>
+                      <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                    </div>
+                  </div>
                   ) : (
                     <div>
                       <label className="text-sm font-medium">Duração (minutos)</label>

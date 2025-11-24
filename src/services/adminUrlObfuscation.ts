@@ -56,42 +56,28 @@ export class AdminUrlObfuscationService {
     }
   }
   
-  // Decodificar token e validar acesso
+  // ✅ SEGURANÇA: Validar token via RPC no backend
   static async validateAdminToken(token: string): Promise<{adminId: string, resource: string} | null> {
     try {
-      // Decodificar o token
-      const decodedToken = atob(token);
-      const [adminId, resource, timestamp, key] = decodedToken.split(':');
+      // Chamar RPC no backend para validar token
+      const { data, error } = await supabase.rpc('validate_admin_token', {
+        p_token: token
+      });
       
-      // Validar a chave
-      if (key !== this.getOBFUSCATION_KEY()) {
-        throw new Error('Token inválido');
+      if (error) {
+        logError('Failed to validate admin token via RPC', { error: error.message }, 'ADMIN_URL_OBFUSCATION');
+        return null;
       }
       
-      // Verificar se o token não é muito antigo (24 horas)
-      const tokenAge = Date.now() - parseInt(timestamp);
-      const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-      
-      if (tokenAge > maxAge) {
-        throw new Error('Token expirado');
+      // RPC retorna JSONB com admin_id e resource se válido, NULL se inválido
+      if (!data) {
+        return null;
       }
       
-      // Verificar se o usuário ainda é admin
-      const { data: userProfile, error } = await supabase
-        .from('users_profiles')
-        .select('id, is_admin')
-        .eq('id', adminId)
-        .single();
-      
-      if (error || !userProfile) {
-        throw new Error('Perfil de administrador não encontrado');
-      }
-      
-      if (!userProfile.is_admin) {
-        throw new Error('Usuário não tem mais permissões de administrador');
-      }
-      
-      return { adminId, resource };
+      return {
+        adminId: data.admin_id,
+        resource: data.resource
+      };
     } catch (error) {
       logError('Failed to validate admin token', { token: token.substring(0, 10) + '...' }, 'ADMIN_URL_OBFUSCATION');
       return null;
@@ -101,14 +87,15 @@ export class AdminUrlObfuscationService {
   // Armazenar token temporariamente
   private static async storeToken(token: string, adminId: string, resource: string): Promise<void> {
     try {
-      // Armazenar no localStorage com expiração
+      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
+      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
       const tokenData = {
         adminId,
         resource,
         expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
       };
       
-      localStorage.setItem(`admin_token_${token}`, JSON.stringify(tokenData));
+      sessionStorage.setItem(`admin_token_${token}`, JSON.stringify(tokenData));
     } catch (error) {
       // Falha silenciosa - não é crítico
       logWarn('Failed to store admin token', { adminId, resource }, 'ADMIN_URL_OBFUSCATION');

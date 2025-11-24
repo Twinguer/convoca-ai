@@ -1,18 +1,16 @@
-
-import { toast } from 'sonner';
-
+/**
+ * ✅ SEGURANÇA: Validação de limite de edições movida para backend
+ * Esta função agora apenas valida formato de dados, não limites de plano
+ */
 export const validateSaveAnswers = (
   editCount: number,
-  selectedBookletId?: string,
-  isPro: boolean = false // Novo parâmetro opcional
+  selectedBookletId?: string
 ): { isValid: boolean; errorMessage?: string } => {
-  // Debug logs removed for security
-  
-  // Verificar limite de edições baseado no plano (Free = 3, Pro = ilimitado)
-  if (!isPro && editCount >= 3) {
+  // Verificar se editCount é um número válido
+  if (typeof editCount !== 'number' || editCount < 0) {
     return {
       isValid: false,
-      errorMessage: "O recurso \"Edições Ilimitadas no Cartão de Respostas\" está disponível apenas no plano Pro."
+      errorMessage: "Contador de edições inválido."
     };
   }
 
@@ -21,6 +19,6 @@ export const validateSaveAnswers = (
     // Não retornar erro aqui, deixar o useSaveAnswers resolver o caderno padrão
   }
 
-  // Debug logs removed for security
+  // Limite de edições é validado no backend via RPC check_free_user_edit_limits
   return { isValid: true };
 };

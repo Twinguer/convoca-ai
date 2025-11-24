@@ -56,39 +56,21 @@ export class UrlObfuscationService {
     }
   }
   
-  // Decodificar token e validar acesso
+  // ✅ SEGURANÇA: Validar token via RPC no backend
   static async validateConcursoToken(token: string): Promise<string | null> {
     try {
-      // Decodificar o token
-      const decodedToken = atob(token);
-      const [concursoId, timestamp, key] = decodedToken.split(':');
+      // Chamar RPC no backend para validar token
+      const { data, error } = await supabase.rpc('validate_concurso_token', {
+        p_token: token
+      });
       
-      // Validar a chave
-      if (key !== this.getOBFUSCATION_KEY()) {
-        throw new Error('Token inválido');
+      if (error) {
+        devLog.error('Erro ao validar token via RPC:', error);
+        return null;
       }
       
-      // Verificar se o token não é muito antigo (24 horas)
-      const tokenAge = Date.now() - parseInt(timestamp);
-      const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-      
-      if (tokenAge > maxAge) {
-        throw new Error('Token expirado');
-      }
-      
-      // Verificar se o concurso ainda existe (mas não verificar status)
-      const { data: concurso, error } = await supabase
-        .from('concursos')
-        .select('id')
-        .eq('id', concursoId)
-        .single();
-      
-      if (error || !concurso) {
-        throw new Error('Concurso não encontrado');
-      }
-      
-      // Retornar o ID do concurso (não verificar status para permitir acesso a rankings finalizados)
-      return concursoId;
+      // RPC retorna UUID do concurso se válido, NULL se inválido
+      return data || null;
     } catch (error) {
       devLog.error('Erro ao validar token:', error);
       return null;
@@ -98,13 +80,14 @@ export class UrlObfuscationService {
   // Armazenar token temporariamente (opcional)
   private static async storeToken(token: string, concursoId: string): Promise<void> {
     try {
-      // Armazenar no localStorage com expiração
+      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
+      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
       const tokenData = {
         concursoId,
         expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
       };
       
-      localStorage.setItem(`concurso_token_${token}`, JSON.stringify(tokenData));
+      sessionStorage.setItem(`concurso_token_${token}`, JSON.stringify(tokenData));
     } catch (error) {
       // Falha silenciosa - não é crítico
       devLog.warn('Erro ao armazenar token:', error);

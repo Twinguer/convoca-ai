@@ -15,7 +15,9 @@ export interface SecurityHeadersConfig {
 
 export class SecurityHeaders {
   private static readonly DEFAULT_CONFIG: SecurityHeadersConfig = {
-    contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';",
+    // ✅ SEGURANÇA: Removido 'unsafe-inline' e 'unsafe-eval' do script-src
+    // Se necessário para desenvolvimento, use getDevelopmentHeaders() com configuração específica
+    contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';",
     xFrameOptions: 'DENY',
     xContentTypeOptions: 'nosniff',
     xXSSProtection: '1; mode=block',
@@ -68,7 +70,9 @@ export class SecurityHeaders {
    */
   static getDevelopmentHeaders(): Record<string, string> {
     return this.getHeaders({
-      contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* https://*.supabase.co; frame-ancestors 'none';",
+      // ✅ SEGURANÇA: Removido 'unsafe-inline' e 'unsafe-eval' do script-src
+      // Nota: Vite HMR pode precisar de ajustes. Se houver problemas, adicionar 'unsafe-eval' apenas para dev
+      contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* https://*.supabase.co ws://localhost:* wss://localhost:*; frame-ancestors 'none';",
       strictTransportSecurity: 'max-age=0' // Disable HSTS in development
     });
   }
