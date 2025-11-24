@@ -2,25 +2,14 @@
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { User } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 
 interface UserProfile {
   id: string;
   name: string;
-  username?: string;
   avatar_url: string | null;
-  bio: string | null;
-  email: string;
-  concursos_aprovados?: string | null;
-  followerCount: number;
-  postCount: number;
   approvalCount: number;
-  status_concurseiro?: string | null;
-  is_studying?: boolean;
   isCoach?: boolean;
 }
 
@@ -34,16 +23,10 @@ export const UserCard: React.FC<UserCardProps> = ({
   onClick
 }) => {
   const [avatarError, setAvatarError] = useState(false);
-  const { user } = useAuth();
-  
-  // Early return if userProfile is not provided
   if (!userProfile) {
     return null;
   }
   
-  // Check if this user is the currently logged in user
-  const isCurrentUser = user?.id === userProfile.id;
-
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -106,18 +89,12 @@ export const UserCard: React.FC<UserCardProps> = ({
             )}
           </div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-3 border-t border-b py-3 flex-shrink-0">
-          <div className="flex flex-col items-center">
-            <span className="text-lg font-bold text-primary">{userProfile.postCount}</span>
-            <span className="text-xs text-muted-foreground text-center">Rankings</span>
-          </div>
+        <div className="border-t py-3 flex-shrink-0">
           <div className="flex flex-col items-center">
             <span className="text-lg font-bold text-green-600">{userProfile.approvalCount || 0}</span>
             <span className="text-xs text-muted-foreground text-center">Aprovações</span>
           </div>
         </div>
-        
       </CardContent>
     </Card>
   );
