@@ -93,13 +93,8 @@ export const UserCard: React.FC<UserCardProps> = ({
             <OnlineIndicator userId={userProfile.id} />
           </div>
           
-          <h3 className="font-semibold text-base text-center leading-tight min-h-[2.5rem] flex items-center justify-center">
-            {userProfile.name ? 
-              userProfile.name.split(' ').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-              ).join(' ').substring(0, 15) 
-              : 'Usuário'
-            }
+          <h3 className="font-semibold text-base text-center leading-tight min-h-[2.5rem] flex items-center justify-center text-balance">
+            {userProfile.name?.trim() || 'Usuário'}
           </h3>
           
           {/* Espaço reservado para badge do coach - sempre presente para manter altura consistente */}

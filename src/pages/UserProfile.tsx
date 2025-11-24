@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +58,11 @@ const UserProfile = () => {
   const [especialidade, setEspecialidade] = useState('');
   const [cursoPreparatorio, setCursoPreparatorio] = useState('');
   const [rotinaEstudos, setRotinaEstudos] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable' | 'saving' | 'success' | 'error'>('idle');
+  const [nicknameMessage, setNicknameMessage] = useState('');
+  const nicknameAutoRequestedRef = useRef(false);
 
   const {
     data: profile,
@@ -252,8 +257,135 @@ const UserProfile = () => {
       setEspecialidade(profile.especialidade || '');
       setCursoPreparatorio(profile.curso_preparatorio || '');
       setRotinaEstudos(profile.rotina_estudos || '');
+      setNickname(profile.nickname || '');
+      setNicknameInput(profile.nickname || '');
+      setNicknameStatus('idle');
+      setNicknameMessage('');
     }
   }, [profile]);
+
+  const sanitizeNicknameInput = useCallback((value: string) => {
+    if (!value) return '';
+    return value.toLowerCase().replace(/[^a-z0-9_.]/g, '').slice(0, 20);
+  }, []);
+
+  const handleNicknameInputChange = (value: string) => {
+    const sanitized = sanitizeNicknameInput(value);
+    setNicknameInput(sanitized);
+    setNicknameStatus('idle');
+    setNicknameMessage('');
+  };
+
+  const nicknameDirty = nicknameInput !== nickname;
+  const isNicknameBusy = nicknameStatus === 'checking' || nicknameStatus === 'saving';
+
+  const verifyNicknameAvailability = useCallback(async () => {
+    if (!user) return;
+    const normalized = sanitizeNicknameInput(nicknameInput);
+
+    if (!normalized || normalized.length < 3) {
+      setNicknameStatus('error');
+      setNicknameMessage('Use pelo menos 3 caracteres (letras minúsculas, números, underscore ou ponto).');
+      return;
+    }
+
+    setNicknameStatus('checking');
+    setNicknameMessage('');
+
+    try {
+      const { data, error } = await supabase.rpc('validate_nickname_availability', {
+        p_nickname: normalized,
+        p_user_id: user.id
+      });
+
+      if (error) throw error;
+
+      if (data?.is_valid) {
+        setNicknameStatus('available');
+        setNicknameMessage('Nickname disponível!');
+      } else {
+        setNicknameStatus('unavailable');
+        setNicknameMessage(data?.reason || 'Nickname indisponível.');
+      }
+    } catch (error: any) {
+      devLog.error('Nickname validation error:', error);
+      setNicknameStatus('error');
+      setNicknameMessage(error?.message || 'Não foi possível validar o nickname.');
+    }
+  }, [nicknameInput, sanitizeNicknameInput, user]);
+
+  const updateNickname = useCallback(async (normalizedNickname: string | null, silent = false) => {
+    if (!user) return;
+    setNicknameStatus('saving');
+    setNicknameMessage('');
+
+    try {
+      const { data, error } = await supabase.rpc('update_user_nickname', {
+        p_user_id: user.id,
+        p_nickname: normalizedNickname
+      });
+
+      if (error) throw error;
+      if (!data?.success) {
+        setNicknameStatus('error');
+        setNicknameMessage(data?.error || 'Não foi possível atualizar o nickname.');
+        if (!silent) {
+          toast({
+            title: 'Erro ao atualizar nickname',
+            description: data?.error || 'Tente novamente em instantes.',
+            variant: 'destructive'
+          });
+        }
+        return;
+      }
+
+      setNickname(data.nickname);
+      setNicknameInput(data.nickname);
+      setNicknameStatus('success');
+      setNicknameMessage(silent ? '' : 'Nickname atualizado com sucesso!');
+      if (!silent) {
+        toast({
+          title: 'Nickname atualizado',
+          description: `Seu novo nickname é @${data.nickname}`
+        });
+      }
+
+      await refetch();
+    } catch (error: any) {
+      devLog.error('Nickname update error:', error);
+      setNicknameStatus('error');
+      const description = error?.message || 'Não foi possível atualizar o nickname.';
+      setNicknameMessage(description);
+      if (!silent) {
+        toast({
+          title: 'Erro ao atualizar nickname',
+          description,
+          variant: 'destructive'
+        });
+      }
+    }
+  }, [refetch, toast, user]);
+
+  const saveNickname = useCallback(async () => {
+    const normalized = sanitizeNicknameInput(nicknameInput);
+    if (!normalized || normalized.length < 3) {
+      setNicknameStatus('error');
+      setNicknameMessage('Use pelo menos 3 caracteres (letras minúsculas, números, underscore ou ponto).');
+      return;
+    }
+    await updateNickname(normalized, false);
+  }, [nicknameInput, sanitizeNicknameInput, updateNickname]);
+
+  const generateNicknameAutomatically = useCallback(async (silent = false) => {
+    await updateNickname(null, silent);
+  }, [updateNickname]);
+
+  useEffect(() => {
+    if (profile && !profile.nickname && user?.id && !nicknameAutoRequestedRef.current) {
+      nicknameAutoRequestedRef.current = true;
+      generateNicknameAutomatically(true);
+    }
+  }, [profile, user?.id, generateNicknameAutomatically]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -411,7 +543,98 @@ const UserProfile = () => {
                 statusConcurseiro={statusConcurseiro}
                 profileText={profileText}
                 isCoach={isCoach || false}
+                nickname={nickname}
               />
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Nickname público</CardTitle>
+              <CardDescription>Identificador único exibido no perfil público e usado para convites.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">@</span>
+                <Input
+                  value={nicknameInput}
+                  onChange={(e) => handleNicknameInputChange(e.target.value)}
+                  className="pl-8"
+                  maxLength={20}
+                  disabled={nicknameStatus === 'saving'}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={verifyNicknameAvailability}
+                  disabled={!nicknameInput || isNicknameBusy}
+                >
+                  {nicknameStatus === 'checking' ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Verificando...
+                    </>
+                  ) : (
+                    'Verificar'
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={saveNickname}
+                  disabled={!nicknameDirty || nicknameStatus === 'saving'}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {nicknameStatus === 'saving' ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar nickname'
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setNicknameInput(nickname);
+                    setNicknameStatus('idle');
+                    setNicknameMessage('');
+                  }}
+                  disabled={!nicknameDirty || nicknameStatus === 'saving'}
+                >
+                  Desfazer
+                </Button>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={() => generateNicknameAutomatically()}
+                disabled={nicknameStatus === 'saving'}
+              >
+                {nicknameStatus === 'saving' && !nicknameDirty ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  'Gerar automaticamente'
+                )}
+              </Button>
+              <p
+                className={`text-xs ${
+                  nicknameStatus === 'available' || nicknameStatus === 'success'
+                    ? 'text-green-600'
+                    : nicknameStatus === 'unavailable' || nicknameStatus === 'error'
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                }`}
+              >
+                {nicknameMessage || 'O nickname deve ter 3-20 caracteres (letras minúsculas, números ou underscore).'}
+              </p>
             </CardContent>
           </Card>
           

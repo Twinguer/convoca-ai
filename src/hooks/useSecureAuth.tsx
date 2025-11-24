@@ -155,7 +155,7 @@ export const useSecureAuth = () => {
   const handleSignup = useCallback(async (email: string, password: string, name: string, nickname?: string) => {
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedName = sanitizeInput(name);
-    const sanitizedNickname = nickname ? sanitizeInput(nickname.toLowerCase().replace(/[^a-z0-9_]/g, '')) : undefined;
+    const sanitizedNickname = nickname ? sanitizeInput(nickname.toLowerCase().replace(/[^a-z0-9_.]/g, '')) : undefined;
 
     if (!isEmailValid(sanitizedEmail)) {
       showErrorToast('Email inválido', 'Por favor, forneça um email válido.');
@@ -173,8 +173,8 @@ export const useSecureAuth = () => {
     }
 
     // Validar nickname se fornecido
-    if (sanitizedNickname && (sanitizedNickname.length < 3 || sanitizedNickname.length > 20 || !/^[a-z0-9_]+$/.test(sanitizedNickname))) {
-      showErrorToast('Nickname inválido', 'O nickname deve ter entre 3 e 20 caracteres e conter apenas letras minúsculas, números e underscore.');
+    if (sanitizedNickname && (sanitizedNickname.length < 3 || sanitizedNickname.length > 20 || !/^[a-z0-9_.]+$/.test(sanitizedNickname))) {
+      showErrorToast('Nickname inválido', 'O nickname deve ter entre 3 e 20 caracteres e conter apenas letras minúsculas, números, underscore ou ponto.');
       return;
     }
 

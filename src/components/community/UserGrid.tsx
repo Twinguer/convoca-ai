@@ -4,7 +4,8 @@ import { UserCard } from './UserCard';
 
 interface User {
   id?: string;
-  username: string;
+  name?: string;
+  username?: string;
   followerCount: number;
   postCount: number;
   approvalCount: number;
@@ -31,9 +32,10 @@ export const UserGrid: React.FC<UserGridProps> = ({ children, users, className =
     <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-stretch ${className}`}>
       {users && users.map((user, index) => {
         // Map the user data to match UserCard's expected interface
+        const displayName = user.name?.trim() || user.username?.trim() || user.email.split('@')[0];
         const userProfile = {
           id: user.id || `user-${index}`,
-          name: user.username || user.email.split('@')[0],
+          name: displayName,
           username: user.username,
           avatar_url: user.avatar_url,
           bio: user.bio,

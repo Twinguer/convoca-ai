@@ -17,6 +17,7 @@ interface ProfileHeaderProps {
   statusConcurseiro: string;
   profileText?: string;
   isCoach?: boolean;
+  nickname?: string;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -27,7 +28,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   handleAvatarUpload,
   statusConcurseiro,
   profileText,
-  isCoach
+  isCoach,
+  nickname
 }) => {
   const { statistics } = useStudyStatistics();
   
@@ -54,6 +56,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       
       <div className="text-center">
         <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
+        {nickname && (
+          <p className="text-sm text-muted-foreground">@{nickname}</p>
+        )}
         <p className="text-sm text-muted-foreground">{email}</p>
         
         <div className="flex flex-col items-center gap-2 mt-2">

@@ -247,7 +247,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
             placeholder="meunickname"
             value={nickname}
             onChange={(e) => {
-              let value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+              let value = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '');
               if (value.length <= 20) {
                 setNickname(value);
               }
@@ -262,10 +262,10 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
             'Se não informar, será gerado automaticamente baseado no seu nome'
           ) : nickname.length < 3 ? (
             'Mínimo 3 caracteres'
-          ) : /^[a-z0-9_]{3,20}$/.test(nickname) ? (
+          ) : /^[a-z0-9_.]{3,20}$/.test(nickname) ? (
             <span className="text-green-600">✓ Nickname válido</span>
           ) : (
-            'Apenas letras minúsculas, números e underscore'
+            'Apenas letras minúsculas, números, underscore ou ponto'
           )}
         </p>
       </div>

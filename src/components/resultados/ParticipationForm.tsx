@@ -47,6 +47,31 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [showAnswerSheet, setShowAnswerSheet] = useState(propShowAnswerSheet || true);
   const [showScoreForm, setShowScoreForm] = useState(false);
   const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
+  const quotaCodeMap = React.useMemo<Record<string, string>>(() => ({
+    'Ampla Concorrência': 'AC',
+    'Ampla': 'AC',
+    'AC': 'AC',
+    'Pessoas Pretas e Pardas (PPP)': 'PPI',
+    'PPP': 'PPI',
+    'PPI': 'PPI',
+    'Pretos/Pardos/Indígenas': 'PPI',
+    'Indígenas': 'PPI',
+    'Pessoas com Deficiência': 'PCD',
+    'Pessoa com Deficiência': 'PCD',
+    'Pessoas com Deficiência (PC)': 'PCD',
+    'Pessoa com Deficiência (PCD)': 'PCD',
+    'Pessoas com Deficiência (PD)': 'PD',
+    'Pessoa com Deficiência (PD)': 'PD',
+    'PCD': 'PCD',
+    'PC': 'PC',
+    'PD': 'PD',
+    'Cota PcD': 'PCD',
+    'Cota PPI': 'PPI',
+    'Cota PC': 'PC',
+    'Cota PD': 'PD',
+    'Hipossuficientes': 'PC',
+    'Pessoas Trans': 'PD'
+  }), []);
   
   // Debug log para selectedQuota
   // Debug logs removed for security
@@ -549,7 +574,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         devLog.log('[ParticipationForm] concursoId validado');
         
         devLog.log('[ParticipationForm] Validando reservationType...');
-        validatedReservationType = RPCValidator.validateReservationType(selectedQuota);
+        const reservationCode = quotaCodeMap[selectedQuota] || selectedQuota;
+        validatedReservationType = RPCValidator.validateReservationType(reservationCode);
         devLog.log('[ParticipationForm] reservationType validado:', validatedReservationType);
         
         devLog.log('[ParticipationForm] Validando bookletId...');

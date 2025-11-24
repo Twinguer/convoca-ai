@@ -30,15 +30,17 @@ export const useCommunityUsers = (searchQuery: string = '') => {
         }
 
         const sanitizedProfiles = (profiles || []).map((profile) => {
-          const safeName = profile?.name?.trim() || 'Concurseiro';
-          const usernameFromName = safeName
-            ? safeName.toLowerCase().replace(/[^a-z0-9]/g, '')
+          const displayName = profile?.name ?? 'Concurseiro';
+          const usernameFromName = displayName
+            ? displayName.toLowerCase().replace(/[^a-z0-9]/g, '')
             : `user_${String(profile?.id).slice(0, 8)}`;
           const fallbackEmail = `${usernameFromName || 'usuario'}@privado.convoca`;
 
           return {
             id: profile?.id,
-            name: safeName,
+            name: displayName,
+            nickname: profile?.nickname || null,
+            publicHandle: profile?.nickname ? `@${profile.nickname}` : null,
             avatar_url: profile?.avatar_url || '',
             username: usernameFromName,
             followerCount: 0,

@@ -27,6 +27,7 @@ const isValidUUID = (str: string): boolean => {
 interface UserProfile {
   id: string;
   name: string;
+  nickname?: string | null;
   bio: string | null;
   avatar_url: string | null;
   email: string;
@@ -131,7 +132,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const {
           data: profileData,
           error: profileError
-        } = await supabase.from('users_profiles').select('id, name, avatar_url').eq('id', id).maybeSingle();
+        } = await supabase.from('users_profiles').select('id, name, avatar_url, nickname').eq('id', id).maybeSingle();
         if (profileError) throw profileError;
         if (!profileData) throw new Error('User profile not found');
 
@@ -415,9 +416,12 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                 </div>
                 
                 <div className="text-center">
-                  <h2 className="text-xl font-bold mb-2">
+                  <h2 className="text-xl font-bold mb-1">
                     {profile?.name || 'Usuário'}
                   </h2>
+                  {profile?.nickname && (
+                    <p className="text-sm text-muted-foreground mb-1">@{profile.nickname}</p>
+                  )}
                   {profile?.isCoach && (
                     <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200 mb-2">
                       Coach
