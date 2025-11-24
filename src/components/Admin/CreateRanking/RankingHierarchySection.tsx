@@ -228,6 +228,7 @@ export const RankingHierarchySection: React.FC<RankingHierarchySectionProps> = (
                       {...field}
                       placeholder="Ex: Analista Administrativo"
                       disabled={!selectedParentId}
+                      maxLength={50}
                     />
                   </FormControl>
                   <FormMessage />

@@ -202,6 +202,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                             {...field}
                             placeholder="Ex: Analista Administrativo"
                             disabled={loadingParent}
+                            maxLength={50}
                           />
                         </FormControl>
                         <FormMessage />
