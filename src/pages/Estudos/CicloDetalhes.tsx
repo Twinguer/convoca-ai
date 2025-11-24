@@ -263,14 +263,23 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
               <Input 
                 id="disciplineName" 
                 value={newDisciplineName} 
-                onChange={e => setNewDisciplineName(e.target.value)} 
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value.length <= 20) {
+                    setNewDisciplineName(value);
+                  }
+                }} 
                 placeholder="Ex: Direito Constitucional"
+                maxLength={20}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && newDisciplineName.trim()) {
                     handleSaveDiscipline();
                   }
                 }}
               />
+              <p className="text-xs text-muted-foreground">
+                {newDisciplineName.length}/20 caracteres
+              </p>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
