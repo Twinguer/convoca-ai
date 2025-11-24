@@ -55,25 +55,94 @@ export class CommunityUrlObfuscationService {
   // ✅ SEGURANÇA: Validar token via RPC no backend
   static async validateCommunityToken(token: string): Promise<{userId: string, action: string} | null> {
     try {
-      // Chamar RPC no backend para validar token
-      const { data, error } = await supabase.rpc('validate_community_token', {
+      // ✅ SEGURANÇA: Tentar função segura primeiro
+      const { data: secureData, error: secureError } = await supabase.rpc('validate_community_token_secure', {
         p_token: token
       });
       
-      if (error) {
-        logError('Failed to validate community token via RPC', { error: error.message }, 'COMMUNITY_URL_OBFUSCATION');
+      // Log detalhado em desenvolvimento
+      if (import.meta.env.DEV) {
+        devLog.log('[validateCommunityToken] Resultado da função segura:', {
+          hasData: !!secureData,
+          hasError: !!secureError,
+          data: secureData,
+          dataType: typeof secureData,
+          error: secureError ? {
+            message: secureError.message,
+            code: secureError.code,
+            details: secureError.details
+          } : null
+        });
+      }
+      
+      if (secureError) {
+        // Em desenvolvimento, tentar debug para diagnóstico
+        if (import.meta.env.DEV) {
+          try {
+            const { data: debugData } = await supabase.rpc('debug_validate_community_token', {
+              p_token: token
+            });
+            devLog.error('[validateCommunityToken] Erro na função segura, debug:', {
+              secureError: secureError.message,
+              debugInfo: debugData
+            });
+            
+            // Se debug funcionou, usar o resultado dele
+            if (debugData && debugData.success === true && debugData.user_id) {
+              devLog.log('[validateCommunityToken] ✅ Usando resultado do debug como fallback, user_id:', debugData.user_id);
+              return {
+                userId: debugData.user_id,
+                action: debugData.action || 'profile'
+              };
+            }
+          } catch (debugError) {
+            // Ignorar erro de debug
+          }
+        }
+        logError('Failed to validate community token via secure RPC', { error: secureError.message }, 'COMMUNITY_URL_OBFUSCATION');
         return null;
       }
       
-      // RPC retorna JSONB com user_id e action se válido, NULL se inválido
-      if (!data) {
-        return null;
+      // Função segura retorna JSONB com user_id e action
+      if (secureData && typeof secureData === 'object' && secureData !== null) {
+        const userId = secureData.user_id || secureData.userId;
+        const action = secureData.action || 'profile';
+        
+        if (userId && typeof userId === 'string') {
+          if (import.meta.env.DEV) {
+            devLog.log('[validateCommunityToken] ✅ Token válido via função segura, user_id:', userId, 'action:', action);
+          }
+          return {
+            userId: userId,
+            action: action
+          };
+        }
       }
       
-      return {
-        userId: data.user_id,
-        action: data.action
-      };
+      // Se retornou null, tentar função antiga como fallback (apenas em desenvolvimento)
+      if (import.meta.env.DEV && secureData === null) {
+        try {
+          const { data: fallbackData, error: fallbackError } = await supabase.rpc('validate_community_token', {
+            p_token: token
+          });
+          
+          if (!fallbackError && fallbackData && fallbackData.user_id) {
+            devLog.warn('[validateCommunityToken] ⚠️ Função segura retornou null, mas função antiga funcionou. Usando como fallback.');
+            return {
+              userId: fallbackData.user_id,
+              action: fallbackData.action || 'profile'
+            };
+          }
+        } catch (fallbackError) {
+          // Ignorar
+        }
+      }
+      
+      // Se retornou null, token inválido
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateCommunityToken] Token inválido ou expirado - função segura retornou null');
+      }
+      return null;
     } catch (error) {
       logError('Failed to validate community token', { token: token.substring(0, 10) + '...' }, 'COMMUNITY_URL_OBFUSCATION');
       return null;
