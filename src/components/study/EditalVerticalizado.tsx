@@ -97,7 +97,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
       <div key={block.id}>
         {/* Tópico Principal (Bloco) */}
         <div 
-          className={`flex items-center py-2 px-4 ${
+          className={`flex items-center py-2 px-2 sm:px-4 ${
             blockIndex % 2 === 0 ? 'bg-muted/20' : 'bg-background'
           } hover:bg-muted/40 transition-colors ${
             hasDisciplines ? 'cursor-pointer' : ''
@@ -112,7 +112,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                 handleToggleDiscipline(block.id, discipline.id);
               });
             }}
-            className="mt-0.5 mr-3 flex-shrink-0"
+            className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
             onClick={(e) => e.stopPropagation()}
           />
           <div className="flex-1">
@@ -158,7 +158,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
             {block.disciplines.map((discipline, disciplineIndex) => (
               <div 
                 key={discipline.id}
-                className={`py-2 px-4 pl-8 ${
+                className={`py-2 px-2 sm:px-4 pl-6 sm:pl-8 ${
                   disciplineIndex % 2 === 0 ? 'bg-muted/10' : 'bg-background'
                 } hover:bg-muted/30 transition-colors`}
               >
@@ -167,7 +167,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                     <Checkbox
                       checked={discipline.isCompleted || false}
                       onCheckedChange={() => handleToggleDiscipline(block.id, discipline.id)}
-                      className="mt-0.5 mr-3 flex-shrink-0"
+                      className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
                     />
                     <span 
                       className={`font-medium text-foreground text-xs truncate ${discipline.isCompleted ? 'line-through opacity-60' : ''} ${allowEdit && onEditDiscipline ? 'cursor-pointer hover:text-primary' : ''}`}
@@ -181,7 +181,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                     </span>
                   </div>
                   {/* Status checkboxes - na mesma linha em telas maiores, abaixo em telas menores */}
-                  <div className="flex items-center gap-1.5 sm:gap-3 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-1 sm:gap-3 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap sm:flex-nowrap pl-0 sm:pl-0">
                     {allowEdit && onRemoveDiscipline && (
                       <Button
                         size="sm"
@@ -209,9 +209,9 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                             handleStatusChange(block.id, discipline.id, undefined as any);
                           }
                         }}
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0"
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
                       />
-                      <span className="text-muted-foreground text-xs">Em andamento</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Em andamento</span>
                     </label>
                     <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
                       <Checkbox
@@ -223,9 +223,9 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                             handleStatusChange(block.id, discipline.id, undefined as any);
                           }
                         }}
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0"
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
                       />
-                      <span className="text-muted-foreground text-xs">Finalizada</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Finalizada</span>
                     </label>
                     <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
                       <Checkbox
@@ -237,9 +237,9 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                             handleStatusChange(block.id, discipline.id, undefined as any);
                           }
                         }}
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0"
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
                       />
-                      <span className="text-muted-foreground text-xs">Em revisão</span>
+                      <span className="text-muted-foreground text-[10px] sm:text-xs">Em revisão</span>
                     </label>
                   </div>
                 </div>
