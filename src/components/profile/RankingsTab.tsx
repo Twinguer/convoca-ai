@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { UrlObfuscationService } from '@/services/urlObfuscation';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -484,7 +485,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               
               {isOwnProfile && (
                 <>
-                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => {
+                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={async () => {
                     // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
                     const concursoId = ranking.concurso_id || ranking.concursos?.id;
                     if (!concursoId || concursoId === 'undefined') {
@@ -496,7 +497,18 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                       });
                       return;
                     }
-                    navigate(`/ranking/${concursoId}/participate?showAnswerSheet=true`);
+                    try {
+                      // ✅ Gerar token seguro e navegar para rota segura
+                      const token = await UrlObfuscationService.generateConcursoToken(concursoId);
+                      navigate(`/concurso/participar/${token}?showAnswerSheet=true`);
+                    } catch (error) {
+                      devLog.error('Erro ao gerar token seguro:', error);
+                      toast({
+                        title: "Erro",
+                        description: "Não foi possível gerar link seguro. Tente novamente.",
+                        variant: "destructive"
+                      });
+                    }
                   }}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>

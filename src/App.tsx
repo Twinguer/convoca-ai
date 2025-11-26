@@ -368,6 +368,8 @@ const AppContent = () => {
                         </SecureConcursoRoute>
                       </>} />
                     {/* Rotas legadas - redirecionar para versão segura */}
+                    <Route path="/ranking/:id" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/ranking/:id/participate" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/concurso/:id" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />

@@ -13,6 +13,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { showProRequiredToast } from '@/utils/planRestrictions';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { UrlObfuscationService } from '@/services/urlObfuscation';
 interface Concurso {
   id: string;
   titulo: string;
@@ -116,14 +117,26 @@ const RankingsPage = () => {
 
         if (limitsError) {
           devLog.error('[RankingsPage] Erro ao verificar limites:', limitsError);
-          // Em caso de erro, redireciona para participar
-          navigate(`/ranking/${concursoId}/participate`);
+          // Em caso de erro, gerar token e redirecionar para participar
+          try {
+            const token = await UrlObfuscationService.generateConcursoToken(concursoId);
+            navigate(`/concurso/participar/${token}`);
+          } catch (error) {
+            devLog.error('[RankingsPage] Erro ao gerar token:', error);
+            navigate('/pre-classificacao');
+          }
           return;
         }
 
         // Se pode participar (dentro do limite de 2), redireciona para página de participação
         if (limitsCheck && limitsCheck.allowed) {
-          navigate(`/ranking/${concursoId}/participate`);
+          try {
+            const token = await UrlObfuscationService.generateConcursoToken(concursoId);
+            navigate(`/concurso/participar/${token}`);
+          } catch (error) {
+            devLog.error('[RankingsPage] Erro ao gerar token:', error);
+            navigate('/pre-classificacao');
+          }
         } else {
           // Limite atingido, mostrar aviso e redirecionar para planos
           showProRequiredToast(navigate, 'Visualizar Rankings que Você Não Participa');
