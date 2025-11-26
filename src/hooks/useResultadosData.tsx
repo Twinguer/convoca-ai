@@ -2,9 +2,10 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
-import { fetchUserRankings } from '@/services/rankingService';
+// ✅ FASE 1: Migrar para usar rankingServiceV3
+import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { useAuth } from '@/hooks/useAuth';
-import type { Ranking } from '@/services/rankingService';
+import type { RankingV3 as Ranking } from '@/services/rankingServiceV3';
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { useEffect, useState } from 'react';
