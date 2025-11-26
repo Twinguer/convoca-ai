@@ -1,23 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
-
-interface EditTokenData {
-  concursoId: string;
-  timestamp: number;
-  userId: string;
-}
+import { logError } from '@/utils/secureLogger';
 
 export class EditUrlObfuscationService {
-  private static readonly TOKEN_PREFIX = 'edit_';
-  private static readonly TOKEN_EXPIRY_HOURS = 24;
-
   /**
-   * Gera um token seguro para edição de ranking
+   * ✅ SEGURANÇA: Gera token seguro via RPC no backend (sem expor chaves)
+   * Migrado de btoa() para sistema seguro de tokens
    */
   static async generateEditToken(concursoId: string, userId: string): Promise<string> {
     try {
-      // Log removido por segurança
-      
       // Verificar se o usuário tem permissão para editar este concurso
       const { data: concurso, error } = await supabase
         .from('concursos')
@@ -38,63 +29,133 @@ export class EditUrlObfuscationService {
         throw new Error('Usuário não tem permissão para editar este concurso');
       }
 
-      const tokenData: EditTokenData = {
-        concursoId,
-        timestamp: Date.now(),
-        userId
-      };
+      // ✅ Gerar token seguro via RPC no backend
+      const { data: tokenHash, error: tokenError } = await supabase.rpc('generate_secure_token', {
+        p_entity_type: 'edit',
+        p_entity_id: concursoId,
+        p_metadata: { user_id: userId },
+        p_expires_in_minutes: 1440 // 24 horas
+      });
 
-      const tokenString = JSON.stringify(tokenData);
-      const encodedToken = btoa(tokenString);
-      
-      return `${this.TOKEN_PREFIX}${encodedToken}`;
+      if (tokenError) {
+        devLog.error('[generateEditToken] Erro ao gerar token via RPC:', tokenError);
+        throw new Error(`Erro ao gerar token: ${tokenError.message}`);
+      }
+
+      if (!tokenHash) {
+        throw new Error('Token não foi gerado');
+      }
+
+      if (import.meta.env.DEV) {
+        devLog.log('[generateEditToken] ✅ Token gerado via RPC:', tokenHash.substring(0, 10) + '...');
+      }
+
+      return tokenHash;
     } catch (error) {
-      devLog.error('Erro ao gerar token de edição:', error);
-      throw new Error('Falha ao gerar token de edição');
+      logError('Failed to generate edit token', { concursoId, userId }, 'EDIT_URL_OBFUSCATION');
+      throw error;
     }
   }
 
   /**
-   * Valida e decodifica um token de edição
+   * ✅ SEGURANÇA: Valida token via RPC no backend (novo sistema)
+   * Migrado de atob() para sistema seguro de tokens
    */
   static async validateEditToken(token: string, userId: string): Promise<string | null> {
     try {
-      if (!token.startsWith(this.TOKEN_PREFIX)) {
-        return null;
+      // Tentar novo sistema primeiro (resolve_secure_token)
+      const { data: tokenData, error: resolveError } = await supabase.rpc('resolve_secure_token', {
+        p_token_hash: token
+      });
+
+      if (!resolveError && tokenData && tokenData.entity_type === 'edit' && tokenData.entity_id) {
+        // Validar que o token pertence ao usuário correto
+        const tokenUserId = tokenData.metadata?.user_id;
+        if (tokenUserId && tokenUserId !== userId) {
+          if (import.meta.env.DEV) {
+            devLog.warn('[validateEditToken] Token pertence a outro usuário:', {
+              tokenUserId,
+              expectedUserId: userId
+            });
+          }
+          return null;
+        }
+
+        // Verificar se o concurso ainda existe e o usuário ainda tem permissão
+        const { data: concurso, error: concursoError } = await supabase
+          .from('concursos')
+          .select('id, created_by_user_id')
+          .eq('id', tokenData.entity_id)
+          .single();
+
+        if (concursoError || !concurso || !concurso.created_by_user_id || concurso.created_by_user_id !== userId) {
+          if (import.meta.env.DEV) {
+            devLog.warn('[validateEditToken] Concurso não encontrado ou sem permissão');
+          }
+          return null;
+        }
+
+        if (import.meta.env.DEV) {
+          devLog.log('[validateEditToken] ✅ Token válido via resolve_secure_token, concurso_id:', tokenData.entity_id);
+        }
+        return tokenData.entity_id;
       }
 
-      const encodedToken = token.substring(this.TOKEN_PREFIX.length);
-      const tokenString = atob(encodedToken);
-      const tokenData: EditTokenData = JSON.parse(tokenString);
+      // Fallback: tentar sistema antigo (compatibilidade com tokens antigos)
+      // Tokens antigos tinham prefixo 'edit_' e eram base64
+      if (token.startsWith('edit_')) {
+        if (import.meta.env.DEV) {
+          devLog.warn('[validateEditToken] Token antigo detectado, tentando decodificar...');
+        }
+        
+        try {
+          const encodedToken = token.substring(5); // Remove 'edit_'
+          const tokenString = atob(encodedToken);
+          const oldTokenData = JSON.parse(tokenString);
 
-      // Verificar se o token não expirou
-      const now = Date.now();
-      const tokenAge = now - tokenData.timestamp;
-      const maxAge = this.TOKEN_EXPIRY_HOURS * 60 * 60 * 1000; // 24 horas em ms
+          // Verificar se o token não expirou (24 horas)
+          const now = Date.now();
+          const tokenAge = now - oldTokenData.timestamp;
+          const maxAge = 24 * 60 * 60 * 1000; // 24 horas
 
-      if (tokenAge > maxAge) {
-        return null;
+          if (tokenAge > maxAge) {
+            return null;
+          }
+
+          // Verificar se o usuário é o mesmo que gerou o token
+          if (oldTokenData.userId !== userId) {
+            return null;
+          }
+
+          // Verificar se o concurso ainda existe e o usuário ainda tem permissão
+          const { data: concurso, error: concursoError } = await supabase
+            .from('concursos')
+            .select('id, created_by_user_id')
+            .eq('id', oldTokenData.concursoId)
+            .single();
+
+          if (concursoError || !concurso || !concurso.created_by_user_id || concurso.created_by_user_id !== userId) {
+            return null;
+          }
+
+          if (import.meta.env.DEV) {
+            devLog.log('[validateEditToken] ✅ Token antigo válido, concurso_id:', oldTokenData.concursoId);
+          }
+          return oldTokenData.concursoId;
+        } catch (oldTokenError) {
+          // Token antigo inválido
+          return null;
+        }
       }
 
-      // Verificar se o usuário é o mesmo que gerou o token
-      if (tokenData.userId !== userId) {
-        return null;
+      // Token inválido ou expirado
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateEditToken] Token inválido ou expirado');
       }
-
-      // Verificar se o concurso ainda existe e o usuário ainda tem permissão
-      const { data: concurso, error } = await supabase
-        .from('concursos')
-        .select('id, created_by_user_id')
-        .eq('id', tokenData.concursoId)
-        .single();
-
-      if (error || !concurso || !concurso.created_by_user_id || concurso.created_by_user_id !== userId) {
-        return null;
-      }
-
-      return tokenData.concursoId;
+      return null;
     } catch (error) {
-      devLog.error('Erro ao validar token de edição:', error);
+      devLog.error('[validateEditToken] Erro geral:', error);
+      logError('Failed to validate edit token', { token: token.substring(0, 10) + '...', userId }, 'EDIT_URL_OBFUSCATION');
       return null;
     }
   }
