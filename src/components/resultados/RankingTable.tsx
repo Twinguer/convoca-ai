@@ -113,13 +113,17 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       }
     });
 
-    // Group classified rankings by reservation type (mantendo ordem original dentro de cada grupo)
+    // ✅ CORREÇÃO: Group classified rankings by reservation type (mantendo ordem original dentro de cada grupo)
+    // Normalizar reservationType para garantir consistência
     const groupedByQuota: Record<string, Ranking[]> = {};
     classifiedRankings.forEach(ranking => {
-      if (!groupedByQuota[ranking.reservationType]) {
-        groupedByQuota[ranking.reservationType] = [];
+      // Normalizar reservationType: garantir que seja string válida
+      const normalizedQuota = (ranking.reservationType || 'Ampla Concorrência').trim();
+      
+      if (!groupedByQuota[normalizedQuota]) {
+        groupedByQuota[normalizedQuota] = [];
       }
-      groupedByQuota[ranking.reservationType].push(ranking);
+      groupedByQuota[normalizedQuota].push(ranking);
     });
 
     // ✅ Ordenar cada grupo de cota por score (descending) APENAS para calcular quotaPosition
@@ -128,9 +132,11 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
     });
 
-    // Calculate positions for classified users (mantendo ordem original)
+    // ✅ CORREÇÃO: Calculate positions for classified users (mantendo ordem original)
     const classifiedWithPositions = classifiedRankings.map((ranking) => {
-      const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
+      // Normalizar reservationType para garantir consistência na busca
+      const normalizedQuota = (ranking.reservationType || 'Ampla Concorrência').trim();
+      const sameQuotaRankings = groupedByQuota[normalizedQuota] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
       
       return {
@@ -197,8 +203,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       return rankingsWithQuotaPositions;
     }
     
+    // ✅ CORREÇÃO: Filtrar por cota com normalização para garantir consistência
     const fullQuotaName = quotaMapping[quota];
-    return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === fullQuotaName);
+    return rankingsWithQuotaPositions.filter(ranking => {
+      const normalizedRankingQuota = (ranking.reservationType || 'Ampla Concorrência').trim();
+      return normalizedRankingQuota === fullQuotaName;
+    });
   };
 
   const handleUserClick = async (userId: string) => {
@@ -379,13 +389,17 @@ const RankingTableContent: React.FC<{
     const classified = rankings.filter(r => !isBelowMinimum(r));
     const eliminated = rankings.filter(r => isBelowMinimum(r));
     
-    // Group classified by quota type (mantendo ordem original dentro de cada grupo)
+    // ✅ CORREÇÃO: Group classified by quota type (mantendo ordem original dentro de cada grupo)
+    // Normalizar reservationType para garantir consistência
     const groupedByQuota: Record<string, Ranking[]> = {};
     classified.forEach(ranking => {
-      if (!groupedByQuota[ranking.reservationType]) {
-        groupedByQuota[ranking.reservationType] = [];
+      // Normalizar reservationType: garantir que seja string válida
+      const normalizedQuota = (ranking.reservationType || 'Ampla Concorrência').trim();
+      
+      if (!groupedByQuota[normalizedQuota]) {
+        groupedByQuota[normalizedQuota] = [];
       }
-      groupedByQuota[ranking.reservationType].push(ranking);
+      groupedByQuota[normalizedQuota].push(ranking);
     });
     
     // Sort each quota group by score (descending) APENAS para calcular quotaPosition
@@ -393,9 +407,11 @@ const RankingTableContent: React.FC<{
       groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
     });
     
-    // Calculate quota positions (mantendo ordem original dos classificados)
+    // ✅ CORREÇÃO: Calculate quota positions (mantendo ordem original dos classificados)
     const withPositions = classified.map((ranking) => {
-      const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
+      // Normalizar reservationType para garantir consistência na busca
+      const normalizedQuota = (ranking.reservationType || 'Ampla Concorrência').trim();
+      const sameQuotaRankings = groupedByQuota[normalizedQuota] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
       
       return {

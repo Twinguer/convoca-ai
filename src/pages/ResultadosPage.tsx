@@ -54,6 +54,8 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
   
   // Usar ID da URL ou prop
   const finalRankingId = rankingId || concursoId || id;
+  const isLegacyRouteAccess = Boolean(id && !secureToken && !rankingId && !concursoId);
+  const safeRankingId = isLegacyRouteAccess ? undefined : finalRankingId;
   
   // Hook principal para dados do concurso e informações básicas
   const {
@@ -72,7 +74,27 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
     isParticipating,
     isRecalculating,
     recalculationProgress
-  } = useResultadosData(finalRankingId);
+  } = useResultadosData(safeRankingId, { allowUrlFallback: !isLegacyRouteAccess });
+
+  if (isLegacyRouteAccess) {
+    return (
+      <div className="p-6 rounded-lg shadow-sm border border-border bg-muted/30">
+        <Alert variant="destructive">
+          <AlertTitle>Acesso bloqueado</AlertTitle>
+          <AlertDescription>
+            Para visualizar rankings é necessário utilizar um link seguro com token válido. 
+            Esse caminho não está mais disponível por motivos de segurança.
+          </AlertDescription>
+        </Alert>
+        <Button
+          className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+          onClick={() => navigate('/pre-classificacao')}
+        >
+          Voltar para pré-classificação
+        </Button>
+      </div>
+    );
+  }
 
   // ✅ Verificar se usuário Free pode ver a classificação
   // Free users só podem ver classificação se participam ou criaram o ranking

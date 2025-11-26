@@ -1,35 +1,6 @@
 // @ts-nocheck
 import { Ranking } from './rankingService';
-
-/**
- * Converte código de reservation_type do banco para nome completo esperado pelo filtro
- * O banco salva códigos (AC, PPI, PCD, PC, PD) mas o filtro espera nomes completos
- * @param code Código do banco (AC, PPI, PCD, PC, PD) ou nome completo já normalizado
- * @returns Nome completo normalizado (Ampla Concorrência, PPP, PCD, Hipossuficientes, Pessoas Trans)
- */
-export const convertReservationCodeToName = (code: string | null | undefined): string => {
-  if (!code) return 'Ampla Concorrência';
-  
-  const upperCode = code.trim().toUpperCase();
-  
-  // Mapeamento de códigos do banco para nomes completos esperados pelo filtro
-  const codeToName: Record<string, string> = {
-    'AC': 'Ampla Concorrência',
-    'PPI': 'PPP',  // PPI no banco → PPP no display (conforme quotaMapping)
-    'PCD': 'PCD',
-    'PC': 'Hipossuficientes',  // PC no banco → Hipossuficientes no display
-    'PD': 'Pessoas Trans'  // PD no banco → Pessoas Trans no display
-  };
-  
-  // Se já está normalizado (nome completo), retornar como está
-  const normalizedNames = ['Ampla Concorrência', 'PPP', 'PCD', 'Hipossuficientes', 'Indígenas', 'Pessoas Trans'];
-  if (normalizedNames.includes(code)) {
-    return code;
-  }
-  
-  // Converter código para nome
-  return codeToName[upperCode] || code || 'Ampla Concorrência';
-};
+import { devLog } from '@/utils/productionLogger';
 
 // Build a Ranking row from consolidated_data user_data and profile info
 export function buildRankingFromConsolidated(
@@ -49,9 +20,36 @@ export function buildRankingFromConsolidated(
   // ✅ CORREÇÃO: Usar weighted_subjective_scores se disponível (com pesos aplicados)
   const weightedSubjectives = userData?.weighted_subjective_scores || userData?.weightedSubjectiveScores || {};
 
-  // ✅ CORREÇÃO: Converter código do banco (AC, PPI, PCD, etc) para nome completo esperado pelo filtro
-  const reservationTypeCode: string = userData?.reservation_type || 'AC';
-  const reservationType: string = convertReservationCodeToName(reservationTypeCode);
+  // ✅ CORREÇÃO: Extrair reservation_type corretamente, sem fallback prematuro
+  // Se o valor existe mas está vazio/null, usar fallback. Caso contrário, usar o valor real
+  let reservationType: string = 'Ampla Concorrência'; // Fallback padrão
+  if (userData?.reservation_type) {
+    const extractedType = String(userData.reservation_type).trim();
+    if (extractedType && extractedType !== '' && extractedType !== 'null' && extractedType !== 'undefined') {
+      reservationType = extractedType;
+      // Debug: log apenas quando não for Ampla Concorrência para identificar cotas
+      if (reservationType !== 'Ampla Concorrência') {
+        devLog.log('[rankingFormatting] reservation_type extraído:', {
+          userId,
+          rankingId,
+          reservationType
+        });
+      }
+    } else {
+      devLog.warn('[rankingFormatting] reservation_type inválido ou vazio:', {
+        userId,
+        rankingId,
+        extractedType,
+        rawValue: userData.reservation_type
+      });
+    }
+  } else {
+    devLog.warn('[rankingFormatting] reservation_type não encontrado em user_data:', {
+      userId,
+      rankingId,
+      userDataKeys: userData ? Object.keys(userData) : []
+    });
+  }
 
   return {
     id: rankingId,

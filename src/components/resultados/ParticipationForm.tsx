@@ -73,6 +73,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     'Hipossuficientes': 'PC',
     'Pessoas Trans': 'PD'
   }), []);
+
+  // ✅ MAPEAMENTO REVERSO: Converter códigos de volta para nomes completos
+  // Isso é necessário porque o sistema espera nomes completos no banco, não códigos
+  const quotaCodeToFullName = React.useMemo<Record<string, string>>(() => ({
+    'AC': 'Ampla Concorrência',
+    'PPI': 'PPP', // PPI (código) -> PPP (nome completo)
+    'PCD': 'PCD', // PCD já é o nome completo
+    'PC': 'Hipossuficientes', // PC (código) -> Hipossuficientes (nome completo)
+    'PD': 'Pessoas Trans' // PD (código) -> Pessoas Trans (nome completo)
+    // Nota: 'Indígenas' não precisa de conversão, já é o nome completo esperado
+  }), []);
   
   // Debug log para selectedQuota
   // Debug logs removed for security
@@ -348,14 +359,64 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         });
       }
 
+      // ✅ CORREÇÃO: Se já está participando, permitir atualizar apenas o reservation_type
       if (isAlreadyParticipating) {
-        toast({
-          title: "Já participando",
-          description: "Você já está participando deste ranking.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
+        // Buscar o ranking_key do ranking existente
+        let existingRankingKey: string | null = null;
+        if (userRankingData?.consolidated_data?.rankings) {
+          for (const [rankingId, rankingData] of Object.entries(userRankingData.consolidated_data.rankings)) {
+            if (rankingData.concurso_id === concurso.id) {
+              existingRankingKey = rankingId;
+              break;
+            }
+          }
+        }
+
+        if (existingRankingKey) {
+          // Validar reservation_type
+          const reservationCode = quotaCodeMap[selectedQuota] || selectedQuota;
+          RPCValidator.validateReservationType(reservationCode);
+          const validatedReservationType = selectedQuota;
+
+          // Atualizar apenas o reservation_type usando a função RPC
+          const { data: updateResult, error: updateError } = await supabase.rpc('update_ranking_reservation_type', {
+            p_user_id: user.id,
+            p_ranking_key: existingRankingKey,
+            p_new_reservation_type: validatedReservationType
+          });
+
+          if (updateError) {
+            devLog.error('[ParticipationForm] Erro ao atualizar reservation_type:', updateError);
+            toast({
+              title: "Erro",
+              description: updateError.message || "Erro ao atualizar tipo de reserva.",
+              variant: "destructive"
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          if (updateResult?.success) {
+            toast({
+              title: "Cota atualizada",
+              description: `Tipo de reserva atualizado para ${selectedQuota}.`,
+              variant: "default"
+            });
+            // Recarregar dados
+            queryClient.invalidateQueries({ queryKey: ['userRankings', user.id] });
+            queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          toast({
+            title: "Erro",
+            description: "Não foi possível encontrar o ranking para atualizar.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
       }
 
       // Verificar limite de rankings para usuários Free usando a função RPC do backend
@@ -543,7 +604,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             "other_subjective": 0
           },
           all_questions_answered: false,
-          reservation_type: selectedQuota  // MOVIDO PARA DENTRO DE user_data
+          reservation_type: selectedQuota  // ✅ Usar selectedQuota diretamente (já é o nome completo)
         },
         concurso_id: concurso.id,
         control_metadata: {
@@ -558,7 +619,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
       // ✅ VALIDAÇÃO: Validar inputs antes de enviar
       let validatedConcursoId: string;
-      let validatedReservationType: string | null;
+      let validatedReservationType: string;
       let validatedBookletId: string | null;
       let validatedRankingData: any;
       
@@ -577,9 +638,22 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         devLog.log('[ParticipationForm] concursoId validado');
         
         devLog.log('[ParticipationForm] Validando reservationType...');
+        // ✅ CORREÇÃO: Garantir que selectedQuota não seja null/undefined
+        if (!selectedQuota || selectedQuota === '') {
+          throw new Error('Tipo de reserva não selecionado. Por favor, selecione uma cota.');
+        }
+        
         const reservationCode = quotaCodeMap[selectedQuota] || selectedQuota;
-        validatedReservationType = RPCValidator.validateReservationType(reservationCode);
-        devLog.log('[ParticipationForm] reservationType validado:', validatedReservationType);
+        
+        // ✅ CORREÇÃO: Validar o código, mas usar o nome completo original para salvar
+        // O sistema espera nomes completos no banco (PPP, PCD, Hipossuficientes, Indígenas, Pessoas Trans)
+        // A validação usa códigos (PPI, PC, PD) apenas para verificar se é válido
+        RPCValidator.validateReservationType(reservationCode); // Apenas validar, não usar o retorno
+        
+        // ✅ CORREÇÃO: Usar o selectedQuota diretamente (já é o nome completo correto)
+        // Garantir que não seja null
+        validatedReservationType = selectedQuota || 'Ampla Concorrência';
+        devLog.log('[ParticipationForm] reservationType validado e usando nome completo:', validatedReservationType);
         
         devLog.log('[ParticipationForm] Validando bookletId...');
         validatedBookletId = RPCValidator.validateBookletId(
@@ -619,7 +693,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         p_concurso_id: rpcParams.p_concurso_id.substring(0, 8) + '...',
         p_reservation_type: rpcParams.p_reservation_type,
         p_selected_booklet_id: rpcParams.p_selected_booklet_id,
-        p_ranking_data: rpcParams.p_ranking_data
+        p_ranking_data_reservation_type: rpcParams.p_ranking_data?.user_data?.reservation_type,
+        selectedQuota: selectedQuota,
+        validatedReservationType: validatedReservationType
       });
       
       const { data: participateResult, error: participateError } = await supabase.rpc('participate_in_ranking', rpcParams);

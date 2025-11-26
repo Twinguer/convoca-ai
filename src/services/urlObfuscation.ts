@@ -3,34 +3,17 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço para ofuscar URLs e controlar acesso
 export class UrlObfuscationService {
-  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
-  private static getOBFUSCATION_KEY(): string {
-    const key = import.meta.env.VITE_URL_OBFUSCATION_KEY;
-    if (!key) {
-      // Em desenvolvimento, usar fallback temporário (NÃO SEGURO PARA PRODUÇÃO)
-      if (import.meta.env.DEV) {
-        devLog.warn('[urlObfuscation] ⚠️ VITE_URL_OBFUSCATION_KEY não configurada. Usando fallback temporário apenas para desenvolvimento. Configure a variável antes de produção.');
-        return 'dev_url_fallback_key_not_secure_change_in_production';
-      }
-      // Em produção, lançar erro crítico
-      const error = new Error('[urlObfuscation] ❌ CRÍTICO: VITE_URL_OBFUSCATION_KEY não configurada. Configure a variável de ambiente antes de usar em produção.');
-      devLog.error(error.message);
-      throw error;
-    }
-    return key;
-  }
-  
-  // Gerar um token ofuscado para um concurso
+  // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves)
   static async generateConcursoToken(concursoId: string): Promise<string> {
     try {
-      // Verificar se o concurso existe e está ativo
-      const { data: concurso, error } = await supabase
+      // Verificar se o concurso existe e está ativo (validação no backend também)
+      const { data: concurso, error: checkError } = await supabase
         .from('concursos')
         .select('id, titulo, status')
         .eq('id', concursoId)
         .single();
       
-      if (error || !concurso) {
+      if (checkError || !concurso) {
         throw new Error('Concurso não encontrado');
       }
       
@@ -39,60 +22,78 @@ export class UrlObfuscationService {
         throw new Error('Concurso não está mais ativo');
       }
       
-      // Criar um token único baseado no ID + timestamp + chave
-      const timestamp = Date.now().toString();
-      const rawToken = `${concursoId}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
+      // Gerar token seguro via RPC no backend
+      const { data: tokenHash, error } = await supabase.rpc('generate_secure_token', {
+        p_entity_type: 'concurso',
+        p_entity_id: concursoId,
+        p_metadata: {},
+        p_expires_in_minutes: 1440 // 24 horas
+      });
       
-      // Usar btoa para codificar (não é criptografia real, mas ofusca)
-      const obfuscatedToken = btoa(rawToken);
+      if (error) {
+        devLog.error('[generateConcursoToken] Erro ao gerar token via RPC:', error);
+        throw new Error(`Erro ao gerar token: ${error.message}`);
+      }
       
-      // Armazenar o token temporariamente (opcional - para validação adicional)
-      await this.storeToken(obfuscatedToken, concursoId);
+      if (!tokenHash) {
+        throw new Error('Token não foi gerado');
+      }
       
-      return obfuscatedToken;
+      if (import.meta.env.DEV) {
+        devLog.log('[generateConcursoToken] ✅ Token gerado via RPC:', tokenHash.substring(0, 10) + '...');
+      }
+      
+      return tokenHash;
     } catch (error) {
       devLog.error('Erro ao gerar token de concurso:', error);
       throw error;
     }
   }
   
-  // ✅ SEGURANÇA: Validar token via RPC no backend
+  // ✅ SEGURANÇA: Validar token via RPC no backend (novo sistema)
   static async validateConcursoToken(token: string): Promise<string | null> {
     try {
-      // Chamar RPC no backend para validar token
+      // Tentar novo sistema primeiro (resolve_secure_token)
+      const { data: tokenData, error: resolveError } = await supabase.rpc('resolve_secure_token', {
+        p_token_hash: token
+      });
+      
+      if (!resolveError && tokenData && tokenData.entity_type === 'concurso' && tokenData.entity_id) {
+        if (import.meta.env.DEV) {
+          devLog.log('[validateConcursoToken] ✅ Token válido via resolve_secure_token, concurso_id:', tokenData.entity_id);
+        }
+        return tokenData.entity_id;
+      }
+      
+      // Fallback: tentar sistema antigo (compatibilidade com tokens antigos)
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateConcursoToken] Token não encontrado no novo sistema, tentando sistema antigo...');
+      }
+      
       const { data, error } = await supabase.rpc('validate_concurso_token', {
         p_token: token
       });
       
-      if (error) {
-        devLog.error('Erro ao validar token via RPC:', error);
-        return null;
+      if (!error && data) {
+        if (import.meta.env.DEV) {
+          devLog.log('[validateConcursoToken] ✅ Token válido via sistema antigo, concurso_id:', data);
+        }
+        return data;
       }
       
-      // RPC retorna UUID do concurso se válido, NULL se inválido
-      return data || null;
+      // Token inválido ou expirado
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateConcursoToken] Token inválido ou expirado');
+      }
+      return null;
     } catch (error) {
       devLog.error('Erro ao validar token:', error);
       return null;
     }
   }
   
-  // Armazenar token temporariamente (opcional)
-  private static async storeToken(token: string, concursoId: string): Promise<void> {
-    try {
-      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
-      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
-      const tokenData = {
-        concursoId,
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      };
-      
-      sessionStorage.setItem(`concurso_token_${token}`, JSON.stringify(tokenData));
-    } catch (error) {
-      // Falha silenciosa - não é crítico
-      devLog.warn('Erro ao armazenar token:', error);
-    }
-  }
+  // ✅ REMOVIDO: storeToken não é mais necessário
+  // Tokens são armazenados no backend via RPC generate_secure_token
   
   // Gerar URL segura para concurso
   static async generateSecureConcursoUrl(concursoId: string, action: 'resultados' | 'participar' | 'ranking' | 'estatisticas' | 'historico' = 'resultados'): Promise<string> {

@@ -4,65 +4,75 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço para ofuscar URLs de usuários e controlar acesso
 export class UserUrlObfuscationService {
-  // ✅ REMOVIDO: getOBFUSCATION_KEY() - chaves não devem ser expostas no frontend
-  // Tokens agora são gerados apenas via RPC no backend
-  
-  // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves no frontend)
+  // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves)
   static async generateUserToken(userId: string): Promise<string> {
     try {
-      // Verificar se o usuário existe (verificação básica)
-      const { data: userProfile, error } = await supabase
-        .from('users_profiles')
-        .select('id, name')
-        .eq('id', userId)
-        .single();
-      
-      if (error || !userProfile) {
-        throw new Error('Perfil de usuário não encontrado');
-      }
-      
-      // ✅ Gerar token seguro via RPC no backend
-      const { data: token, error: tokenError } = await supabase.rpc('generate_secure_token', {
-        p_entity_id: userId,
+      // Gerar token seguro via RPC no backend
+      const { data: tokenHash, error } = await supabase.rpc('generate_secure_token', {
         p_entity_type: 'user',
+        p_entity_id: userId,
         p_metadata: {},
         p_expires_in_minutes: 1440 // 24 horas
       });
       
-      if (tokenError || !token) {
-        logError('Failed to generate secure token via RPC', { error: tokenError, userId }, 'URL_OBFUSCATION');
-        throw new Error('Falha ao gerar token seguro');
+      if (error) {
+        devLog.error('[generateUserToken] Erro ao gerar token via RPC:', error);
+        throw new Error(`Erro ao gerar token: ${error.message}`);
       }
       
-      return token;
+      if (!tokenHash) {
+        throw new Error('Token não foi gerado');
+      }
+      
+      if (import.meta.env.DEV) {
+        devLog.log('[generateUserToken] ✅ Token gerado via RPC:', tokenHash.substring(0, 10) + '...');
+      }
+      
+      return tokenHash;
     } catch (error) {
       logError('Failed to generate user token', { userId }, 'URL_OBFUSCATION');
       throw error;
     }
   }
   
-  // ✅ SEGURANÇA: Validar token via RPC no backend (sem expor chaves no frontend)
+  // ✅ SEGURANÇA: Validar token via RPC no backend (novo sistema)
   static async validateUserToken(token: string): Promise<string | null> {
     try {
-      // ✅ Usar função segura de resolução de token
-      const { data, error } = await supabase.rpc('resolve_secure_token', {
-        p_token: token,
-        p_entity_type: 'user',
-        p_consume: false
+      // Tentar novo sistema primeiro (resolve_secure_token)
+      const { data: tokenData, error: resolveError } = await supabase.rpc('resolve_secure_token', {
+        p_token_hash: token
       });
       
-      if (error) {
-        logError('Failed to resolve secure token via RPC', { error: error.message, token: token?.substring(0, 10) }, 'URL_OBFUSCATION');
-        return null;
+      if (!resolveError && tokenData && tokenData.entity_type === 'user' && tokenData.entity_id) {
+        if (import.meta.env.DEV) {
+          devLog.log('[validateUserToken] ✅ Token válido via resolve_secure_token, user_id:', tokenData.entity_id);
+        }
+        return tokenData.entity_id;
       }
       
-      // A função retorna uma tabela, então data é um array
-      const resolved = Array.isArray(data) ? data[0] : data;
-      
-      if (resolved && resolved.entity_id) {
-        return resolved.entity_id;
+      // Fallback: tentar sistema antigo (compatibilidade com tokens antigos)
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateUserToken] Token não encontrado no novo sistema, tentando sistema antigo...');
       }
       
+      const { data: secureData, error: secureError } = await supabase.rpc('validate_user_token_secure', {
+        p_token: token
+      });
+      
+      if (!secureError && secureData && typeof secureData === 'string' && secureData.trim() !== '') {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(secureData.trim())) {
+          if (import.meta.env.DEV) {
+            devLog.log('[validateUserToken] ✅ Token válido via sistema antigo, user_id:', secureData);
+          }
+          return secureData.trim();
+        }
+      }
+      
+      // Token inválido ou expirado
+      if (import.meta.env.DEV) {
+        devLog.warn('[validateUserToken] Token inválido ou expirado');
+      }
       return null;
     } catch (error) {
       logError('Failed to validate user token', { token: token?.substring(0, 10) + '...' }, 'URL_OBFUSCATION');
@@ -70,7 +80,8 @@ export class UserUrlObfuscationService {
     }
   }
   
-  // ✅ REMOVIDO: storeToken() - tokens agora são armazenados apenas no banco via RPC
+  // ✅ REMOVIDO: storeToken não é mais necessário
+  // Tokens são armazenados no backend via RPC generate_secure_token
   
   // Gerar URL segura para usuário
   static async generateSecureUserUrl(userId: string, action: 'profile' | 'followers' | 'following' = 'profile'): Promise<string> {
