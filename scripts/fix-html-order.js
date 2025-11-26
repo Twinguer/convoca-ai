@@ -12,18 +12,21 @@ try {
   
   // Encontrar o react-vendor, vendor e o script principal
   // Procurar em modulepreload primeiro (pode ter atributos em qualquer ordem)
-  const reactVendorPreload = html.match(/<link[^>]*href=["']([^"']*react-vendor[^"']+)["'][^>]*>/);
-  const reactVendorScript = html.match(/<script[^>]*src=["']([^"']*react-vendor[^"']+)["'][^>]*>/);
+  const reactVendorPreload = html.match(/<link[^>]*href=["']([^"']*\/react-vendor-[^"']+)["'][^>]*>/);
+  const reactVendorScript = html.match(/<script[^>]*src=["']([^"']*\/react-vendor-[^"']+)["'][^>]*>/);
   const reactVendorMatch = reactVendorPreload || reactVendorScript;
   
   console.log('🔍 [fix-html-order] reactVendorPreload:', reactVendorPreload ? reactVendorPreload[1] : 'não encontrado');
   console.log('🔍 [fix-html-order] reactVendorScript:', reactVendorScript ? reactVendorScript[1] : 'não encontrado');
   console.log('🔍 [fix-html-order] reactVendorMatch:', reactVendorMatch ? reactVendorMatch[1] : 'não encontrado');
   
-  const vendorPreload = html.match(/<link[^>]*href=["']([^"']*vendor[^"']+)["'][^>]*>/);
-  const scriptTag = html.match(/<script[^>]*src=["']([^"']*index[^"']+)["'][^>]*>/);
+  // Procurar vendor que NÃO seja react-vendor (usar lookahead negativo)
+  const vendorPreload = html.match(/<link[^>]*href=["']([^"']*\/vendor-[^"']+)(?!.*react-vendor)["'][^>]*>/);
+  const vendorScript = html.match(/<script[^>]*src=["']([^"']*\/vendor-[^"']+)(?!.*react-vendor)["'][^>]*>/);
+  const vendorMatch = vendorPreload || vendorScript;
+  const scriptTag = html.match(/<script[^>]*src=["']([^"']*\/index-[^"']+)["'][^>]*>/);
   
-  console.log('🔍 [fix-html-order] vendorPreload:', vendorPreload ? vendorPreload[1] : 'não encontrado');
+  console.log('🔍 [fix-html-order] vendorMatch:', vendorMatch ? vendorMatch[1] : 'não encontrado');
   console.log('🔍 [fix-html-order] scriptTag:', scriptTag ? scriptTag[0] : 'não encontrado');
   
   if (reactVendorMatch && scriptTag) {
@@ -36,18 +39,36 @@ try {
     console.log('🗑️ [fix-html-order] Removendo', modulepreloadCount, 'modulepreloads');
     html = html.replace(/<link[^>]*rel=["']modulepreload["'][^>]*>/g, '');
     
-    // Inserir scripts na ordem correta: react-vendor PRIMEIRO, depois vendor (se existir), depois index
-    let newScripts = `<script type="module" crossorigin src="${reactVendorPath}"></script>`;
-    if (vendorPreload) {
-      console.log('📝 [fix-html-order] vendor path:', vendorPreload[1]);
-      newScripts += `\n    <script type="module" crossorigin src="${vendorPreload[1]}"></script>`;
+    // Remover TODOS os scripts module existentes (incluindo duplicatas)
+    // Primeiro remover todos os scripts module
+    html = html.replace(/<script[^>]*type=["']module["'][^>]*>.*?<\/script>/g, '');
+    html = html.replace(/<script[^>]*type=["']module["'][^>]*src=["'][^"']+["'][^>]*>/g, '');
+    
+    // Construir nova ordem de scripts com carregamento sequencial
+    // Usar import() dinâmico para garantir que react-vendor carregue antes do vendor
+    let newScripts = `<script type="module">
+      // Carregar react-vendor primeiro e aguardar
+      import('${reactVendorPath}').then(() => {
+        // Depois carregar vendor (se existir)
+        ${vendorMatch ? `return import('${vendorMatch[1]}');` : 'return Promise.resolve();'}
+      }).then(() => {
+        // Por último, carregar index
+        import('${scriptTag[1]}');
+      }).catch(err => {
+        console.error('Erro ao carregar módulos:', err);
+      });
+    </script>`;
+    
+    console.log('📝 [fix-html-order] Nova ordem de scripts (sequencial):');
+    console.log(newScripts.substring(0, 200) + '...');
+    
+    // Inserir antes do fechamento do body (substituir qualquer script restante)
+    if (html.includes('</body>')) {
+      html = html.replace('</body>', `    ${newScripts}\n</body>`);
+    } else {
+      // Fallback: adicionar no final
+      html += `\n    ${newScripts}`;
     }
-    newScripts += `\n    ${scriptTag[0]}`;
-    
-    console.log('📝 [fix-html-order] Nova ordem de scripts:');
-    console.log(newScripts);
-    
-    html = html.replace(scriptTag[0], newScripts);
     
     // Escrever o HTML modificado
     writeFileSync(htmlPath, html, 'utf-8');

@@ -9,55 +9,11 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
-    {
-      name: 'ensure-react-vendor-first',
-      closeBundle() {
-        // Modificar o HTML após o build ser completamente finalizado
-        const htmlPath = path.resolve('dist', 'index.html');
-        try {
-          let html = readFileSync(htmlPath, 'utf-8');
-          
-          // Encontrar o react-vendor, vendor e o script principal
-          const reactVendorMatch = html.match(/<link[^>]*react-vendor[^>]*href=["']([^"']+)["'][^>]*>/);
-          const vendorPreload = html.match(/<link[^>]*vendor[^>]*href=["']([^"']+)["'][^>]*>/);
-          const scriptTag = html.match(/<script[^>]*type=["']module["'][^>]*src=["']([^"']*index[^"']*)["'][^>]*>/);
-          
-          if (reactVendorMatch && scriptTag) {
-            const reactVendorPath = reactVendorMatch[1];
-            
-            // Remover todos os modulepreloads
-            html = html.replace(/<link[^>]*rel=["']modulepreload["'][^>]*>/g, '');
-            
-            // Inserir scripts na ordem correta: react-vendor PRIMEIRO, depois vendor (se existir), depois index
-            let newScripts = `<script type="module" crossorigin src="${reactVendorPath}"></script>`;
-            if (vendorPreload) {
-              newScripts += `\n    <script type="module" crossorigin src="${vendorPreload[1]}"></script>`;
-            }
-            newScripts += `\n    ${scriptTag[0]}`;
-            
-            html = html.replace(scriptTag[0], newScripts);
-            
-            // Escrever o HTML modificado
-            writeFileSync(htmlPath, html, 'utf-8');
-            console.log('✅ HTML modificado: react-vendor será carregado antes de vendor e index');
-          }
-        } catch (error) {
-          console.warn('Failed to modify index.html:', error);
-        }
-      }
-    }
+    react()
   ],
   resolve: {
     alias: { 
       "@": path.resolve(__dirname, "./src"),
-      // ✅ CRÍTICO: Garantir que React seja sempre um singleton
-      // Isso força todos os imports de React a apontarem para o mesmo módulo
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
-      // Forçar @radix-ui e outras libs a usar o mesmo React
-      "@radix-ui/react-dialog": path.resolve(__dirname, "./node_modules/@radix-ui/react-dialog"),
-      "@radix-ui/react-slot": path.resolve(__dirname, "./node_modules/@radix-ui/react-slot"),
     },
     dedupe: ["react", "react-dom"], // Garantir que não haja duplicatas
   },
@@ -76,35 +32,41 @@ export default defineConfig(({ mode }) => ({
           return 'assets/[name]-[hash].js';
         },
         manualChunks: (id) => {
-          // ✅ CRÍTICO: Separar React e React-DOM PRIMEIRO
-          // Deve ser verificado ANTES de qualquer outro node_modules
-          // Lista de exceções (bibliotecas que contêm "react" no nome mas não são React core)
-          const reactExceptions = [
-            "react-router",
-            "react-hook-form",
-            "react-window",
-            "react-day-picker",
-            "react-resizable-panels",
-            "react-query",
-            "@tanstack/react-query",
-            "react-beautiful-dnd",
-            "react-select",
-            "react-virtualized"
-          ];
+          // ✅ CRÍTICO: Isolar apenas React e React-DOM core e suas dependências internas
+          // Usar Set para verificação mais eficiente
+          const reactCorePackages = new Set([
+            "react",
+            "react-dom",
+            "scheduler",
+            "object-assign",
+            "loose-envify"
+          ]);
           
-          // Verificar se é React core (não está na lista de exceções)
-          const isReactCore = id.includes("node_modules/react") && 
-                             !reactExceptions.some(exception => id.includes(exception));
+          // Normalizar o caminho para extrair o nome do pacote
+          const normalizedId = id.replace(/\\/g, "/");
+          const pkgMatch = normalizedId.match(/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+          const pkgName = pkgMatch?.[1];
           
-          // Verificar se é React-DOM
-          const isReactDOM = id.includes("node_modules/react-dom");
-          
-          if (isReactCore || isReactDOM) {
+          // Se for um pacote core do React, colocar em react-vendor
+          if (pkgName && reactCorePackages.has(pkgName)) {
             return "react-vendor";
           }
           
           // Separar outras dependências vendor
+          // IMPORTANTE: Bibliotecas que dependem de React devem ir para vendor,
+          // mas React core deve estar isolado em react-vendor
           if (id.includes("node_modules")) {
+            // Garantir que React core nunca vá para vendor
+            if (id.includes("/react/") && !id.includes("/react-dom/") && 
+                !id.includes("/react-router") && !id.includes("/react-hook-form") &&
+                !id.includes("/react-query") && !id.includes("/@tanstack/react-query")) {
+              // Verificar se é realmente React core (não uma biblioteca que usa React)
+              if (pkgName === "react" || pkgName === "react-dom" || 
+                  pkgName === "scheduler" || pkgName === "object-assign" || 
+                  pkgName === "loose-envify") {
+                return "react-vendor";
+              }
+            }
             return "vendor";
           }
 

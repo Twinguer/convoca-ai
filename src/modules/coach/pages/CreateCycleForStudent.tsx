@@ -11,11 +11,7 @@ import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { devLog } from '@/utils/productionLogger';
 import { useToast } from '@/hooks/use-toast';
 
-// Helper para verificar se é UUID válido
-const isValidUUID = (str: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
+// ✅ REMOVIDO: isValidUUID - não aceitar UUIDs diretamente por segurança
 
 const CreateCycleForStudent = () => {
   const { studentId: studentIdParam } = useParams();
@@ -35,18 +31,13 @@ const CreateCycleForStudent = () => {
       setIsValidatingToken(true);
       
       try {
-        let studentId: string;
-        if (isValidUUID(studentIdParam)) {
-          studentId = studentIdParam;
-        } else {
-          const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
-          if (!validatedUserId) {
-            throw new Error('Token de aluno inválido');
-          }
-          studentId = validatedUserId;
+        // ✅ SEGURANÇA: Validar token (não aceitar UUIDs diretamente)
+        const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
+        if (!validatedUserId) {
+          throw new Error('Token de aluno inválido');
         }
 
-        setValidatedStudentId(studentId);
+        setValidatedStudentId(validatedUserId);
       } catch (error) {
         devLog.error('Erro ao validar token:', error);
         toast({

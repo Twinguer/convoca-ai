@@ -22,11 +22,7 @@ import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import { devLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 
-// Helper para verificar se é UUID válido
-const isValidUUID = (str: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
+// ✅ REMOVIDO: isValidUUID - não aceitar UUIDs diretamente por segurança
 
 const StudentDetailsPage = () => {
   const { studentId: studentIdParam } = useParams();
@@ -55,13 +51,7 @@ const StudentDetailsPage = () => {
     const validateId = async () => {
       if (!studentIdParam) return;
 
-      // Se for UUID válido, usar diretamente
-      if (isValidUUID(studentIdParam)) {
-        setValidatedStudentId(studentIdParam);
-        return;
-      }
-
-      // Se não for UUID, provavelmente é um token ofuscado
+      // ✅ SEGURANÇA: Validar token (não aceitar UUIDs diretamente)
       setIsValidatingToken(true);
       try {
         const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);

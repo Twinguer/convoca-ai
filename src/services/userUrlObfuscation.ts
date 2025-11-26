@@ -75,7 +75,7 @@ export class UserUrlObfuscationService {
       }
       return null;
     } catch (error) {
-      logError('Failed to validate user token', { token: token.substring(0, 10) + '...' }, 'URL_OBFUSCATION');
+      logError('Failed to validate user token', { token: token?.substring(0, 10) + '...' }, 'URL_OBFUSCATION');
       return null;
     }
   }
