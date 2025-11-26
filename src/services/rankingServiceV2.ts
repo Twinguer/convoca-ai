@@ -54,12 +54,13 @@ export interface RankingDiscipline {
   weight: number;
 }
 
+// ✅ CORREÇÃO: Importar função de normalização para garantir nomenclatura correta
+import { getReservationAbbreviation as getReservationAbbreviationNormalized, normalizeReservationType } from '@/utils/quotaNormalization';
+
 // Helper function to get abbreviation for reservation type
+// Agora usa a função centralizada de normalização
 const getReservationAbbreviation = (reservationType: string): string => {
-  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
-  
-  const abbr = reservationType.substring(0, 3).toUpperCase();
-  return abbr;
+  return getReservationAbbreviationNormalized(reservationType);
 };
 
 // Buscar rankings usando a nova estrutura normalizada
@@ -250,7 +251,7 @@ export const fetchUserRankingsV2 = async (
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
-        reservationType: ranking.reservation_type || 'Ampla Concorrência',
+        reservationType: normalizeReservationType(ranking.reservation_type || 'Ampla Concorrência'),
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id,
         rankingId: ranking.concurso_id,

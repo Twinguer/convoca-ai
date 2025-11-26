@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
 
 /**
  * Interface for ranking data item
@@ -109,8 +110,9 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
               score: typedRankingData.user_data?.score || 0,
               userId: userRanking.user_id,
               avatarUrl: userProfile.avatar_url,
-              reservationType: typedRankingData.user_data?.reservation_type || 'Ampla Concorrência',
-              displayReservation: typedRankingData.user_data?.reservation_type || 'Ampla Concorrência',
+              // ✅ CORREÇÃO: Normalizar reservation_type para garantir nomenclatura correta
+              reservationType: normalizeReservationType(typedRankingData.user_data?.reservation_type || 'Ampla Concorrência'),
+              displayReservation: getReservationAbbreviation(typedRankingData.user_data?.reservation_type || 'Ampla Concorrência'),
               // Pontuações subjetivas (sem peso)
               discursiveScore: typedRankingData.user_data?.subjectives?.discursive || 0,
               caseStudy1Score: typedRankingData.user_data?.subjectives?.case_study_1 || 0,
