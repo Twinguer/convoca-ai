@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/config/queryClient";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Menu from "./components/Menu";
 import { TimerProvider } from "./contexts/TimerContext";
@@ -398,7 +399,6 @@ const AppContent = () => {
     </>;
 };
 const App = () => {
-  const queryClient = new QueryClient();
   return <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="nomeia-ui-theme" attribute="class" enableSystem>

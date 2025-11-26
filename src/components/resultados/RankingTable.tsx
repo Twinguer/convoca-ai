@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, isDisciplineBlock } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
-import { Ranking } from '@/services/rankingService';
+// ✅ CONSOLIDADO: Usar interface única do rankingService
+import type { Ranking } from '@/services/rankingService';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadMoreButton } from './LoadMoreButton';
 import { formatScore } from '@/lib/utils';

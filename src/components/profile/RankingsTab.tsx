@@ -10,7 +10,7 @@ import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
+import { fetchUserRankings } from '@/services/rankingService';
 import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { UrlObfuscationService } from '@/services/urlObfuscation';
@@ -93,7 +93,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               }
 
               // Usar a versão V3 otimizada
-              const list = await fetchUserRankingsV3(concursoId);
+              const list = await fetchUserRankings(concursoId);
 
               // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
               const isBelowMinimum = (rankingData: any, concursoData: any) => {

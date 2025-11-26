@@ -1,53 +1,62 @@
 // @ts-nocheck
-
+/**
+ * ✅ CONSOLIDADO: Serviço único de rankings
+ * 
+ * Este arquivo consolida as funcionalidades de rankingService.ts (V1),
+ * rankingServiceV2.ts e rankingServiceV3.ts em uma única implementação.
+ * 
+ * Características:
+ * - Usa RPCs para segurança e performance
+ * - Interface única e consistente
+ * - Cache otimizado com suporte a reservationType
+ */
 import { supabase } from '@/integrations/supabase/client';
+import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
 import { logger } from '@/utils/logger';
 import { rankingCache } from './rankingCache';
-import { buildRankingFromConsolidated } from './rankingFormatting';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
-// Defining the Ranking interface to fix TypeScript errors
+// ✅ Interface única consolidada (anteriormente RankingV3)
 export interface Ranking {
+  id: string;
   position: number;
   name: string;
   score: number;
   userId: string;
-  avatarUrl?: string | null;
-  // Pontuações subjetivas
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
-  otherSubjectiveScore?: number | null;
-  // Pontuações subjetivas com peso
-  weightedDiscursiveScore?: number | null;
-  weightedCaseStudy1Score?: number | null;
-  weightedCaseStudy2Score?: number | null;
-  weightedCaseStudy3Score?: number | null;
-  weightedOtherSubjectiveScore?: number | null;
-  // Pontuações de disciplinas customizadas
-  customDisciplineScores?: { [key: string]: number };
-  weightedCustomDisciplineScores?: { [key: string]: number };
-  // Flags de mínimos não atingidos
+  avatarUrl?: string;
+  reservationType: string;
+  displayReservation: string;
+  discursiveScore?: number;
+  caseStudy1Score?: number;
+  caseStudy2Score?: number;
+  caseStudy3Score?: number;
+  otherSubjectiveScore?: number;
+  customDisciplineScores?: Record<string, number>;
   belowMinimum?: boolean;
   belowDisciplineMinimums?: string[];
   belowBlockMinimums?: string[];
-  // Campos adicionais
-  reservationType: string;
-  displayReservation?: string;
-  id: string;
-  quotaPosition?: number; // Posição dentro da cota - será calculado em runtime
 }
 
-// ✅ CORREÇÃO: Importar função de normalização para garantir nomenclatura correta
-import { getReservationAbbreviation } from '@/utils/quotaNormalization';
+// ✅ Interface consolidada (anteriormente RankingDataV3)
+export interface RankingData {
+  id: string;
+  titulo: string;
+  orgao: string;
+  banca: string;
+  total_participants: number;
+  created_at: string;
+  exam_type: string;
+  disciplines?: any[];
+  official_answers?: Record<string, any>;
+}
 
-// Helper function to get abbreviation for reservation type
-// Agora usa a função centralizada de normalização
-const getReservationAbbreviationLocal = (reservationType: string): string => {
-  return getReservationAbbreviation(reservationType);
-};
-
+/**
+ * Busca rankings de forma otimizada usando JOINs nativos do Supabase
+ * @param concursoId ID do concurso
+ * @param reservationType Tipo de reserva (opcional)
+ * @param offset Offset para paginação
+ * @param limit Limite de resultados
+ */
+// ✅ Função principal consolidada (anteriormente fetchUserRankingsV3)
 export const fetchUserRankings = async (
   concursoId: string,
   reservationType?: string,
@@ -55,26 +64,30 @@ export const fetchUserRankings = async (
   limit = 100
 ): Promise<Ranking[]> => {
   const startTime = performance.now();
-  const page = Math.floor(offset / limit) + 1;
-
+  
   try {
-    logger.ranking('Fetching rankings', `concursoId: ${concursoId}, page: ${page}, limit: ${limit}`);
+    logger.info('fetchUserRankings called', 'RANKING_SERVICE', {
+      concursoId,
+      reservationType,
+      offset,
+      limit
+    });
+
+    const page = Math.floor(offset / limit) + 1;
 
     // Verificar cache local primeiro
-    const localCachedRankings = rankingCache.getRankings(concursoId, page, limit);
+    const localCachedRankings = rankingCache.getRankings(concursoId, page, limit, reservationType);
     
     if (localCachedRankings) {
-      logger.ranking('Rankings loaded from local cache', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
+      logger.ranking('Rankings loaded from local cache V3', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
       
       const endTime = performance.now();
       logger.performance('fetchUserRankings (local cached)', endTime - startTime, 'RANKING_SERVICE');
       
-      return localCachedRankings;
+      return localCachedRankings as Ranking[];
     }
-    
-    // Query usando função RPC para buscar rankings (acesso público)
-    logger.ranking('Executing ranking query V2 (RPC)', `rankingId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
-    
+
+    // ✅ FASE 2: Migrar para usar RPC em vez de query direta
     // Usar função RPC que retorna rankings do concurso (acesso público)
     const { data: allUserRankings, error: rankingError } = await supabase.rpc('get_rankings_for_concurso', {
       p_concurso_id: concursoId,
@@ -84,306 +97,309 @@ export const fetchUserRankings = async (
     });
 
     if (rankingError) {
-      logger.error('Error calling get_rankings_for_concurso', 'RANKING_SERVICE', rankingError);
+      logger.error('Error calling get_rankings_for_concurso V3', 'RANKING_SERVICE_V3', rankingError);
       throw new Error(`Ranking query error: ${rankingError.message}`);
     }
 
-    // Filter and format rankings for the specific concurso
-    const rankingData = [];
-    if (allUserRankings) {
-      // Get user IDs for profile lookup
-      const userIds = allUserRankings.map(ur => ur.user_id);
-      
-      // Fetch user profiles separately
-      const { data: userProfiles, error: profileError } = await supabase
-        .from('users_profiles')
-        .select('id, name, avatar_url')
-        .in('id', userIds);
-      
-      // Debug logs removed for security
-      
-      // Create a map for quick profile lookup
-      const profileMap = new Map();
-      if (userProfiles && userProfiles.length > 0) {
-        userProfiles.forEach(profile => {
-          profileMap.set(profile.id, profile);
-        });
-      }
-      
-      // Se não encontrou todos os perfis, buscar individualmente
-      if (profileMap.size < userIds.length) {
-        devLog.warn(`Found ${profileMap.size} profiles out of ${userIds.length}, searching for missing ones...`);
-        for (const userId of userIds) {
-          if (!profileMap.has(userId)) {
-            try {
-              const { data: individualProfile } = await supabase
-                .from('users_profiles')
-                .select('id, name, avatar_url')
-                .eq('id', userId)
-                .single();
-              
-              if (individualProfile) {
-                profileMap.set(userId, individualProfile);
-                // Debug logs removed for security
-              } else {
-                devLog.warn(`No profile found for ${userId}`);
-              }
-            } catch (err) {
-              devLog.warn(`Failed to fetch individual profile for ${userId}:`, err);
-            }
-          }
-        }
-      }
-      
-      // Debug logs removed for security
-      
-      // Process rankings sequentially to handle async operations
-      for (const userRanking of allUserRankings) {
-        if (userRanking.consolidated_data?.rankings) {
-          for (const [rankingId, rankingDataItem] of Object.entries(userRanking.consolidated_data.rankings)) {
-            // Debug logs removed for security
-            
-            if (rankingDataItem.concurso_id === concursoId) {
-              const userProfile = profileMap.get(userRanking.user_id);
-              
-              if (!userProfile) {
-                devLog.error(`CRITICAL: Profile not found for user ${userRanking.user_id}`);
-                devLog.error('Available profiles:', Array.from(profileMap.keys()));
-                devLog.error('Looking for:', userRanking.user_id);
-                continue; // Skip this ranking if no profile found
-              }
-              
-              // Debug logs removed for security
-              
-              // Debug logs removed for security
-
-              // Debug logs removed for security
-
-              // Debug logs removed for security
-
-              rankingData.push(
-                buildRankingFromConsolidated(
-                  rankingId,
-                  userRanking.user_id,
-                  rankingDataItem.user_data,
-                  userProfile.name,
-                  userProfile.avatar_url,
-                  getReservationAbbreviationLocal
-                )
-              );
-            }
-          }
-        }
-      }
-    }
-
-    // ✅ Ordenar rankings: classificados por score decrescente primeiro, depois eliminados por score decrescente
-    // Isso garante que classificados sempre aparecem antes de eliminados, independente do score
-    rankingData.sort((a, b) => {
-      const aScore = Number(a.score || 0);
-      const bScore = Number(b.score || 0);
-      const aEliminated = !!(a.belowMinimum || (a.belowDisciplineMinimums && a.belowDisciplineMinimums.length > 0) || (a.belowBlockMinimums && a.belowBlockMinimums.length > 0));
-      const bEliminated = !!(b.belowMinimum || (b.belowDisciplineMinimums && b.belowDisciplineMinimums.length > 0) || (b.belowBlockMinimums && b.belowBlockMinimums.length > 0));
-      
-      // Se um é eliminado e outro não, eliminado vai para o final
-      if (aEliminated && !bEliminated) return 1;
-      if (!aEliminated && bEliminated) return -1;
-      
-      // Se ambos têm o mesmo status (ambos classificados ou ambos eliminados), ordenar por score decrescente
-      // Em caso de empate, manter ordem original (estável)
-      if (bScore !== aScore) {
-        return bScore - aScore;
-      }
-      
-      // Empate: ordenar por userId para garantir ordem estável
-      return (a.userId || '').localeCompare(b.userId || '');
-    });
-    
-    // ✅ Calcular posições usando função do backend (mais eficiente e consistente)
-    let positionsMap: Record<string, Record<string, { position: number; quotaPosition?: number }>> = {};
-    try {
-      const { data: positionsData, error: positionsError } = await supabase.rpc('calculate_ranking_positions', {
-        p_concurso_id: concursoId
-      });
-      
-      if (!positionsError && positionsData) {
-        positionsMap = positionsData;
-      }
-    } catch (err) {
-      devLog.warn('Failed to fetch positions from backend, falling back to frontend calculation:', err);
-      // Fallback: calcular no frontend se backend falhar
-      const quotaGroups: { [key: string]: typeof rankingData } = {};
-      rankingData.forEach(ranking => {
-        const quota = ranking.reservationType || 'Ampla Concorrência';
-        if (!quotaGroups[quota]) {
-          quotaGroups[quota] = [];
-        }
-        quotaGroups[quota].push(ranking);
-      });
-      
-      Object.keys(quotaGroups).forEach(quota => {
-        const quotaRankings = quotaGroups[quota];
-        const quotaClassified = quotaRankings.filter(r => {
-          const eliminated = !!(r.belowMinimum || (r.belowDisciplineMinimums && r.belowDisciplineMinimums.length > 0) || (r.belowBlockMinimums && r.belowBlockMinimums.length > 0));
-          return !eliminated;
-        });
-        
-        quotaClassified.forEach((ranking, index) => {
-          if (!positionsMap[ranking.userId]) {
-            positionsMap[ranking.userId] = {};
-          }
-          if (!positionsMap[ranking.userId][ranking.id]) {
-            positionsMap[ranking.userId][ranking.id] = { position: 0 };
-          }
-          positionsMap[ranking.userId][ranking.id].quotaPosition = index + 1;
-        });
-      });
-    }
-    
-    // Aplicar posições do mapa aos rankings
-    rankingData.forEach((ranking, index) => {
-      const positions = positionsMap[ranking.userId]?.[ranking.id];
-      if (positions) {
-        ranking.quotaPosition = positions.quotaPosition;
-        // position será calculado no pagination abaixo
-      }
-    });
-    
-    const paginatedData = rankingData.slice(offset, offset + limit);
-
-    logger.ranking('Query result', `data: ${paginatedData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
-
-    if (rankingError) {
-      throw new Error(`Ranking query error: ${rankingError.message}`);
-    }
-
-    if (!paginatedData || paginatedData.length === 0) {
-      logger.ranking('No rankings found', `concursoId: ${concursoId}`);
+    if (!allUserRankings || allUserRankings.length === 0) {
       return [];
     }
 
-    // Buscar dados do ranking (nova estrutura)
-    const { data: rankingInfo, error: rankingInfoError } = await supabase
+    // Processar consolidated_data para extrair rankings do concurso específico
+    const rankingsForConcurso = [];
+    
+    for (const item of allUserRankings) {
+      const consolidatedData = item.consolidated_data || {};
+      
+      if (consolidatedData.rankings) {
+        // Encontrar o ranking específico deste concurso
+        for (const [rankingId, ranking] of Object.entries(consolidatedData.rankings)) {
+          if ((ranking as any).concurso_id === concursoId) {
+            rankingsForConcurso.push({
+              user_id: item.user_id,
+              rankingId,
+              rankingData: ranking
+            });
+            break; // Apenas um ranking por concurso por usuário
+          }
+        }
+      }
+    }
+
+    // Ordenar por score (descendente)
+    rankingsForConcurso.sort((a, b) => {
+      const scoreA = (a.rankingData as any).user_data?.score || 0;
+      const scoreB = (b.rankingData as any).user_data?.score || 0;
+      return scoreB - scoreA;
+    });
+
+    // Buscar perfis de usuários separadamente (RPC não retorna perfis)
+    const userIds = [...new Set(rankingsForConcurso.map((item: any) => item.user_id))];
+    
+    const { data: userProfiles, error: profileError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+
+    if (profileError) {
+      logger.error('Error fetching user profiles V3', 'RANKING_SERVICE_V3', profileError);
+      // Continuar mesmo sem perfis (usar valores padrão)
+    }
+
+    // Criar mapa de perfis para lookup rápido
+    const profileMap = new Map();
+    if (userProfiles) {
+      userProfiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+
+    // Mapear resultados para o formato esperado
+    const paginatedData = rankingsForConcurso.map((item: any) => {
+      const userProfile = profileMap.get(item.user_id) || { name: 'Usuário', avatar_url: null };
+      return {
+        user_id: item.user_id,
+        rankingId: item.rankingId,
+        rankingData: item.rankingData,
+        users_profiles: userProfile
+      };
+    });
+
+    // Mapear resultados para o formato esperado
+    const rankings: Ranking[] = paginatedData.map((item: any, index: number) => {
+      // RPC retorna dados já formatados, mas precisamos extrair user_data
+      const rankingData = item.rankingData || item;
+      const userData = rankingData?.user_data || rankingData || {};
+      
+      // Extrair pontuações subjetivas da estrutura correta
+      const subjectiveScores = userData?.subjectives || {};
+      const objectScores = userData?.object_scores || {};
+      
+      // Debug logs removed for security
+
+      return {
+        id: item.rankingId || rankingData?.id || `ranking-${item.user_id}-${index}`, // Usar o rankingId específico
+        position: offset + index + 1,
+        name: item.users_profiles?.name || 'Usuário',
+        score: userData?.score || rankingData?.score || 0,
+        userId: item.user_id,
+        avatarUrl: item.users_profiles?.avatar_url || null,
+        // ✅ CORREÇÃO: Normalizar reservation_type para garantir nomenclatura correta
+        reservationType: normalizeReservationType(userData?.reservation_type || rankingData?.reservation_type || 'Ampla Concorrência'),
+        displayReservation: getReservationAbbreviation(userData?.reservation_type || rankingData?.reservation_type || 'Ampla Concorrência'),
+        discursiveScore: subjectiveScores.discursive || 0,
+        caseStudy1Score: subjectiveScores.case_study_1 || 0,
+        caseStudy2Score: subjectiveScores.case_study_2 || 0,
+        caseStudy3Score: subjectiveScores.case_study_3 || 0,
+        otherSubjectiveScore: subjectiveScores.other_subjective || 0,
+        customDisciplineScores: objectScores,
+        belowMinimum: false,
+        belowDisciplineMinimums: [],
+        belowBlockMinimums: [],
+      };
+    });
+
+    // Armazenar no cache local
+    rankingCache.setRankings(concursoId, rankings, page, limit, reservationType);
+
+    const duration = performance.now() - startTime;
+    logger.performance('fetchUserRankings completed', duration, 'RANKING_SERVICE', {
+      count: rankings.length,
+      offset,
+      limit
+    });
+
+    return rankings;
+  } catch (error) {
+    logger.error('Error in fetchUserRankings', 'RANKING_SERVICE', error);
+    throw error;
+  }
+};
+
+/**
+ * Busca dados do ranking (concurso)
+ */
+// ✅ Função consolidada (anteriormente fetchRankingDataV3)
+export const fetchRankingData = async (concursoId: string): Promise<RankingData | null> => {
+  try {
+    const { data, error } = await supabase
       .from('concursos')
-      .select('id, subjects')
+      .select('*')
       .eq('id', concursoId)
       .single();
 
-    if (rankingInfoError) {
-      logger.warn('Could not fetch ranking data', 'RANKING_SERVICE', rankingInfoError);
+    if (error) {
+      logger.error('Error fetching ranking data V3', 'RANKING_SERVICE_V3', error);
+      throw error;
     }
 
-    // Obter dados do ranking
-    const subjects = rankingInfo?.subjects || {};
-    const hasMinimumScoreEnabled = subjects.discr || subjects.case1 || subjects.case2 || subjects.case3 || subjects.other;
-    const totalMinimumScore = hasMinimumScoreEnabled ? (subjects.discr_min_score || subjects.case1_min_score || subjects.case2_min_score || subjects.case3_min_score || subjects.other_min_score || 0) : 0;
-
-    // Formatar os dados do ranking com posições (nova estrutura normalizada)
-    // Posições devem ser calculadas considerando TODOS os rankings (não apenas paginados)
-    const totalRankings = rankingData.length;
-    const formattedRankings = paginatedData.map((ranking, index) => {
-      const name = ranking.name || 'Usuário Anônimo';
-      const avatarUrl = ranking.avatarUrl || null;
-      
-      // Usar flags calculados no recálculo (consolidated_data)
-      const belowMinimum = !!ranking.belowMinimum;
-      const belowDisciplineMinimums = ranking.belowDisciplineMinimums || [];
-      const belowBlockMinimums = ranking.belowBlockMinimums || [];
-    
-      // ✅ Usar posição do backend se disponível, caso contrário calcular localmente
-      const backendPosition = positionsMap[ranking.userId]?.[ranking.id]?.position;
-      const position = backendPosition ? backendPosition : (offset + index + 1);
-    
-      return {
-        position, // Posição correta após ordenação
-        name: name,
-        score: ranking.score || 0,
-        userId: ranking.userId,
-        avatarUrl: avatarUrl,
-        // Pontuações subjetivas (da nova estrutura)
-        discursiveScore: ranking.discursiveScore || 0,
-        caseStudy1Score: ranking.caseStudy1Score || 0,
-        caseStudy2Score: ranking.caseStudy2Score || 0,
-        caseStudy3Score: ranking.caseStudy3Score || 0,
-        otherSubjectiveScore: ranking.otherSubjectiveScore || 0,
-        // Pontuações subjetivas com peso (da nova estrutura)
-        weightedDiscursiveScore: ranking.weightedDiscursiveScore || 0,
-        weightedCaseStudy1Score: ranking.weightedCaseStudy1Score || 0,
-        weightedCaseStudy2Score: ranking.weightedCaseStudy2Score || 0,
-        weightedCaseStudy3Score: ranking.weightedCaseStudy3Score || 0,
-        weightedOtherSubjectiveScore: ranking.weightedOtherSubjectiveScore || 0,
-        // Pontuações de disciplinas customizadas
-        customDisciplineScores: ranking.customDisciplineScores || {},
-        weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores || {},
-        // Flags de mínimos não atingidos (vindo do consolidated_data)
-        belowMinimum,
-        belowDisciplineMinimums,
-        belowBlockMinimums,
-        // Dados do ranking
-        reservationType: ranking.reservationType,
-        displayReservation: getReservationAbbreviationLocal(ranking.reservationType),
-        quotaPosition: ranking.quotaPosition || undefined, // Preservar quotaPosition calculado acima
-        id: ranking.id,
-      };
-    });
-        
-    // Armazenar no cache local
-    rankingCache.setRankings(concursoId, formattedRankings, page, limit);
-    
-    const endTime = performance.now();
-    logger.performance('fetchUserRankings', endTime - startTime, 'RANKING_SERVICE');
-    
-    return formattedRankings;
-    
+    return data as RankingData;
   } catch (error) {
-    logger.error('Error fetching rankings', 'RANKING_SERVICE', error);
-    
-    // Tentar cache local como fallback
-    const fallbackRankings = rankingCache.getRankings(concursoId, page, limit);
-    if (fallbackRankings) {
-      return fallbackRankings;
+    logger.error('Error in fetchRankingData', 'RANKING_SERVICE', error);
+    return null;
+  }
+};
+
+/**
+ * Busca disciplinas do ranking
+ */
+// ✅ Função consolidada (anteriormente fetchRankingDisciplinesV3)
+export const fetchRankingDisciplines = async (concursoId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('concursos')
+      .select('disciplines')
+      .eq('id', concursoId)
+      .single();
+
+    if (error) {
+      logger.error('Error fetching disciplines', 'RANKING_SERVICE', error);
+      throw error;
     }
-    
+
+    return data?.disciplines || [];
+  } catch (error) {
+    logger.error('Error in fetchRankingDisciplines', 'RANKING_SERVICE', error);
     return [];
   }
 };
 
-
-// Get the available reservation types for a concurso
+/**
+ * Busca tipos de reserva disponíveis para um ranking
+ */
+// ✅ Função consolidada (anteriormente getAvailableReservationTypesV3)
 export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
-      .from('concursos')
-      .select(`
-        has_ampla_concorrencia,
-        has_ppp,
-        has_pcd,
-        has_hipossuficientes,
-        has_indigenas,
-        has_transsexuais
-      `)
-      .eq('id', concursoId)
-      .single();
-    
+      .from('user_rankings')
+      .select('consolidated_data');
+
     if (error) {
-      devLog.error('Error fetching concurso reservation types:', error);
-      return ['Ampla Concorrência'];
+      logger.error('Error fetching reservation types', 'RANKING_SERVICE', error);
+      throw error;
     }
-    
-    const types = [];
-    
-    // Ampla Concorrência is always available
-    types.push('Ampla Concorrência');
-    
-    if (data.has_ppp) types.push('PPP');
-    if (data.has_pcd) types.push('PCD');
-    if (data.has_hipossuficientes) types.push('Hipossuficientes');
-    if (data.has_indigenas) types.push('Indígenas');
-    if (data.has_transsexuais) types.push('Pessoas Trans');
-    
-    return types;
+
+    const types = new Set<string>();
+    types.add('Ampla Concorrência');
+
+    data?.forEach((item: any) => {
+      const rankings = item.consolidated_data?.rankings || {};
+      Object.values(rankings).forEach((ranking: any) => {
+        if (ranking?.concurso_id === concursoId) {
+          const type = ranking?.user_data?.reservation_type || 'Ampla Concorrência';
+          types.add(type);
+        }
+      });
+    });
+
+    return Array.from(types);
   } catch (error) {
-    devLog.error('Error determining available reservation types:', error);
+    logger.error('Error in getAvailableReservationTypes', 'RANKING_SERVICE', error);
     return ['Ampla Concorrência'];
+  }
+};
+
+/**
+ * Busca estatísticas do ranking
+ */
+// ✅ Função consolidada (anteriormente fetchRankingStatsV3)
+export const fetchRankingStats = async (concursoId: string): Promise<any> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_rankings')
+      .select('consolidated_data');
+
+    if (error) {
+      logger.error('Error fetching stats', 'RANKING_SERVICE', error);
+      throw error;
+    }
+
+    const entries: Array<{ score: number; reservation_type: string }> = [];
+
+    data?.forEach((item: any) => {
+      const rankings = item.consolidated_data?.rankings || {};
+      Object.values(rankings).forEach((ranking: any) => {
+        if (ranking?.concurso_id === concursoId) {
+          entries.push({
+            score: Number(ranking?.user_data?.score || 0),
+            reservation_type: ranking?.user_data?.reservation_type || 'Ampla Concorrência'
+          });
+        }
+      });
+    });
+
+    const totalParticipants = entries.length;
+    const scores = entries.map(e => e.score);
+    const avgScore = totalParticipants > 0 ? (scores.reduce((a, b) => a + b, 0) / totalParticipants) : 0;
+    const maxScore = scores.length ? Math.max(...scores) : 0;
+    const minScore = scores.length ? Math.min(...scores) : 0;
+
+    const reservationTypeCount: Record<string, number> = {};
+    entries.forEach(e => {
+      reservationTypeCount[e.reservation_type] = (reservationTypeCount[e.reservation_type] || 0) + 1;
+    });
+
+    return {
+      total_participants: totalParticipants,
+      avg_score: avgScore,
+      max_score: maxScore,
+      min_score: minScore,
+      reservation_type_count: reservationTypeCount,
+    };
+  } catch (error) {
+    logger.error('Error in fetchRankingStats', 'RANKING_SERVICE', error);
+    return null;
+  }
+};
+
+/**
+ * Calcula score usando Edge Function
+ */
+export const calculateRankingScore = async (
+  userId: string,
+  concursoId: string,
+  answers: Record<string, string>,
+  bookletId: string,
+  reservationType: string,
+  subjectiveScores?: {
+    discursive_score?: number;
+    case_study_1_score?: number;
+    case_study_2_score?: number;
+    case_study_3_score?: number;
+    other_subjective_score?: number;
+  }
+): Promise<{ success: boolean; score?: number; error?: string }> => {
+  try {
+    logger.info('calculateRankingScore called', 'RANKING_SERVICE', {
+      userId,
+      concursoId,
+      bookletId,
+      answerCount: Object.keys(answers).length
+    });
+
+    const { data, error } = await supabase.functions.invoke('calculate-ranking-score', {
+      body: {
+        userId,
+        concursoId,
+        answers,
+        bookletId,
+        reservationType,
+        subjectiveScores,
+      },
+    });
+
+    if (error) {
+      logger.error('Error calling calculate-ranking-score function', 'RANKING_SERVICE', error);
+      return { success: false, error: error.message };
+    }
+
+    logger.info('Score calculated successfully', 'RANKING_SERVICE', {
+      score: data.score
+    });
+
+    return { success: true, score: data.score };
+  } catch (error: any) {
+    logger.error('Error in calculateRankingScore', 'RANKING_SERVICE', error);
+    return { success: false, error: error.message };
   }
 };

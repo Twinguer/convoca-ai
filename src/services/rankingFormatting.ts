@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { Ranking } from './rankingService';
+// ✅ CONSOLIDADO: Usar interface única do rankingService
+import type { Ranking } from './rankingService';
 import { devLog } from '@/utils/productionLogger';
 import { normalizeReservationType } from '@/utils/quotaNormalization';
 

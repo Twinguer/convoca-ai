@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Concurso, ConcursoFilter } from "@/types/concursos";
+// ✅ CONSOLIDADO: Usar serviço único de rankings
 import { fetchUserRankings as fetchRankingsFromService } from "./rankingService";
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 

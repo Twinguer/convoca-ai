@@ -1,15 +1,16 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+// ✅ CONSOLIDADO: Usar serviço único de rankings
 import { 
-  fetchUserRankingsV3, 
-  fetchRankingDataV3, 
-  fetchRankingDisciplinesV3, 
-  getAvailableReservationTypesV3,
-  fetchRankingStatsV3,
-  RankingV3,
-  RankingDataV3
-} from '@/services/rankingServiceV3';
+  fetchUserRankings, 
+  fetchRankingData, 
+  fetchRankingDisciplines, 
+  getAvailableReservationTypes,
+  fetchRankingStats,
+  Ranking,
+  RankingData
+} from '@/services/rankingService';
 import { logger } from '@/utils/logger';
 
 interface UseRankingsDataV3Options {
@@ -21,8 +22,8 @@ interface UseRankingsDataV3Options {
 }
 
 interface UseRankingsDataV3Return {
-  rankings: RankingV3[];
-  rankingData: RankingDataV3 | null;
+  rankings: Ranking[];
+  rankingData: RankingData | null;
   disciplines: any[];
   reservationTypes: string[];
   stats: any;
@@ -62,7 +63,7 @@ export const useRankingsDataV3 = ({
     refetch: refetchRankings
   } = useQuery({
     queryKey: ['rankings-v3', concursoId, reservationType, currentPage, limit],
-    queryFn: () => fetchUserRankingsV3(concursoId, reservationType, offset, limit),
+    queryFn: () => fetchUserRankings(concursoId, reservationType, offset, limit),
     enabled: enabled && !!concursoId,
     staleTime: 2 * 60 * 1000, // 2 minutos (mais agressivo para dados em tempo real)
     gcTime: 5 * 60 * 1000, // 5 minutos
@@ -78,7 +79,7 @@ export const useRankingsDataV3 = ({
     error: errorRankingData
   } = useQuery({
     queryKey: ['ranking-data-v3', concursoId],
-    queryFn: () => fetchRankingDataV3(concursoId),
+    queryFn: () => fetchRankingData(concursoId),
     enabled: enabled && !!concursoId,
     staleTime: 10 * 60 * 1000, // 10 minutos
     gcTime: 30 * 60 * 1000, // 30 minutos
@@ -92,7 +93,7 @@ export const useRankingsDataV3 = ({
     error: errorDisciplines
   } = useQuery({
     queryKey: ['ranking-disciplines-v3', concursoId],
-    queryFn: () => fetchRankingDisciplinesV3(concursoId),
+    queryFn: () => fetchRankingDisciplines(concursoId),
     enabled: enabled && !!concursoId,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
@@ -106,7 +107,7 @@ export const useRankingsDataV3 = ({
     error: errorReservationTypes
   } = useQuery({
     queryKey: ['ranking-reservation-types-v3', concursoId],
-    queryFn: () => getAvailableReservationTypesV3(concursoId),
+    queryFn: () => getAvailableReservationTypes(concursoId),
     enabled: enabled && !!concursoId,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
@@ -120,7 +121,7 @@ export const useRankingsDataV3 = ({
     error: errorStats
   } = useQuery({
     queryKey: ['ranking-stats-v3', concursoId],
-    queryFn: () => fetchRankingStatsV3(concursoId),
+    queryFn: () => fetchRankingStats(concursoId),
     enabled: enabled && !!concursoId,
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -260,7 +261,7 @@ export const useRankingsPaginationV3 = (concursoId: string, limit = 100) => {
 export const useRankingStatsV3 = (concursoId: string) => {
   const { data: stats, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['ranking-stats-v3', concursoId],
-    queryFn: () => fetchRankingStatsV3(concursoId),
+    queryFn: () => fetchRankingStats(concursoId),
     enabled: !!concursoId,
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

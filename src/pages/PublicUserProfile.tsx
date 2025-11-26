@@ -13,7 +13,7 @@ import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
-import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
+import { fetchUserRankings } from '@/services/rankingService';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
@@ -205,7 +205,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
 
         // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
         const results = await Promise.all(concursoIds.map(async cid => {
-          const list = await fetchUserRankingsV3(cid);
+          const list = await fetchUserRankings(cid);
 
           // Buscar dados do ranking para verificar o tipo de exame
           let rankingData = null;

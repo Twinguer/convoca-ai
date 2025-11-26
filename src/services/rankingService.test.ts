@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { describe, it, expect, vi } from 'vitest';
+// ✅ FASE 4: Atualizado para usar serviço consolidado
 import { fetchUserRankings } from './rankingService';
 import { supabase } from '@/integrations/supabase/client';
 

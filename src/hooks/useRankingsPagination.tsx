@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+// ✅ CONSOLIDADO: Usar serviço único de rankings
 import { fetchUserRankings } from '@/services/rankingService';
 import { logger } from '@/utils/logger';
 import type { Ranking } from '@/services/rankingService';

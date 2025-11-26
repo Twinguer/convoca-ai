@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LoadMoreButton } from './LoadMoreButton';
 import { logger } from '@/utils/logger';
+// ✅ CONSOLIDADO: Usar interface única do rankingService
 import type { Ranking } from '@/services/rankingService';
 import { formatScore } from '@/lib/utils';
 
