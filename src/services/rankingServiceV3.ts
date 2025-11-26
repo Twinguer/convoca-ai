@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { supabase } from '@/integrations/supabase/client';
+import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
 import { logger } from '@/utils/logger';
 import { rankingCache } from './rankingCache';
-import { convertReservationCodeToName } from './rankingFormatting';
 
 export interface RankingV3 {
   id: string;
@@ -133,10 +133,6 @@ export const fetchUserRankingsV3 = async (
       
       // Debug logs removed for security
 
-      // ✅ CORREÇÃO: Converter código do banco para nome completo esperado pelo filtro
-      const reservationTypeCode = userData?.reservation_type || 'AC';
-      const normalizedReservationType = convertReservationCodeToName(reservationTypeCode);
-
       return {
         id: item.rankingId, // Usar o rankingId específico
         position: offset + index + 1,
@@ -144,8 +140,9 @@ export const fetchUserRankingsV3 = async (
         score: userData?.score || 0, // ← CORREÇÃO: extrair do user_data
         userId: item.user_id,
         avatarUrl: item.users_profiles.avatar_url,
-        reservationType: normalizedReservationType,
-        displayReservation: normalizedReservationType,
+        // ✅ CORREÇÃO: Normalizar reservation_type para garantir nomenclatura correta
+        reservationType: normalizeReservationType(userData?.reservation_type || 'Ampla Concorrência'),
+        displayReservation: getReservationAbbreviation(userData?.reservation_type || 'Ampla Concorrência'),
         discursiveScore: subjectiveScores.discursive || 0,
         caseStudy1Score: subjectiveScores.case_study_1 || 0,
         caseStudy2Score: subjectiveScores.case_study_2 || 0,

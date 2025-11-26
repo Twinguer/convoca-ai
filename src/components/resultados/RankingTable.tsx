@@ -14,6 +14,7 @@ import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadMoreButton } from './LoadMoreButton';
 import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -287,16 +288,14 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     </Card>;
 };
 
+// ✅ CORREÇÃO: Importar função de normalização para garantir nomenclatura correta
+import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
+
 const getQuotaAbbreviation = (quota: string): string => {
-  if (quota === "Ampla Concorrência") return "AC";
-  const abbreviations: Record<string, string> = {
-    "PPP": "PPP",
-    "PCD": "PCD",
-    "Hipossuficientes": "Hip",
-    "Indígenas": "Ind",
-    "Pessoas Trans": "Tra"
-  };
-  return abbreviations[quota] || quota.substring(0, 3);
+  // Normalizar primeiro para garantir nome completo correto
+  const normalized = normalizeReservationType(quota);
+  // Usar função centralizada de abreviação
+  return getReservationAbbreviation(normalized);
 };
 
 const RankingTableContent: React.FC<{

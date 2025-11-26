@@ -39,13 +39,13 @@ export interface Ranking {
   quotaPosition?: number; // Posição dentro da cota - será calculado em runtime
 }
 
+// ✅ CORREÇÃO: Importar função de normalização para garantir nomenclatura correta
+import { getReservationAbbreviation } from '@/utils/quotaNormalization';
+
 // Helper function to get abbreviation for reservation type
-const getReservationAbbreviation = (reservationType: string): string => {
-  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
-  
-  // Get first three letters as abbreviation
-  const abbr = reservationType.substring(0, 3).toUpperCase();
-  return abbr;
+// Agora usa a função centralizada de normalização
+const getReservationAbbreviationLocal = (reservationType: string): string => {
+  return getReservationAbbreviation(reservationType);
 };
 
 export const fetchUserRankings = async (
@@ -168,7 +168,7 @@ export const fetchUserRankings = async (
                   rankingDataItem.user_data,
                   userProfile.name,
                   userProfile.avatar_url,
-                  getReservationAbbreviation
+                  getReservationAbbreviationLocal
                 )
               );
             }
@@ -321,7 +321,7 @@ export const fetchUserRankings = async (
         belowBlockMinimums,
         // Dados do ranking
         reservationType: ranking.reservationType,
-        displayReservation: getReservationAbbreviation(ranking.reservationType),
+        displayReservation: getReservationAbbreviationLocal(ranking.reservationType),
         quotaPosition: ranking.quotaPosition || undefined, // Preservar quotaPosition calculado acima
         id: ranking.id,
       };
