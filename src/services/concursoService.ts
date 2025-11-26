@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Concurso, ConcursoFilter } from "@/types/concursos";
-import { fetchUserRankings as fetchRankingsFromService } from "./rankingService";
+// ✅ FASE 1: Migrar para usar rankingServiceV3
+import { fetchUserRankingsV3 as fetchRankingsFromService } from "./rankingServiceV3";
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 /**

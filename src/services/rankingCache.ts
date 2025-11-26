@@ -3,7 +3,8 @@
  * Sistema leve e funcional
  */
 
-import type { Ranking } from '@/services/rankingService';
+// ✅ FASE 1: Migrar para usar interface RankingV3
+import type { RankingV3 as Ranking } from '@/services/rankingServiceV3';
 
 interface CacheEntry<T> {
   data: T;

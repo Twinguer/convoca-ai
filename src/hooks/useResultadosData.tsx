@@ -79,15 +79,15 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
     staleTime: 300000, // 5 minutos
   });
   
-  // Configuração para rankings (query simples) - HABILITADO para exibir classificação
+  // ✅ FASE 1: Configuração para rankings usando V3 (com RPC)
   const { 
     data: rankings = [], 
     isLoading: isLoadingRankings, 
     refetch: refetchRankings,
     isRefetching
   } = useQuery({
-    queryKey: ['rankings', id],
-    queryFn: () => fetchUserRankings(id),
+    queryKey: ['rankings-v3', id],
+    queryFn: () => fetchUserRankingsV3(id || '', undefined, 0, 100),
     refetchOnWindowFocus: false,
     staleTime: 0, // Sempre buscar dados frescos para garantir atualizações imediatas
     enabled: !!id, // HABILITADO - buscar rankings para exibir classificação

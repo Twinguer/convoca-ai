@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { Ranking } from './rankingService';
+// ✅ FASE 1: Migrar para usar interface RankingV3
+import type { RankingV3 as Ranking } from './rankingServiceV3';
 import { devLog } from '@/utils/productionLogger';
 import { normalizeReservationType } from '@/utils/quotaNormalization';
 

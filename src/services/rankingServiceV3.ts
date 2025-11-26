@@ -73,40 +73,40 @@ export const fetchUserRankingsV3 = async (
       return localCachedRankings as RankingV3[];
     }
 
-    // Query para buscar todos os user_rankings e filtrar por concurso_id no consolidated_data
-    const { data, error } = await supabase
-      .from('user_rankings')
-      .select(`
-        user_id,
-        consolidated_data,
-        users_profiles!inner(id, name, avatar_url)
-      `);
+    // ✅ FASE 2: Migrar para usar RPC em vez de query direta
+    // Usar função RPC que retorna rankings do concurso (acesso público)
+    const { data: allUserRankings, error: rankingError } = await supabase.rpc('get_rankings_for_concurso', {
+      p_concurso_id: concursoId,
+      p_reservation_type: reservationType || null,
+      p_offset: offset,
+      p_limit: limit
+    });
 
-    if (error) {
-      logger.error('Error fetching rankings V3', 'RANKING_SERVICE_V3', error);
-      throw error;
+    if (rankingError) {
+      logger.error('Error calling get_rankings_for_concurso V3', 'RANKING_SERVICE_V3', rankingError);
+      throw new Error(`Ranking query error: ${rankingError.message}`);
     }
 
-    if (!data) {
+    if (!allUserRankings || allUserRankings.length === 0) {
       return [];
     }
 
-    // Filtrar rankings que participam deste concurso específico
+    // Processar consolidated_data para extrair rankings do concurso específico
     const rankingsForConcurso = [];
     
-    for (const item of data) {
+    for (const item of allUserRankings) {
       const consolidatedData = item.consolidated_data || {};
       
       if (consolidatedData.rankings) {
-        // Verificar se este usuário participa do concurso
+        // Encontrar o ranking específico deste concurso
         for (const [rankingId, ranking] of Object.entries(consolidatedData.rankings)) {
           if ((ranking as any).concurso_id === concursoId) {
             rankingsForConcurso.push({
-              ...item,
+              user_id: item.user_id,
               rankingId,
               rankingData: ranking
             });
-            break;
+            break; // Apenas um ranking por concurso por usuário
           }
         }
       }
@@ -119,13 +119,43 @@ export const fetchUserRankingsV3 = async (
       return scoreB - scoreA;
     });
 
-    // Aplicar paginação
-    const paginatedData = rankingsForConcurso.slice(offset, offset + limit);
+    // Buscar perfis de usuários separadamente (RPC não retorna perfis)
+    const userIds = [...new Set(rankingsForConcurso.map((item: any) => item.user_id))];
+    
+    const { data: userProfiles, error: profileError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+
+    if (profileError) {
+      logger.error('Error fetching user profiles V3', 'RANKING_SERVICE_V3', profileError);
+      // Continuar mesmo sem perfis (usar valores padrão)
+    }
+
+    // Criar mapa de perfis para lookup rápido
+    const profileMap = new Map();
+    if (userProfiles) {
+      userProfiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+
+    // Mapear resultados para o formato esperado
+    const paginatedData = rankingsForConcurso.map((item: any) => {
+      const userProfile = profileMap.get(item.user_id) || { name: 'Usuário', avatar_url: null };
+      return {
+        user_id: item.user_id,
+        rankingId: item.rankingId,
+        rankingData: item.rankingData,
+        users_profiles: userProfile
+      };
+    });
 
     // Mapear resultados para o formato esperado
     const rankings: RankingV3[] = paginatedData.map((item: any, index: number) => {
-      const rankingData = item.rankingData;
-      const userData = rankingData?.user_data || {};
+      // RPC retorna dados já formatados, mas precisamos extrair user_data
+      const rankingData = item.rankingData || item;
+      const userData = rankingData?.user_data || rankingData || {};
       
       // Extrair pontuações subjetivas da estrutura correta
       const subjectiveScores = userData?.subjectives || {};
@@ -134,15 +164,15 @@ export const fetchUserRankingsV3 = async (
       // Debug logs removed for security
 
       return {
-        id: item.rankingId, // Usar o rankingId específico
+        id: item.rankingId || rankingData?.id || `ranking-${item.user_id}-${index}`, // Usar o rankingId específico
         position: offset + index + 1,
-        name: item.users_profiles.name || 'Usuário',
-        score: userData?.score || 0, // ← CORREÇÃO: extrair do user_data
+        name: item.users_profiles?.name || 'Usuário',
+        score: userData?.score || rankingData?.score || 0,
         userId: item.user_id,
-        avatarUrl: item.users_profiles.avatar_url,
+        avatarUrl: item.users_profiles?.avatar_url || null,
         // ✅ CORREÇÃO: Normalizar reservation_type para garantir nomenclatura correta
-        reservationType: normalizeReservationType(userData?.reservation_type || 'Ampla Concorrência'),
-        displayReservation: getReservationAbbreviation(userData?.reservation_type || 'Ampla Concorrência'),
+        reservationType: normalizeReservationType(userData?.reservation_type || rankingData?.reservation_type || 'Ampla Concorrência'),
+        displayReservation: getReservationAbbreviation(userData?.reservation_type || rankingData?.reservation_type || 'Ampla Concorrência'),
         discursiveScore: subjectiveScores.discursive || 0,
         caseStudy1Score: subjectiveScores.case_study_1 || 0,
         caseStudy2Score: subjectiveScores.case_study_2 || 0,

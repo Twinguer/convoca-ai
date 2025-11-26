@@ -1,9 +1,10 @@
 // @ts-nocheck
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserRankings } from '@/services/rankingService';
+// ✅ FASE 1: Migrar para usar rankingServiceV3
+import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { logger } from '@/utils/logger';
-import type { Ranking } from '@/services/rankingService';
+import type { RankingV3 as Ranking } from '@/services/rankingServiceV3';
 
 interface UseRankingsPaginationOptions {
   concursoId: string;
@@ -42,7 +43,7 @@ export const useRankingsPagination = ({
         limit: initialLimit,
         currentPage
       });
-      return fetchUserRankings(concursoId, reservationType, offset, initialLimit);
+      return fetchUserRankingsV3(concursoId, reservationType, offset, initialLimit);
     },
     enabled: !!concursoId,
     staleTime: 10 * 60 * 1000, // Aumentado para 10 minutos
