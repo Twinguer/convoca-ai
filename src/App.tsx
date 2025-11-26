@@ -384,10 +384,6 @@ const AppContent = () => {
                         <Menu />
                         <TestSupabaseConnection />
                       </>} /> */}
-                    <Route path="/concurso/participar/:token" element={<Navigate to="/pre-classificacao" replace />} />
-                    {/* Rotas legadas - redirecionar para versão segura */}
-                    <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
-                    <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/recalculate" element={<>
                         <Menu />
                         <RecalculateScores />

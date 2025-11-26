@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById } from '@/services/concursoService';
 import { LoadingState } from '@/components/resultados/LoadingState';
@@ -11,12 +11,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
-const ConcursoParticipation = () => {
-  const { id } = useParams<{ id: string }>();
+interface ConcursoParticipationProps {
+  concursoId?: string;
+  secureToken?: string;
+}
+
+const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ 
+  concursoId, 
+  secureToken 
+}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  devLog.log('[ConcursoParticipation] Concurso ID from params:', id);
+  // ✅ Usar concursoId passado como prop pelo SecureConcursoRoute
+  const id = concursoId;
+
+  devLog.log('[ConcursoParticipation] Concurso ID from props:', id);
 
   // Fetch concurso details with better error handling
   const {
