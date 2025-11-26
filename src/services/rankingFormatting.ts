@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { Ranking } from './rankingService';
+import { devLog } from '@/utils/productionLogger';
 
 // Build a Ranking row from consolidated_data user_data and profile info
 export function buildRankingFromConsolidated(
@@ -19,7 +20,36 @@ export function buildRankingFromConsolidated(
   // ✅ CORREÇÃO: Usar weighted_subjective_scores se disponível (com pesos aplicados)
   const weightedSubjectives = userData?.weighted_subjective_scores || userData?.weightedSubjectiveScores || {};
 
-  const reservationType: string = userData?.reservation_type || 'Ampla Concorrência';
+  // ✅ CORREÇÃO: Extrair reservation_type corretamente, sem fallback prematuro
+  // Se o valor existe mas está vazio/null, usar fallback. Caso contrário, usar o valor real
+  let reservationType: string = 'Ampla Concorrência'; // Fallback padrão
+  if (userData?.reservation_type) {
+    const extractedType = String(userData.reservation_type).trim();
+    if (extractedType && extractedType !== '' && extractedType !== 'null' && extractedType !== 'undefined') {
+      reservationType = extractedType;
+      // Debug: log apenas quando não for Ampla Concorrência para identificar cotas
+      if (reservationType !== 'Ampla Concorrência') {
+        devLog.log('[rankingFormatting] reservation_type extraído:', {
+          userId,
+          rankingId,
+          reservationType
+        });
+      }
+    } else {
+      devLog.warn('[rankingFormatting] reservation_type inválido ou vazio:', {
+        userId,
+        rankingId,
+        extractedType,
+        rawValue: userData.reservation_type
+      });
+    }
+  } else {
+    devLog.warn('[rankingFormatting] reservation_type não encontrado em user_data:', {
+      userId,
+      rankingId,
+      userDataKeys: userData ? Object.keys(userData) : []
+    });
+  }
 
   return {
     id: rankingId,

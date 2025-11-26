@@ -12,13 +12,19 @@ import { logger } from '@/utils/logger';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
-export function useResultadosData(concursoId?: string) {
-  const { id: urlId } = useParams() as { id: string };
+type ResultadosDataOptions = {
+  allowUrlFallback?: boolean;
+};
+
+export function useResultadosData(concursoId?: string, options: ResultadosDataOptions = {}) {
+  const { allowUrlFallback = true } = options;
+  const { id: urlId } = useParams() as { id?: string };
+  const resolvedId = concursoId ?? (allowUrlFallback ? urlId : undefined);
   const { user } = useAuth();
   const isAuthenticated = !!user;
   
   // Usar concursoId passado como prop ou do URL
-  const id = concursoId || urlId;
+  const id = resolvedId;
   
   // Estados para controle de recálculo
   const [isRecalculating, setIsRecalculating] = useState(false);

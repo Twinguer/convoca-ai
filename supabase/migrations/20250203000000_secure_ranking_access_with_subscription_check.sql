@@ -190,6 +190,12 @@ BEGIN
         SELECT 1
         FROM jsonb_object_keys(ur.consolidated_data->'rankings') AS ranking_key
         WHERE (ur.consolidated_data->'rankings'->ranking_key->>'concurso_id')::uuid = p_concurso_id
+          -- ✅ CORREÇÃO: Filtrar por reservation_type se fornecido
+          AND (
+            p_reservation_type IS NULL 
+            OR p_reservation_type = ''
+            OR (ur.consolidated_data->'rankings'->ranking_key->'user_data'->>'reservation_type') = p_reservation_type
+          )
       )
     OFFSET p_offset
     LIMIT p_limit;
@@ -222,6 +228,12 @@ BEGIN
       SELECT 1
       FROM jsonb_object_keys(ur.consolidated_data->'rankings') AS ranking_key
       WHERE (ur.consolidated_data->'rankings'->ranking_key->>'concurso_id')::uuid = p_concurso_id
+        -- ✅ CORREÇÃO: Filtrar por reservation_type se fornecido
+        AND (
+          p_reservation_type IS NULL 
+          OR p_reservation_type = ''
+          OR (ur.consolidated_data->'rankings'->ranking_key->'user_data'->>'reservation_type') = p_reservation_type
+        )
     )
   OFFSET p_offset
   LIMIT p_limit;

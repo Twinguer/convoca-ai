@@ -336,15 +336,6 @@ const AppContent = () => {
                         <Menu />
                         <Resultado />
                       </>} />
-                    {/* Rotas de rankings - sistema original */}
-                    <Route path="/ranking/:id" element={<>
-                        <Menu />
-                        <ResultadosPage />
-                      </>} />
-                    <Route path="/ranking/:id/participate" element={<>
-                        <Menu />
-                        <RankingParticipationWrapper />
-                      </>} />
                     {/* Rotas seguras para concursos */}
                     <Route path="/concurso/resultados/:token" element={<>
                         <Menu />
