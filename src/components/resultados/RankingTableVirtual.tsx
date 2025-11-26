@@ -11,8 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LoadMoreButton } from './LoadMoreButton';
 import { logger } from '@/utils/logger';
-// ✅ FASE 1: Migrar para usar interface RankingV3
-import type { RankingV3 as Ranking } from '@/services/rankingServiceV3';
+// ✅ CONSOLIDADO: Usar interface única do rankingService
+import type { Ranking } from '@/services/rankingService';
 import { formatScore } from '@/lib/utils';
 
 interface RankingTableVirtualProps {

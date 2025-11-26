@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { describe, it, expect, vi } from 'vitest';
-// ✅ FASE 4: Atualizar teste para usar V3
-import { fetchUserRankingsV3 as fetchUserRankings } from './rankingServiceV3';
+// ✅ FASE 4: Atualizado para usar serviço consolidado
+import { fetchUserRankings } from './rankingService';
 import { supabase } from '@/integrations/supabase/client';
 
 vi.mock('@/integrations/supabase/client', () => ({

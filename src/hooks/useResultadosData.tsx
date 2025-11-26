@@ -2,10 +2,10 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
-// ✅ FASE 1: Migrar para usar rankingServiceV3
-import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
+// ✅ CONSOLIDADO: Usar serviço único de rankings
+import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
-import type { RankingV3 as Ranking } from '@/services/rankingServiceV3';
+import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { useEffect, useState } from 'react';
@@ -88,7 +88,7 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
     isRefetching
   } = useQuery({
     queryKey: ['rankings-v3', id],
-    queryFn: () => fetchUserRankingsV3(id || '', undefined, 0, 100),
+    queryFn: () => fetchUserRankings(id || '', undefined, 0, 100),
     refetchOnWindowFocus: false,
     staleTime: 0, // Sempre buscar dados frescos para garantir atualizações imediatas
     enabled: !!id, // HABILITADO - buscar rankings para exibir classificação

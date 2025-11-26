@@ -1,10 +1,22 @@
 // @ts-nocheck
+/**
+ * ✅ CONSOLIDADO: Serviço único de rankings
+ * 
+ * Este arquivo consolida as funcionalidades de rankingService.ts (V1),
+ * rankingServiceV2.ts e rankingServiceV3.ts em uma única implementação.
+ * 
+ * Características:
+ * - Usa RPCs para segurança e performance
+ * - Interface única e consistente
+ * - Cache otimizado com suporte a reservationType
+ */
 import { supabase } from '@/integrations/supabase/client';
 import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
 import { logger } from '@/utils/logger';
 import { rankingCache } from './rankingCache';
 
-export interface RankingV3 {
+// ✅ Interface única consolidada (anteriormente RankingV3)
+export interface Ranking {
   id: string;
   position: number;
   name: string;
@@ -24,7 +36,8 @@ export interface RankingV3 {
   belowBlockMinimums?: string[];
 }
 
-export interface RankingDataV3 {
+// ✅ Interface consolidada (anteriormente RankingDataV3)
+export interface RankingData {
   id: string;
   titulo: string;
   orgao: string;
@@ -43,16 +56,17 @@ export interface RankingDataV3 {
  * @param offset Offset para paginação
  * @param limit Limite de resultados
  */
-export const fetchUserRankingsV3 = async (
+// ✅ Função principal consolidada (anteriormente fetchUserRankingsV3)
+export const fetchUserRankings = async (
   concursoId: string,
   reservationType?: string,
   offset = 0,
   limit = 100
-): Promise<RankingV3[]> => {
+): Promise<Ranking[]> => {
   const startTime = performance.now();
   
   try {
-    logger.info('fetchUserRankingsV3 called', 'RANKING_SERVICE_V3', {
+    logger.info('fetchUserRankings called', 'RANKING_SERVICE', {
       concursoId,
       reservationType,
       offset,
@@ -68,9 +82,9 @@ export const fetchUserRankingsV3 = async (
       logger.ranking('Rankings loaded from local cache V3', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
       
       const endTime = performance.now();
-      logger.performance('fetchUserRankingsV3 (local cached)', endTime - startTime, 'RANKING_SERVICE_V3');
+      logger.performance('fetchUserRankings (local cached)', endTime - startTime, 'RANKING_SERVICE');
       
-      return localCachedRankings as RankingV3[];
+      return localCachedRankings as Ranking[];
     }
 
     // ✅ FASE 2: Migrar para usar RPC em vez de query direta
@@ -152,7 +166,7 @@ export const fetchUserRankingsV3 = async (
     });
 
     // Mapear resultados para o formato esperado
-    const rankings: RankingV3[] = paginatedData.map((item: any, index: number) => {
+    const rankings: Ranking[] = paginatedData.map((item: any, index: number) => {
       // RPC retorna dados já formatados, mas precisamos extrair user_data
       const rankingData = item.rankingData || item;
       const userData = rankingData?.user_data || rankingData || {};
@@ -189,7 +203,7 @@ export const fetchUserRankingsV3 = async (
     rankingCache.setRankings(concursoId, rankings, page, limit, reservationType);
 
     const duration = performance.now() - startTime;
-    logger.performance('fetchUserRankingsV3 completed', duration, 'RANKING_SERVICE_V3', {
+    logger.performance('fetchUserRankings completed', duration, 'RANKING_SERVICE', {
       count: rankings.length,
       offset,
       limit
@@ -197,7 +211,7 @@ export const fetchUserRankingsV3 = async (
 
     return rankings;
   } catch (error) {
-    logger.error('Error in fetchUserRankingsV3', 'RANKING_SERVICE_V3', error);
+    logger.error('Error in fetchUserRankings', 'RANKING_SERVICE', error);
     throw error;
   }
 };
@@ -205,7 +219,8 @@ export const fetchUserRankingsV3 = async (
 /**
  * Busca dados do ranking (concurso)
  */
-export const fetchRankingDataV3 = async (concursoId: string): Promise<RankingDataV3 | null> => {
+// ✅ Função consolidada (anteriormente fetchRankingDataV3)
+export const fetchRankingData = async (concursoId: string): Promise<RankingData | null> => {
   try {
     const { data, error } = await supabase
       .from('concursos')
@@ -218,9 +233,9 @@ export const fetchRankingDataV3 = async (concursoId: string): Promise<RankingDat
       throw error;
     }
 
-    return data as RankingDataV3;
+    return data as RankingData;
   } catch (error) {
-    logger.error('Error in fetchRankingDataV3', 'RANKING_SERVICE_V3', error);
+    logger.error('Error in fetchRankingData', 'RANKING_SERVICE', error);
     return null;
   }
 };
@@ -228,7 +243,8 @@ export const fetchRankingDataV3 = async (concursoId: string): Promise<RankingDat
 /**
  * Busca disciplinas do ranking
  */
-export const fetchRankingDisciplinesV3 = async (concursoId: string): Promise<any[]> => {
+// ✅ Função consolidada (anteriormente fetchRankingDisciplinesV3)
+export const fetchRankingDisciplines = async (concursoId: string): Promise<any[]> => {
   try {
     const { data, error } = await supabase
       .from('concursos')
@@ -237,13 +253,13 @@ export const fetchRankingDisciplinesV3 = async (concursoId: string): Promise<any
       .single();
 
     if (error) {
-      logger.error('Error fetching disciplines V3', 'RANKING_SERVICE_V3', error);
+      logger.error('Error fetching disciplines', 'RANKING_SERVICE', error);
       throw error;
     }
 
     return data?.disciplines || [];
   } catch (error) {
-    logger.error('Error in fetchRankingDisciplinesV3', 'RANKING_SERVICE_V3', error);
+    logger.error('Error in fetchRankingDisciplines', 'RANKING_SERVICE', error);
     return [];
   }
 };
@@ -251,14 +267,15 @@ export const fetchRankingDisciplinesV3 = async (concursoId: string): Promise<any
 /**
  * Busca tipos de reserva disponíveis para um ranking
  */
-export const getAvailableReservationTypesV3 = async (concursoId: string): Promise<string[]> => {
+// ✅ Função consolidada (anteriormente getAvailableReservationTypesV3)
+export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
       .from('user_rankings')
       .select('consolidated_data');
 
     if (error) {
-      logger.error('Error fetching reservation types V3', 'RANKING_SERVICE_V3', error);
+      logger.error('Error fetching reservation types', 'RANKING_SERVICE', error);
       throw error;
     }
 
@@ -277,7 +294,7 @@ export const getAvailableReservationTypesV3 = async (concursoId: string): Promis
 
     return Array.from(types);
   } catch (error) {
-    logger.error('Error in getAvailableReservationTypesV3', 'RANKING_SERVICE_V3', error);
+    logger.error('Error in getAvailableReservationTypes', 'RANKING_SERVICE', error);
     return ['Ampla Concorrência'];
   }
 };
@@ -285,14 +302,15 @@ export const getAvailableReservationTypesV3 = async (concursoId: string): Promis
 /**
  * Busca estatísticas do ranking
  */
-export const fetchRankingStatsV3 = async (concursoId: string): Promise<any> => {
+// ✅ Função consolidada (anteriormente fetchRankingStatsV3)
+export const fetchRankingStats = async (concursoId: string): Promise<any> => {
   try {
     const { data, error } = await supabase
       .from('user_rankings')
       .select('consolidated_data');
 
     if (error) {
-      logger.error('Error fetching stats V3', 'RANKING_SERVICE_V3', error);
+      logger.error('Error fetching stats', 'RANKING_SERVICE', error);
       throw error;
     }
 
@@ -329,7 +347,7 @@ export const fetchRankingStatsV3 = async (concursoId: string): Promise<any> => {
       reservation_type_count: reservationTypeCount,
     };
   } catch (error) {
-    logger.error('Error in fetchRankingStatsV3', 'RANKING_SERVICE_V3', error);
+    logger.error('Error in fetchRankingStats', 'RANKING_SERVICE', error);
     return null;
   }
 };
@@ -352,7 +370,7 @@ export const calculateRankingScore = async (
   }
 ): Promise<{ success: boolean; score?: number; error?: string }> => {
   try {
-    logger.info('calculateRankingScore called', 'RANKING_SERVICE_V3', {
+    logger.info('calculateRankingScore called', 'RANKING_SERVICE', {
       userId,
       concursoId,
       bookletId,
@@ -371,17 +389,17 @@ export const calculateRankingScore = async (
     });
 
     if (error) {
-      logger.error('Error calling calculate-ranking-score function', 'RANKING_SERVICE_V3', error);
+      logger.error('Error calling calculate-ranking-score function', 'RANKING_SERVICE', error);
       return { success: false, error: error.message };
     }
 
-    logger.info('Score calculated successfully', 'RANKING_SERVICE_V3', {
+    logger.info('Score calculated successfully', 'RANKING_SERVICE', {
       score: data.score
     });
 
     return { success: true, score: data.score };
   } catch (error: any) {
-    logger.error('Error in calculateRankingScore', 'RANKING_SERVICE_V3', error);
+    logger.error('Error in calculateRankingScore', 'RANKING_SERVICE', error);
     return { success: false, error: error.message };
   }
 };

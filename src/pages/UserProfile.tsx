@@ -24,7 +24,7 @@ import RankingsTab from '@/components/profile/RankingsTab';
 import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
-import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
+import { fetchUserRankings } from '@/services/rankingService';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface UserRanking {
@@ -198,7 +198,7 @@ const UserProfile = () => {
           .in('id', concursoIds);
 
         const results = await Promise.all(concursoIds.map(async (cid) => {
-          const list = await fetchUserRankingsV3(cid);
+          const list = await fetchUserRankings(cid);
           const concursoInfo = concursosData?.find(c => c.id === cid);
           const rankingData = concursoInfo || { exam_type: 'Alternativas' };
 
