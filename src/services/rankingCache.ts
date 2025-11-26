@@ -82,14 +82,15 @@ class RankingCache {
 
   /**
    * Métodos específicos para rankings
+   * ✅ FASE 3: Adicionado suporte a reservationType
    */
-  setRankings(concursoId: string, rankings: Ranking[], page: number, limit: number): void {
-    const key = `rankings:${concursoId}:${page}:${limit}`;
+  setRankings(concursoId: string, rankings: Ranking[], page: number, limit: number, reservationType?: string): void {
+    const key = `rankings:${concursoId}:${page}:${limit}:${reservationType || 'all'}`;
     this.set(key, rankings);
   }
 
-  getRankings(concursoId: string, page: number, limit: number): Ranking[] | null {
-    const key = `rankings:${concursoId}:${page}:${limit}`;
+  getRankings(concursoId: string, page: number, limit: number, reservationType?: string): Ranking[] | null {
+    const key = `rankings:${concursoId}:${page}:${limit}:${reservationType || 'all'}`;
     return this.get<Ranking[]>(key);
   }
 
@@ -123,6 +124,33 @@ class RankingCache {
       size: this.cache.size,
       keys: Array.from(this.cache.keys())
     };
+  }
+
+  /**
+   * ✅ FASE 3: Invalidar cache de um ranking específico
+   * Incorporado do V2
+   */
+  invalidateRanking(concursoId: string): void {
+    const keysToDelete: string[] = [];
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(`rankings:${concursoId}:`) || key.startsWith(`concurso:${concursoId}`)) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => this.cache.delete(key));
+  }
+
+  /**
+   * ✅ FASE 3: Cache de dados de ranking (incorporado do V2)
+   */
+  setRankingData(concursoId: string, data: any): void {
+    const key = `ranking-data:${concursoId}`;
+    this.set(key, data);
+  }
+
+  getRankingData(concursoId: string): any | null {
+    const key = `ranking-data:${concursoId}`;
+    return this.get(key);
   }
 }
 
