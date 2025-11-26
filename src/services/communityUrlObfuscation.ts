@@ -4,24 +4,10 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço para ofuscar URLs da comunidade e controlar acesso
 export class CommunityUrlObfuscationService {
-  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
-  private static getOBFUSCATION_KEY(): string {
-    const key = import.meta.env.VITE_COMMUNITY_OBFUSCATION_KEY;
-    if (!key) {
-      // Em desenvolvimento, usar fallback temporário (NÃO SEGURO PARA PRODUÇÃO)
-      if (import.meta.env.DEV) {
-        devLog.warn('[communityUrlObfuscation] ⚠️ VITE_COMMUNITY_OBFUSCATION_KEY não configurada. Usando fallback temporário apenas para desenvolvimento. Configure a variável antes de produção.');
-        return 'dev_community_fallback_key_not_secure_change_in_production';
-      }
-      // Em produção, lançar erro crítico
-      const error = new Error('[communityUrlObfuscation] ❌ CRÍTICO: VITE_COMMUNITY_OBFUSCATION_KEY não configurada. Configure a variável de ambiente antes de usar em produção.');
-      devLog.error(error.message);
-      throw error;
-    }
-    return key;
-  }
+  // ✅ REMOVIDO: getOBFUSCATION_KEY() - chaves não devem ser expostas no frontend
+  // Tokens agora são gerados apenas via RPC no backend
   
-  // Gerar um token ofuscado para funcionalidades da comunidade
+  // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves no frontend)
   static async generateCommunityToken(userId: string, action: 'followers' | 'following' | 'profile'): Promise<string> {
     try {
       // Verificar se o usuário existe (verificação básica)
@@ -35,137 +21,59 @@ export class CommunityUrlObfuscationService {
         throw new Error('Perfil de usuário não encontrado');
       }
       
-      // Criar um token único baseado no ID + action + timestamp + chave
-      const timestamp = Date.now().toString();
-      const rawToken = `${userId}:${action}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
+      // ✅ Gerar token seguro via RPC no backend
+      const { data: token, error: tokenError } = await supabase.rpc('generate_secure_token', {
+        p_entity_id: userId,
+        p_entity_type: 'community',
+        p_metadata: { action },
+        p_expires_in_minutes: 1440 // 24 horas
+      });
       
-      // Usar btoa para codificar (não é criptografia real, mas ofusca)
-      const obfuscatedToken = btoa(rawToken);
+      if (tokenError || !token) {
+        logError('Failed to generate secure token via RPC', { error: tokenError, userId, action }, 'COMMUNITY_URL_OBFUSCATION');
+        throw new Error('Falha ao gerar token seguro');
+      }
       
-      // Armazenar o token temporariamente
-      await this.storeToken(obfuscatedToken, userId, action);
-      
-      return obfuscatedToken;
+      return token;
     } catch (error) {
       logError('Failed to generate community token', { userId, action }, 'COMMUNITY_URL_OBFUSCATION');
       throw error;
     }
   }
   
-  // ✅ SEGURANÇA: Validar token via RPC no backend
+  // ✅ SEGURANÇA: Validar token via RPC no backend (sem expor chaves no frontend)
   static async validateCommunityToken(token: string): Promise<{userId: string, action: string} | null> {
     try {
-      // ✅ SEGURANÇA: Tentar função segura primeiro
-      const { data: secureData, error: secureError } = await supabase.rpc('validate_community_token_secure', {
-        p_token: token
+      // ✅ Usar função segura de resolução de token
+      const { data, error } = await supabase.rpc('resolve_secure_token', {
+        p_token: token,
+        p_entity_type: 'community',
+        p_consume: false
       });
       
-      // Log detalhado em desenvolvimento
-      if (import.meta.env.DEV) {
-        devLog.log('[validateCommunityToken] Resultado da função segura:', {
-          hasData: !!secureData,
-          hasError: !!secureError,
-          data: secureData,
-          dataType: typeof secureData,
-          error: secureError ? {
-            message: secureError.message,
-            code: secureError.code,
-            details: secureError.details
-          } : null
-        });
-      }
-      
-      if (secureError) {
-        // Em desenvolvimento, tentar debug para diagnóstico
-        if (import.meta.env.DEV) {
-          try {
-            const { data: debugData } = await supabase.rpc('debug_validate_community_token', {
-              p_token: token
-            });
-            devLog.error('[validateCommunityToken] Erro na função segura, debug:', {
-              secureError: secureError.message,
-              debugInfo: debugData
-            });
-            
-            // Se debug funcionou, usar o resultado dele
-            if (debugData && debugData.success === true && debugData.user_id) {
-              devLog.log('[validateCommunityToken] ✅ Usando resultado do debug como fallback, user_id:', debugData.user_id);
-              return {
-                userId: debugData.user_id,
-                action: debugData.action || 'profile'
-              };
-            }
-          } catch (debugError) {
-            // Ignorar erro de debug
-          }
-        }
-        logError('Failed to validate community token via secure RPC', { error: secureError.message }, 'COMMUNITY_URL_OBFUSCATION');
+      if (error) {
+        logError('Failed to resolve secure token via RPC', { error: error.message, token: token?.substring(0, 10) }, 'COMMUNITY_URL_OBFUSCATION');
         return null;
       }
       
-      // Função segura retorna JSONB com user_id e action
-      if (secureData && typeof secureData === 'object' && secureData !== null) {
-        const userId = secureData.user_id || secureData.userId;
-        const action = secureData.action || 'profile';
-        
-        if (userId && typeof userId === 'string') {
-          if (import.meta.env.DEV) {
-            devLog.log('[validateCommunityToken] ✅ Token válido via função segura, user_id:', userId, 'action:', action);
-          }
-          return {
-            userId: userId,
-            action: action
-          };
-        }
+      // A função retorna uma tabela, então data é um array
+      const resolved = Array.isArray(data) ? data[0] : data;
+      
+      if (resolved && resolved.entity_id) {
+        return {
+          userId: resolved.entity_id,
+          action: resolved.metadata?.action || 'profile'
+        };
       }
       
-      // Se retornou null, tentar função antiga como fallback (apenas em desenvolvimento)
-      if (import.meta.env.DEV && secureData === null) {
-        try {
-          const { data: fallbackData, error: fallbackError } = await supabase.rpc('validate_community_token', {
-            p_token: token
-          });
-          
-          if (!fallbackError && fallbackData && fallbackData.user_id) {
-            devLog.warn('[validateCommunityToken] ⚠️ Função segura retornou null, mas função antiga funcionou. Usando como fallback.');
-            return {
-              userId: fallbackData.user_id,
-              action: fallbackData.action || 'profile'
-            };
-          }
-        } catch (fallbackError) {
-          // Ignorar
-        }
-      }
-      
-      // Se retornou null, token inválido
-      if (import.meta.env.DEV) {
-        devLog.warn('[validateCommunityToken] Token inválido ou expirado - função segura retornou null');
-      }
       return null;
     } catch (error) {
-      logError('Failed to validate community token', { token: token.substring(0, 10) + '...' }, 'COMMUNITY_URL_OBFUSCATION');
+      logError('Failed to validate community token', { token: token?.substring(0, 10) + '...' }, 'COMMUNITY_URL_OBFUSCATION');
       return null;
     }
   }
   
-  // Armazenar token temporariamente
-  private static async storeToken(token: string, userId: string, action: string): Promise<void> {
-    try {
-      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
-      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
-      const tokenData = {
-        userId,
-        action,
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      };
-      
-      sessionStorage.setItem(`community_token_${token}`, JSON.stringify(tokenData));
-    } catch (error) {
-      // Falha silenciosa - não é crítico
-      logWarn('Failed to store community token', { userId, action }, 'COMMUNITY_URL_OBFUSCATION');
-    }
-  }
+  // ✅ REMOVIDO: storeToken() - tokens agora são armazenados apenas no banco via RPC
   
   // Gerar URL segura para perfil
   static async generateSecureProfileUrl(userId: string): Promise<string> {

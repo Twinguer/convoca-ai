@@ -10,11 +10,7 @@ import CicloDetalhes from '@/pages/Estudos/CicloDetalhes';
 import { devLog } from '@/utils/productionLogger';
 import { useToast } from '@/hooks/use-toast';
 
-// Helper para verificar se é UUID válido
-const isValidUUID = (str: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
+// ✅ REMOVIDO: isValidUUID - não aceitar UUIDs diretamente por segurança
 
 const StudentCycleDisciplinesPage = () => {
   const { studentId: studentIdParam, cycleId: cycleIdParam } = useParams();
@@ -35,34 +31,22 @@ const StudentCycleDisciplinesPage = () => {
       setIsValidatingToken(true);
       
       try {
-        // Validar studentId
-        let studentId: string;
-        if (isValidUUID(studentIdParam)) {
-          studentId = studentIdParam;
-        } else {
-          const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
-          const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
-          if (!validatedUserId) {
-            throw new Error('Token de aluno inválido');
-          }
-          studentId = validatedUserId;
+        // ✅ SEGURANÇA: Validar studentId via token (não aceitar UUIDs diretamente)
+        const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
+        const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
+        if (!validatedUserId) {
+          throw new Error('Token de aluno inválido');
         }
 
-        // Validar cycleId
-        let cycleId: string;
-        if (isValidUUID(cycleIdParam)) {
-          cycleId = cycleIdParam;
-        } else {
-          const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
-          const validatedCycle = await StudyCycleUrlObfuscationService.validateStudyCycleToken(cycleIdParam, studentId);
-          if (!validatedCycle) {
-            throw new Error('Token de ciclo inválido');
-          }
-          cycleId = validatedCycle;
+        // ✅ SEGURANÇA: Validar cycleId via token (não aceitar UUIDs diretamente)
+        const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
+        const validatedCycle = await StudyCycleUrlObfuscationService.validateStudyCycleToken(cycleIdParam, validatedUserId);
+        if (!validatedCycle) {
+          throw new Error('Token de ciclo inválido');
         }
 
-        setValidatedStudentId(studentId);
-        setValidatedCycleId(cycleId);
+        setValidatedStudentId(validatedUserId);
+        setValidatedCycleId(validatedCycle);
       } catch (error) {
         devLog.error('Erro ao validar tokens:', error);
         toast({

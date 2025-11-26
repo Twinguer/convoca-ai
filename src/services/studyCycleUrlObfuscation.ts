@@ -5,25 +5,10 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 // Serviço para ofuscar URLs de ciclos de estudo e controlar acesso
 export class StudyCycleUrlObfuscationService {
-  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
-  private static getOBFUSCATION_KEY(): string {
-    const key = import.meta.env.VITE_URL_OBFUSCATION_KEY;
-    if (!key) {
-      // Em desenvolvimento, usar fallback temporário (NÃO SEGURO PARA PRODUÇÃO)
-      if (import.meta.env.DEV) {
-        devLog.warn('[studyCycleUrlObfuscation] ⚠️ VITE_URL_OBFUSCATION_KEY não configurada. Usando fallback temporário apenas para desenvolvimento. Configure a variável antes de produção.');
-        return 'dev_study_cycle_fallback_key_not_secure_change_in_production';
-      }
-      // Em produção, lançar erro crítico
-      const error = new Error('[studyCycleUrlObfuscation] ❌ CRÍTICO: VITE_URL_OBFUSCATION_KEY não configurada. Configure a variável de ambiente antes de usar em produção.');
-      devLog.error(error.message);
-      throw error;
-    }
-    return key;
-  }
+  // ✅ REMOVIDO: getOBFUSCATION_KEY() - chaves não devem ser expostas no frontend
+  // Tokens agora são gerados apenas via RPC no backend
   
-  
-  // Gerar um token ofuscado para um ciclo de estudo
+  // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves no frontend)
   static async generateStudyCycleToken(cycleId: string, userId: string): Promise<string> {
     try {
       // Buscar dados do usuário usando o serviço existente
@@ -45,128 +30,57 @@ export class StudyCycleUrlObfuscationService {
         throw new Error('Ciclo de estudo não está mais ativo');
       }
       
-      // Criar um token único baseado no ID + userId + timestamp + chave
-      const timestamp = Date.now().toString();
-      const rawToken = `${cycleId}:${userId}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
+      // ✅ Gerar token seguro via RPC no backend
+      const { data: token, error: tokenError } = await supabase.rpc('generate_secure_token', {
+        p_entity_id: cycleId,
+        p_entity_type: 'study_cycle',
+        p_metadata: { userId },
+        p_expires_in_minutes: 1440 // 24 horas
+      });
       
-      // Usar btoa para codificar (não é criptografia real, mas ofusca)
-      const obfuscatedToken = btoa(rawToken);
+      if (tokenError || !token) {
+        logError('Failed to generate secure token via RPC', { error: tokenError, cycleId, userId }, 'STUDY_CYCLE_URL_OBFUSCATION');
+        throw new Error('Falha ao gerar token seguro');
+      }
       
-      // Armazenar o token temporariamente (opcional - para validação adicional)
-      await this.storeToken(obfuscatedToken, cycleId, userId);
-      
-      return obfuscatedToken;
+      return token;
     } catch (error) {
       logError('Failed to generate study cycle token', { cycleId, userId }, 'STUDY_CYCLE_URL_OBFUSCATION');
       throw error;
     }
   }
   
-  // ✅ SEGURANÇA: Validar token via RPC no backend
+  // ✅ SEGURANÇA: Validar token via RPC no backend (sem expor chaves no frontend)
   static async validateStudyCycleToken(token: string, userId: string): Promise<string | null> {
     try {
-      // ✅ SEGURANÇA: Tentar função segura primeiro
-      const { data: secureData, error: secureError } = await supabase.rpc('validate_study_cycle_token_secure', {
+      // ✅ Usar função segura de resolução de token
+      const { data, error } = await supabase.rpc('resolve_secure_token', {
         p_token: token,
-        p_user_id: userId
+        p_entity_type: 'study_cycle',
+        p_consume: false
       });
       
-      // Log detalhado em desenvolvimento
-      if (import.meta.env.DEV) {
-        devLog.log('[validateStudyCycleToken] Resultado da função segura:', {
-          hasData: !!secureData,
-          hasError: !!secureError,
-          data: secureData,
-          dataType: typeof secureData,
-          error: secureError ? {
-            message: secureError.message,
-            code: secureError.code
-          } : null
-        });
-      }
-      
-      if (secureError) {
-        // Em desenvolvimento, tentar debug para diagnóstico
-        if (import.meta.env.DEV) {
-          try {
-            const { data: debugData } = await supabase.rpc('debug_validate_study_cycle_token', {
-              p_token: token,
-              p_user_id: userId
-            });
-            devLog.error('[validateStudyCycleToken] Erro na função segura, debug:', {
-              secureError: secureError.message,
-              debugInfo: debugData
-            });
-            
-            // Se debug funcionou, usar o resultado dele
-            if (debugData && debugData.success === true && debugData.valid_cycle_id) {
-              devLog.log('[validateStudyCycleToken] ✅ Usando resultado do debug como fallback, cycle_id:', debugData.valid_cycle_id);
-              return debugData.valid_cycle_id;
-            }
-          } catch (debugError) {
-            // Ignorar erro de debug
-          }
-        }
-        logError('Failed to validate study cycle token via secure RPC', { error: secureError.message }, 'STUDY_CYCLE_URL_OBFUSCATION');
+      if (error) {
+        logError('Failed to resolve secure token via RPC', { error: error.message, token: token?.substring(0, 10) }, 'STUDY_CYCLE_URL_OBFUSCATION');
         return null;
       }
       
-      // Função segura retorna TEXT diretamente
-      if (secureData && typeof secureData === 'string' && secureData.trim() !== '') {
-        if (import.meta.env.DEV) {
-          devLog.log('[validateStudyCycleToken] ✅ Token válido via função segura, cycle_id:', secureData);
-        }
-        return secureData.trim();
+      // A função retorna uma tabela, então data é um array
+      const resolved = Array.isArray(data) ? data[0] : data;
+      
+      // Verificar se o token pertence ao usuário
+      if (resolved && resolved.entity_id && resolved.metadata?.userId === userId) {
+        return resolved.entity_id;
       }
       
-      // Se retornou null, tentar debug como fallback em desenvolvimento
-      if (import.meta.env.DEV && secureData === null) {
-        try {
-          const { data: debugData } = await supabase.rpc('debug_validate_study_cycle_token', {
-            p_token: token,
-            p_user_id: userId
-          });
-          
-          if (debugData && debugData.success === true && debugData.valid_cycle_id) {
-            devLog.warn('[validateStudyCycleToken] ⚠️ Função segura retornou null, mas debug funcionou. Usando debug como fallback.');
-            return debugData.valid_cycle_id;
-          }
-        } catch (debugError) {
-          // Ignorar
-        }
-      }
-      
-      // Se retornou null, token inválido
-      if (import.meta.env.DEV) {
-        devLog.warn('[validateStudyCycleToken] Token inválido ou expirado - função segura retornou null');
-      }
       return null;
     } catch (error) {
-      devLog.error('[validateStudyCycleToken] Erro geral:', error);
-      logError('Failed to validate study cycle token', { token: token.substring(0, 10) + '...', userId }, 'STUDY_CYCLE_URL_OBFUSCATION');
+      logError('Failed to validate study cycle token', { token: token?.substring(0, 10) + '...', userId }, 'STUDY_CYCLE_URL_OBFUSCATION');
       return null;
     }
   }
   
-  // Armazenar token temporariamente (opcional)
-  private static async storeToken(token: string, cycleId: string, userId: string): Promise<void> {
-    try {
-      // Em um cenário real, isso seria armazenado em um banco de dados ou cache seguro
-      // ✅ SEGURANÇA: Usar sessionStorage em vez de localStorage
-      // sessionStorage expira quando a aba é fechada, reduzindo risco de XSS persistente
-      const tokenData = {
-        cycleId,
-        userId,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
-      };
-      
-      sessionStorage.setItem(`study_cycle_token_${token}`, JSON.stringify(tokenData));
-    } catch (error) {
-      // Falha silenciosa - não é crítico
-      logWarn('Failed to store study cycle token', { cycleId, userId }, 'STUDY_CYCLE_URL_OBFUSCATION');
-    }
-  }
+  // ✅ REMOVIDO: storeToken() - tokens agora são armazenados apenas no banco via RPC
   
   // Gerar URL segura para ciclo de estudo
   static async generateSecureStudyCycleUrl(cycleId: string, userId: string, action: 'view' | 'edit' | 'session' | 'cronograma' | 'timer' | 'estatisticas' = 'view'): Promise<string> {
