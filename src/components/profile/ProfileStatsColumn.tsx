@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ interface ProfileStatsColumnProps {
 
 export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, rankings = [] }) => {
   const navigate = useNavigate();
+  const { isPro } = useSubscription();
 
   // Buscar grupos do usuário
   const { data: userGroups = [], isLoading: groupsLoading } = useQuery({
@@ -106,6 +108,11 @@ export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, 
   };
 
   const handleViewGroup = (groupId: string) => {
+    // ✅ Se for usuário free, redirecionar para planos
+    if (!isPro) {
+      navigate('/planos');
+      return;
+    }
     navigate(`/grupos/${groupId}`);
   };
 

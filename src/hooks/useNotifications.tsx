@@ -46,6 +46,10 @@ export const useNotifications = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      // Aguardar um pouco para garantir que a sessão está totalmente carregada
+      // Isso resolve o problema de convites desaparecendo após refresh
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -53,9 +57,44 @@ export const useNotifications = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Notification[];
+      
+      // Para notificações de convite, verificar se o convite ainda existe
+      // e está pendente antes de exibir
+      const notificationsWithValidInvitations = await Promise.all(
+        (data || []).map(async (notification) => {
+          if (notification.type === 'coach_invitation') {
+            const invitationId = notification.metadata?.invitation_id || notification.metadata?.invitationId;
+            if (invitationId) {
+              try {
+                // Verificar se o convite ainda existe e está pendente
+                const { data: invitation, error: invitationError } = await supabase
+                  .from('coach_invitations_history')
+                  .select('id, status')
+                  .eq('id', invitationId)
+                  .eq('status', 'pending')
+                  .maybeSingle();
+                
+                // Se o convite não existe mais ou não está pendente, não exibir a notificação
+                if (invitationError || !invitation) {
+                  return null;
+                }
+              } catch (err) {
+                // Se houver erro ao verificar (ex: RLS), ainda exibir a notificação
+                // para não perder o convite caso seja um problema temporário
+                console.warn('Erro ao verificar convite:', err);
+              }
+            }
+          }
+          return notification;
+        })
+      );
+      
+      // Filtrar nulls (convites inválidos)
+      return notificationsWithValidInvitations.filter(n => n !== null) as Notification[];
     },
     enabled: !!user?.id,
+    retry: 2, // Tentar novamente em caso de erro
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Backoff exponencial
   });
 
   // Contar notificações não lidas

@@ -7,11 +7,13 @@ import { CreateGroupModal } from './CreateGroupModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserGroups } from '@/hooks/useGroupMembers';
 import { useNavigate } from 'react-router-dom';
+import { useSubscription } from '@/hooks/useSubscription';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
 
 export const GroupsTab: React.FC = () => {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -21,10 +23,20 @@ export const GroupsTab: React.FC = () => {
   const userMemberGroupIds = userGroups.map(g => g.id);
 
   const handleGroupClick = (groupId: string) => {
+    // ✅ Se for usuário free, redirecionar para planos
+    if (!isPro) {
+      navigate('/planos');
+      return;
+    }
     navigate(`/grupos/${groupId}`);
   };
 
   const handleJoinGroup = (groupId: string) => {
+    // ✅ Se for usuário free, redirecionar para planos
+    if (!isPro) {
+      navigate('/planos');
+      return;
+    }
     // Navegar para a página do grupo (o usuário pode entrar lá)
     navigate(`/grupos/${groupId}`);
   };

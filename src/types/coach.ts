@@ -8,7 +8,7 @@ export type RelationshipStatus = 'active' | 'inactive' | 'removed';
 export type TaskType = 'suggested_cycle' | 'goal' | 'reminder' | 'note';
 export type Priority = 'high' | 'medium' | 'low';
 export type TaskStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'rejected';
-export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+export type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'cancelled';
 export type AlertType = 'low_activity' | 'high_engagement' | 'task_overdue' | 'goal_achieved';
 export type AlertSeverity = 'high' | 'medium' | 'low';
 
