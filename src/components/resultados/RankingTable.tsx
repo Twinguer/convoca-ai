@@ -289,16 +289,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     </Card>;
 };
 
-// ✅ CORREÇÃO: Importar função de normalização para garantir nomenclatura correta
-import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
-
-const getQuotaAbbreviation = (quota: string): string => {
-  // Normalizar primeiro para garantir nome completo correto
-  const normalized = normalizeReservationType(quota);
-  // Usar função centralizada de abreviação
-  return getReservationAbbreviation(normalized);
-};
-
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -544,7 +534,7 @@ const RankingTableContent: React.FC<{
                   </Avatar>
                   <span>{ranking.name}</span>
                   {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      {getQuotaAbbreviation(ranking.reservationType)}
+                      {getReservationAbbreviation(ranking.reservationType)}
                     </span>}
                 </div>
               </TableCell>
@@ -566,7 +556,7 @@ const RankingTableContent: React.FC<{
       <TableRow>
         <TableHead className="text-center w-16">ac</TableHead>
         {!isAmpla && <TableHead className="text-center w-16">
-          {getQuotaAbbreviation(activeTab)}
+          {getReservationAbbreviation(activeTab)}
         </TableHead>}
         <TableHead>part</TableHead>
         <TableHead className="text-right">tot</TableHead>
@@ -701,7 +691,7 @@ const RankingTableContent: React.FC<{
                 <span>
                   {ranking.name}
                   {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      ({getQuotaAbbreviation(ranking.reservationType)})
+                      ({getReservationAbbreviation(ranking.reservationType)})
                     </span>}
                 </span>
               </div>

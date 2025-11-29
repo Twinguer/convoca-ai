@@ -208,10 +208,8 @@ export default function NotificationsPage() {
           invitation={activeInvitation}
           onClose={() => {
             closeInvitation();
-            // Marcar como lida após fechar o modal
-            if (!activeInvitation.is_read) {
-              markAsRead(activeInvitation.id);
-            }
+            // ✅ NÃO marcar como lida ao fechar - apenas quando aceitar/recusar
+            // A notificação será removida automaticamente quando o convite for respondido
           }}
         />
       )}

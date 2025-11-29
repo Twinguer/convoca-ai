@@ -8,6 +8,8 @@ import type { StudyGroup } from '@/types/studyGroups';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigate } from 'react-router-dom';
 
 interface GroupCardProps {
   group: StudyGroup;
@@ -36,12 +38,20 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onJoin,
 }) => {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
+  const navigate = useNavigate();
   const isAuthenticated = !!user;
 
   const handleCardClick = () => {
     // ✅ Se não estiver autenticado, redirecionar para login
     if (!isAuthenticated) {
       window.location.href = '/auth';
+      return;
+    }
+    
+    // ✅ Se for usuário free, redirecionar para planos
+    if (!isPro) {
+      navigate('/planos');
       return;
     }
     

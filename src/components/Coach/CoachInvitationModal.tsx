@@ -184,6 +184,22 @@ const CoachInvitationModal = ({ invitation, onClose }: CoachInvitationModalProps
         title: 'Convite recusado',
         description: 'Você pode aceitar outro convite depois se quiser',
       });
+      
+      // Invalidar notificações para remover a notificação do convite recusado
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      
+      // Remover notificação da lista localmente
+      if (currentUser?.id) {
+        queryClient.setQueryData(['notifications', currentUser.id], (old: any) => {
+          if (!old) return old;
+          const invitationId = invitation.metadata?.invitation_id || invitation.metadata?.invitationId || invitation.id;
+          return old.filter((n: any) => {
+            const nInvitationId = n.metadata?.invitation_id || n.metadata?.invitationId || n.id;
+            return nInvitationId !== invitationId;
+          });
+        });
+      }
+      
       onClose();
     },
     onError: (error: any) => {

@@ -1605,12 +1605,13 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="duration">Tempo estudado (minutos) *</Label>
-                  <Input id="duration" type="number" min="1" max={999999} value={studyDuration} onChange={e => {
+                  <Input id="duration" type="number" min="1" max={999} value={studyDuration} onChange={e => {
                     const value = e.target.value;
-                    if (value === '' || (Number(value) >= 1 && Number(value) <= 999999)) {
+                    // Limitar a 3 dígitos (máximo 999)
+                    if (value === '' || (Number(value) >= 1 && Number(value) <= 999 && value.length <= 3)) {
                       setStudyDuration(value === '' ? 0 : Number(value));
                     }
-                  }} placeholder="Ex: 60" />
+                  }} placeholder="Ex: 60" maxLength={3} />
                   {studyDuration >= 20 && <p className="text-xs text-green-600 mt-1">✓ Tarefa contará para as estatísticas</p>}
                 </div>
 
@@ -1631,9 +1632,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="questions-total">Total de questões</Label>
-                  <Input id="questions-total" type="number" min="0" max={999999} value={questionsTotal} onChange={e => {
+                  <Input id="questions-total" type="number" min="0" max={9999} value={questionsTotal} onChange={e => {
                 const inputValue = e.target.value;
-                if (inputValue === '' || (Number(inputValue) >= 0 && Number(inputValue) <= 999999)) {
+                // Limitar a 4 dígitos (máximo 9999)
+                if (inputValue === '' || (Number(inputValue) >= 0 && Number(inputValue) <= 9999 && inputValue.length <= 4)) {
                   const value = inputValue === '' ? 0 : Number(inputValue);
                   setQuestionsTotal(value);
                   // Validar se as questões corretas não ficaram maiores que o novo total
@@ -1642,7 +1644,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                     setQuestionsError('');
                   }
                 }
-              }} placeholder="Questões resolvidas" />
+              }} placeholder="Questões resolvidas" maxLength={4} />
                 </div>
 
                 {questionsTotal > 0 && <div>
