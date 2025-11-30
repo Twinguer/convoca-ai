@@ -18,7 +18,7 @@ import { QuotaSelector, QuotaType } from './QuotaSelector';
 import { BookletSelector } from './BookletSelector';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { RPCValidator } from '@/utils/rpcValidator';
-import { convertReservationCodeToName } from '@/services/rankingFormatting';
+import { normalizeReservationType } from '@/utils/quotaNormalization';
 interface ExamBooklet {
   id: string;
   name: string;
@@ -137,7 +137,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
               if (rankingData.concurso_id === concurso.id && rankingData.user_data?.reservation_type) {
                 // ✅ CORREÇÃO: Converter código do banco (AC, PPI, PCD, etc) para nome completo esperado pelo QuotaType
                 const reservationCode = rankingData.user_data.reservation_type;
-                const reservationName = convertReservationCodeToName(reservationCode);
+                const reservationName = normalizeReservationType(reservationCode);
                 setSelectedQuota(reservationName as QuotaType);
                 break;
               }

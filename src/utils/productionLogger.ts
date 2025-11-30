@@ -4,6 +4,8 @@
  */
 
 const IS_PRODUCTION = import.meta.env.PROD;
+// ✅ SEGURANÇA: Flag para desabilitar logs mesmo em desenvolvimento
+const ENABLE_DEBUG_LOGS = import.meta.env.VITE_ENABLE_DEBUG_LOGS !== 'false';
 
 /**
  * Logger que só funciona em desenvolvimento
@@ -11,13 +13,13 @@ const IS_PRODUCTION = import.meta.env.PROD;
  */
 export const devLog = {
   info: (...args: any[]) => {
-    if (!IS_PRODUCTION) {
+    if (!IS_PRODUCTION && ENABLE_DEBUG_LOGS) {
       console.log('[DEV]', ...args.map(arg => sanitizeForLog(arg)));
     }
   },
   
   warn: (...args: any[]) => {
-    if (!IS_PRODUCTION) {
+    if (!IS_PRODUCTION && ENABLE_DEBUG_LOGS) {
       console.warn('[DEV]', ...args.map(arg => sanitizeForLog(arg)));
     }
   },
@@ -28,14 +30,14 @@ export const devLog = {
   },
   
   debug: (...args: any[]) => {
-    if (!IS_PRODUCTION) {
+    if (!IS_PRODUCTION && ENABLE_DEBUG_LOGS) {
       console.debug('[DEBUG]', ...args.map(arg => sanitizeForLog(arg)));
     }
   },
   
   // Métodos de compatibilidade para substituir console.log diretamente
   log: (...args: any[]) => {
-    if (!IS_PRODUCTION) {
+    if (!IS_PRODUCTION && ENABLE_DEBUG_LOGS) {
       console.log('[DEV]', ...args.map(arg => sanitizeForLog(arg)));
     }
   }

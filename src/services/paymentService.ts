@@ -151,7 +151,7 @@ export const paymentService = {
       if (voucherCode) {
         body.voucherCode = voucherCode;
       }
-      devLog.log("[paymentService] Body que será enviado:", JSON.stringify(body));
+      devLog.log("[paymentService] Body que será enviado:", sanitizeForLog(body));
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body
       });
