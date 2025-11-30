@@ -319,8 +319,16 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
                   id="maxMembers"
                   type="number"
                   value={maxMembers}
-                  onChange={(e) => setMaxMembers(e.target.value)}
-                  min={2}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numValue = parseInt(value, 10);
+                    if (!isNaN(numValue) && numValue >= 1 && numValue <= 1000) {
+                      setMaxMembers(value);
+                    } else if (value === '' || value === '0') {
+                      setMaxMembers('1'); // Mínimo 1
+                    }
+                  }}
+                  min={1}
                   max={1000}
                 />
               </div>

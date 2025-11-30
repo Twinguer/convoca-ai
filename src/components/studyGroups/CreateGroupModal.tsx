@@ -173,12 +173,14 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
               <Input
                 id="max_members"
                 type="number"
-                min="5"
+                min="1"
                 max="1000"
                 value={formData.max_members}
-                onChange={(e) =>
-                  setFormData({ ...formData, max_members: parseInt(e.target.value) || 50 })
-                }
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  const clampedValue = Math.min(Math.max(value, 1), 1000); // Garantir entre 1 e 1000
+                  setFormData({ ...formData, max_members: clampedValue });
+                }}
               />
             </div>
           </div>
