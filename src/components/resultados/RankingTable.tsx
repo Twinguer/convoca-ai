@@ -515,7 +515,7 @@ const RankingTableContent: React.FC<{
           <TableRow>
             <TableHead className="text-center w-16">AC</TableHead>
             {isAmpla && <TableHead className="text-center w-16">AP</TableHead>}
-            <TableHead>Candidato</TableHead>
+            <TableHead className="min-w-[200px]">Candidato</TableHead>
             <TableHead className="text-right">Total</TableHead>
             {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
           </TableRow>
@@ -528,12 +528,12 @@ const RankingTableContent: React.FC<{
               </TableCell>}
               <TableCell>
                 <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                     <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
-                  <span>{ranking.name}</span>
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                  <span className="whitespace-nowrap">{ranking.name}</span>
+                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full flex-shrink-0">
                       {getReservationAbbreviation(ranking.reservationType)}
                     </span>}
                 </div>
@@ -558,12 +558,12 @@ const RankingTableContent: React.FC<{
         {!isAmpla && <TableHead className="text-center w-16">
           {getReservationAbbreviation(activeTab)}
         </TableHead>}
-        <TableHead>part</TableHead>
+        <TableHead className="min-w-[200px]">part</TableHead>
         <TableHead className="text-right">tot</TableHead>
         
         {/* Custom discipline columns */}
         {customDisciplines.map((discipline, idx) => <TableHead key={`custom-${idx}`} className="text-right">
-            {discipline.name}
+            {discipline.name.toLowerCase()}
           </TableHead>)}
         
         {/* Subjective parts */}
@@ -622,7 +622,7 @@ const RankingTableContent: React.FC<{
           
           return hasOther ? (
             <TableHead className="text-right">
-              {concurso.subjects?.name_other || 'Outro'}
+              {(concurso.subjects?.name_other || 'Outro').toLowerCase()}
             </TableHead>
           ) : null;
         })()}
@@ -684,11 +684,11 @@ const RankingTableContent: React.FC<{
                 // Debug logs removed for security
                 handleUserClick(ranking.userId);
               }}>
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 flex-shrink-0">
                   <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                   <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <span>
+                <span className="whitespace-nowrap">
                   {ranking.name}
                   {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                       ({getReservationAbbreviation(ranking.reservationType)})
@@ -842,7 +842,7 @@ const RankingTableContent: React.FC<{
     
   return (
     <div>
-      <Table>
+      <Table className="min-w-max">
         {renderTableHeader()}
         {renderRankingRows()}
       </Table>
