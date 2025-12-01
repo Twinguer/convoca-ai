@@ -836,19 +836,41 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               onValueChange={handleSectionChange}
               className="w-full"
             >
-              <TabsList className="grid w-full" style={{ 
-                gridTemplateColumns: `repeat(${Math.min(objectiveSections.length + (hasSubjectiveSections ? 1 : 0), 6)}, 1fr)` 
-              }}>
-                {objectiveSections.map(section => (
-                  <TabsTrigger key={section.key} value={section.key}>
-                    {section.label}
-                  </TabsTrigger>
-                ))}
-                {hasSubjectiveSections && (
-                  <TabsTrigger key="subjetivas" value="subjetivas">
-                    Subjetivas
-                  </TabsTrigger>
-                )}
+              <TabsList className="flex flex-wrap w-full gap-1 p-1">
+                {objectiveSections.map(section => {
+                  const maxTabsPerRow = 6;
+                  const maxWidthPercent = 100 / maxTabsPerRow;
+                  
+                  return (
+                    <TabsTrigger 
+                      key={section.key} 
+                      value={section.key}
+                      className="flex-1 min-w-[140px]"
+                      style={{
+                        maxWidth: `calc(${maxWidthPercent}% - 4px)`
+                      }}
+                    >
+                      <span className="truncate block w-full text-center">{section.label}</span>
+                    </TabsTrigger>
+                  );
+                })}
+                {hasSubjectiveSections && (() => {
+                  const maxTabsPerRow = 6;
+                  const maxWidthPercent = 100 / maxTabsPerRow;
+                  
+                  return (
+                    <TabsTrigger 
+                      key="subjetivas" 
+                      value="subjetivas"
+                      className="flex-1 min-w-[140px]"
+                      style={{
+                        maxWidth: `calc(${maxWidthPercent}% - 4px)`
+                      }}
+                    >
+                      <span className="truncate block w-full text-center">Subjetivas</span>
+                    </TabsTrigger>
+                  );
+                })()}
               </TabsList>
 
               {objectiveSections.map(section => (

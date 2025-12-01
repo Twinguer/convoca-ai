@@ -21,3 +21,9 @@ COMMENT ON POLICY "users_can_view_own_rankings_for_rpc" ON public.user_rankings 
 'Permite que usuários vejam seus próprios rankings. Funções SECURITY DEFINER (como get_rankings_for_concurso) 
 podem acessar todos os dados via bypass de RLS usando set_config(''row_security'', ''off'', true).';
 
+
+
+
+
+
+

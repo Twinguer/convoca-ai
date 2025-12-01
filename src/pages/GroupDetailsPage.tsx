@@ -38,6 +38,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { studyGroupService } from '@/integrations/supabase/studyGroups/groups';
 import { useToast } from '@/hooks/use-toast';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -90,6 +100,7 @@ export const GroupDetailsPage: React.FC = () => {
 
   const [isLeaving, setIsLeaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   const handleRequestJoin = async () => {
     if (!groupId || !user) {
@@ -182,9 +193,15 @@ export const GroupDetailsPage: React.FC = () => {
     setIsLeaving(true);
     try {
       await leaveGroup.mutateAsync(groupId);
+      setShowLeaveDialog(false);
       navigate('/comunidade');
-    } catch (error) {
+    } catch (error: any) {
       devLog.error('Erro ao sair do grupo:', error);
+      toast({
+        title: 'Erro ao sair do grupo',
+        description: error.message || 'Não foi possível sair do grupo. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLeaving(false);
     }
@@ -320,15 +337,39 @@ export const GroupDetailsPage: React.FC = () => {
                     {isMember && (
                       <>
                         {group.created_by !== user?.id && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={handleLeave}
-                            disabled={isLeaving}
-                          >
-                            <LogOut className="h-4 w-4 mr-2" />
-                            {isLeaving ? 'Saindo...' : 'Sair do Grupo'}
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => setShowLeaveDialog(true)}
+                              disabled={isLeaving}
+                            >
+                              <LogOut className="h-4 w-4 mr-2" />
+                              Sair do Grupo
+                            </Button>
+                            <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Sair do Grupo?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Você tem certeza que deseja sair do grupo <strong>{group.name}</strong>? 
+                                    Você não poderá mais ver os posts e interagir com os membros. 
+                                    Esta ação pode ser revertida solicitando entrada novamente.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel disabled={isLeaving}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={handleLeave} 
+                                    className="bg-destructive hover:bg-destructive/90"
+                                    disabled={isLeaving}
+                                  >
+                                    {isLeaving ? 'Saindo...' : 'Sair do Grupo'}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
                         )}
                         {isAdmin && (
                           <GroupSettingsButton group={group} onGroupUpdated={() => {

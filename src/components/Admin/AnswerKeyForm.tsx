@@ -628,12 +628,25 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         {/* Tabs for sections */}
         {objectiveSections.length > 0 && <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs value={selectedSection} onValueChange={value => setSelectedSection(value)} className="w-full">
-              <TabsList className="grid w-full" style={{
-            gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))`
-          }}>
-                {objectiveSections.map(section => <TabsTrigger key={section.key} value={section.key}>
-                    {section.label}
-                  </TabsTrigger>)}
+              <TabsList className="flex flex-wrap w-full gap-1 p-1">
+                {objectiveSections.map(section => {
+                  // Calcular o número máximo de abas por linha (máximo 6)
+                  const maxTabsPerRow = 6;
+                  const maxWidthPercent = 100 / maxTabsPerRow;
+                  
+                  return (
+                    <TabsTrigger 
+                      key={section.key} 
+                      value={section.key}
+                      className="flex-1 min-w-[140px]"
+                      style={{
+                        maxWidth: `calc(${maxWidthPercent}% - 4px)`
+                      }}
+                    >
+                      <span className="truncate block w-full text-center">{section.label}</span>
+                    </TabsTrigger>
+                  );
+                })}
               </TabsList>
               
               {objectiveSections.map(section => <TabsContent key={section.key} value={section.key}>

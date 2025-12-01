@@ -169,21 +169,29 @@ export const studyGroupMembersService = {
   },
 
   /**
-   * Sair do grupo (similar a unfollowUser)
+   * Sair do grupo usando RPC (evita recursão RLS)
    */
   async leaveGroup(groupId: string, userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from('study_group_members')
-        .update({ status: 'left' })
-        .eq('group_id', groupId)
-        .eq('user_id', userId);
+      const { data, error } = await supabase.rpc('leave_study_group', {
+        p_group_id: groupId,
+        p_user_id: userId,
+      });
 
       if (error) throw error;
+      
+      // Verificar resposta da função RPC
+      if (data && typeof data === 'object' && 'success' in data) {
+        if (!data.success) {
+          throw new Error(data.message || 'Erro ao sair do grupo');
+        }
+        return true;
+      }
+      
       return true;
-    } catch (error) {
+    } catch (error: any) {
       logError('Error leaving group', error, 'STUDY_GROUPS');
-      return false;
+      throw error; // Re-throw para que o hook possa tratar
     }
   },
 };

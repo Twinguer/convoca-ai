@@ -46,7 +46,8 @@ class SecureLogger {
     const sensitiveKeys = [
       'password', 'token', 'key', 'secret', 'auth', 'credential',
       'email', 'phone', 'ssn', 'cpf', 'cnpj', 'credit_card',
-      'bank_account', 'api_key', 'access_token', 'refresh_token'
+      'bank_account', 'api_key', 'access_token', 'refresh_token',
+      'anon_key', 'service_key', 'authorization', 'supabase'
     ];
 
     const sanitized = { ...data };
@@ -55,6 +56,14 @@ class SecureLogger {
       const lowerKey = key.toLowerCase();
       if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
         sanitized[key] = '[REDACTED]';
+      } else if (typeof sanitized[key] === 'string') {
+        const value = sanitized[key];
+        // Verificar se é uma chave JWT ou URL do Supabase
+        if (value.length > 50 && (value.startsWith('eyJ') || value.includes('supabase.co'))) {
+          sanitized[key] = '[REDACTED_SENSITIVE_STRING]';
+        } else if (value.includes('key') || value.includes('token') || value.includes('secret')) {
+          sanitized[key] = '[REDACTED_SENSITIVE_STRING]';
+        }
       } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
         sanitized[key] = this.sanitizeData(sanitized[key]);
       }

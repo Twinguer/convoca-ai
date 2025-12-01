@@ -196,15 +196,17 @@ export const useLeaveGroup = () => {
       queryClient.invalidateQueries({ queryKey: ['group-members', groupId] });
       queryClient.invalidateQueries({ queryKey: ['study-group', groupId] });
       queryClient.invalidateQueries({ queryKey: ['user-groups', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-group-status', groupId, user?.id] });
       toast({
         title: 'Você saiu do grupo',
         description: 'Você não é mais membro deste grupo.',
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.message || 'Não foi possível sair do grupo.';
       toast({
         title: 'Erro ao sair do grupo',
-        description: 'Não foi possível sair do grupo.',
+        description: errorMessage,
         variant: 'destructive',
       });
     },

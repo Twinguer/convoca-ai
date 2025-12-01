@@ -58,11 +58,15 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 }
 
 // ✅ DEBUG: Log de inicialização (apenas em desenvolvimento)
-if (import.meta.env.DEV) {
+// ✅ SEGURANÇA: Não logar dados sensíveis mesmo em desenvolvimento
+if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEBUG_LOGS !== 'false') {
   devLog.info('Inicializando cliente Supabase', {
-    url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 30)}...` : 'NÃO CONFIGURADO',
-    key: SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 20)}...` : 'NÃO CONFIGURADO'
+    url_configured: !!SUPABASE_URL,
+    key_configured: !!SUPABASE_ANON_KEY,
+    // Não incluir valores reais mesmo truncados
   });
+} else if (import.meta.env.DEV) {
+  // Em desenvolvimento mas com logs desabilitados, não logar nada
 }
 
 export const supabase = createClient<Database>(
