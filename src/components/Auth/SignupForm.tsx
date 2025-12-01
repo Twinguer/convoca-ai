@@ -7,9 +7,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
+import { TurnstileCaptcha } from '@/components/Security/TurnstileCaptcha';
 
 interface SignupFormProps {
-  onSubmit: (email: string, password: string, name: string, nickname?: string) => Promise<void>;
+  onSubmit: (email: string, password: string, name: string, nickname?: string, captchaToken?: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -22,6 +23,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [captchaToken, setCaptchaToken] = useState<string>('');
+  const [captchaError, setCaptchaError] = useState(false);
 
   const validateEmail = useCallback((email: string): boolean => {
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -31,6 +34,21 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
   const validatePassword = useCallback((password: string): boolean => {
     const validation = PasswordValidator.validate(password);
     return validation.isValid;
+  }, []);
+
+  const handleCaptchaSuccess = useCallback((token: string) => {
+    setCaptchaToken(token);
+    setCaptchaError(false);
+    // Limpar erro de captcha se houver
+    if (errors.captcha) {
+      setErrors(prev => ({ ...prev, captcha: '' }));
+    }
+  }, [errors.captcha]);
+
+  const handleCaptchaError = useCallback(() => {
+    setCaptchaToken('');
+    setCaptchaError(true);
+    setErrors(prev => ({ ...prev, captcha: 'Erro na verificação de segurança. Tente novamente.' }));
   }, []);
 
   const validateForm = useCallback(() => {
@@ -61,9 +79,14 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
       newErrors.confirmPassword = 'Senhas não conferem';
     }
 
+    // Validar captcha
+    if (!captchaToken) {
+      newErrors.captcha = 'Por favor, complete a verificação de segurança';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [name, email, password, confirmPassword, validateEmail, validatePassword]);
+  }, [name, email, password, confirmPassword, captchaToken, validateEmail, validatePassword]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +95,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
       return;
     }
     
-    await onSubmit(email, password, name, nickname.trim() || undefined);
+    await onSubmit(email, password, name, nickname.trim() || undefined, captchaToken);
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,6 +291,26 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
             'Apenas letras minúsculas, números, underscore ou ponto'
           )}
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <TurnstileCaptcha
+          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || ''}
+          onSuccess={handleCaptchaSuccess}
+          onError={handleCaptchaError}
+          className="mt-2"
+        />
+        {captchaError && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Erro na verificação de segurança. Por favor, tente novamente.
+            </AlertDescription>
+          </Alert>
+        )}
+        {errors.captcha && (
+          <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.captcha}</p>
+        )}
       </div>
       
       <Button 

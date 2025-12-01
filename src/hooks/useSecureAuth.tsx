@@ -152,7 +152,7 @@ export const useSecureAuth = () => {
     }
   }, [sanitizeInput, isEmailValid, checkRateLimit, lockoutEnd, loginAttempts, navigate]);
 
-  const handleSignup = useCallback(async (email: string, password: string, name: string, nickname?: string) => {
+  const handleSignup = useCallback(async (email: string, password: string, name: string, nickname?: string, captchaToken?: string) => {
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedName = sanitizeInput(name);
     const sanitizedNickname = nickname ? sanitizeInput(nickname.toLowerCase().replace(/[^a-z0-9_.]/g, '')) : undefined;
@@ -175,6 +175,29 @@ export const useSecureAuth = () => {
     // Validar nickname se fornecido
     if (sanitizedNickname && (sanitizedNickname.length < 3 || sanitizedNickname.length > 20 || !/^[a-z0-9_.]+$/.test(sanitizedNickname))) {
       showErrorToast('Nickname inválido', 'O nickname deve ter entre 3 e 20 caracteres e conter apenas letras minúsculas, números, underscore ou ponto.');
+      return;
+    }
+
+    // Validar captcha antes de prosseguir
+    if (!captchaToken) {
+      showErrorToast('Verificação de segurança', 'Por favor, complete a verificação de segurança.');
+      return;
+    }
+
+    // Validar captcha no backend via Edge Function
+    try {
+      const { data: captchaData, error: captchaError } = await supabase.functions.invoke('validate-turnstile', {
+        body: { token: captchaToken }
+      });
+
+      if (captchaError || !captchaData?.valid) {
+        logSecurity('Invalid captcha token', { email: sanitizedEmail }, 'AUTH');
+        showErrorToast('Verificação de segurança falhou', 'Por favor, tente novamente.');
+        return;
+      }
+    } catch (error: any) {
+      logError('Captcha validation failed', { error: error.message }, 'AUTH');
+      showErrorToast('Erro na verificação de segurança', 'Tente novamente em alguns instantes.');
       return;
     }
 
