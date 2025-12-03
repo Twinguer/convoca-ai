@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import SubjectTimeDistributionChart from '@/components/StudyStats/SubjectTimeDistributionChart';
 import AccuracyEvolutionChart from '@/components/StudyStats/AccuracyEvolutionChart';
-import StudyHeatmapChart from '@/components/StudyStats/StudyHeatmapChart';
 const StatisticsPage = () => {
   const {
     statistics,
@@ -137,20 +136,14 @@ const StatisticsPage = () => {
         </Card>
       </div>
 
-      {/* Gráfico de Desempenho - linha separada */}
+      {/* Primeira linha: Gráfico de Desempenho (sozinho) */}
       <div className="mb-6">
         <PerformanceChart statistics={statistics} timeFilter={timeFilter} onTimeFilterChange={setTimeFilter} />
       </div>
 
-      {/* Outros 3 gráficos em uma linha para telas grandes */}
+      {/* Segunda linha: 3 gráficos enfileirados */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
         <SubjectTimeDistributionChart statistics={statistics} />
-        <StudyHeatmapChart statistics={statistics} />
-        <AccuracyEvolutionChart statistics={statistics} />
-      </div>
-
-      {/* Desempenho em Questões */}
-      <div className="mb-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -238,7 +231,7 @@ const StatisticsPage = () => {
             </Tabs>
           </CardContent>
         </Card>
-
+        <AccuracyEvolutionChart statistics={statistics} />
       </div>
 
       {/* Desempenho por Disciplina */}
