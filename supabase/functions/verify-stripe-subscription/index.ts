@@ -211,11 +211,20 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Inicializar Stripe
+    // Inicializar Stripe e detectar modo
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
       console.error("[verify-stripe-subscription] STRIPE_SECRET_KEY não configurado");
       throw new Error("Configuração do Stripe não encontrada");
+    }
+
+    // Verificar se é chave de teste ou produção
+    const isTestMode = stripeSecretKey.startsWith("sk_test_");
+    const isLiveMode = stripeSecretKey.startsWith("sk_live_");
+    
+    if (!isTestMode && !isLiveMode) {
+      console.error("[verify-stripe-subscription] Chave Stripe inválida (deve começar com sk_test_ ou sk_live_)");
+      throw new Error("Chave Stripe inválida");
     }
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
@@ -272,13 +281,23 @@ serve(async (req: Request): Promise<Response> => {
         const priceId = subscription.items.data[0]?.price?.id;
         console.log(`[verify-stripe-subscription] Plan ID não encontrado no metadata, tentando identificar pelo price_id: ${priceId}`);
         
-        // Mapear price_id para planId (Nova Conta - Modo Teste)
-        const priceToPlan: Record<string, string> = {
+        // Mapear price_id para planId (baseado no modo)
+        const STRIPE_PRICES_TEST: Record<string, string> = {
           "price_1SRagSFBsZSweLR7D5kE6D7h": "pro",
           "price_1SRaimFBsZSweLR714Du0mqE": "coach_starter",
           "price_1SRah0FBsZSweLR7DI1hiPsv": "coach_professional",
           "price_1SRai8FBsZSweLR7A93PGay8": "coach_enterprise"
         };
+        
+        // Price IDs do Stripe - Modo PRODUÇÃO (LIVE)
+        const STRIPE_PRICES_LIVE: Record<string, string> = {
+          "price_1SRaGrFbBP7AYhAYK3UISUzO": "pro",
+          "price_1SRaHbFbBP7AYhAYcjvOF6bB": "coach_starter",
+          "price_1SRaI8FbBP7AYhAYWHNeSPMW": "coach_professional",
+          "price_1SRaIbFbBP7AYhAYgbDmmBdG": "coach_enterprise"
+        };
+        
+        const priceToPlan = isTestMode ? STRIPE_PRICES_TEST : STRIPE_PRICES_LIVE;
         
         planId = priceToPlan[priceId || ""] || "pro";
         console.log(`[verify-stripe-subscription] Plan ID identificado: ${planId}`);

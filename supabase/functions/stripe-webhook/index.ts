@@ -15,6 +15,27 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
+// Price IDs do Stripe - Modo TESTE
+const STRIPE_PRICES_TEST: Record<string, string> = {
+  "price_1SRagSFBsZSweLR7D5kE6D7h": "pro",
+  "price_1SRaimFBsZSweLR714Du0mqE": "coach_starter",
+  "price_1SRah0FBsZSweLR7DI1hiPsv": "coach_professional",
+  "price_1SRai8FBsZSweLR7A93PGay8": "coach_enterprise"
+};
+
+// Price IDs do Stripe - Modo PRODUÇÃO (LIVE)
+const STRIPE_PRICES_LIVE: Record<string, string> = {
+  "price_1SRaGrFbBP7AYhAYK3UISUzO": "pro",
+  "price_1SRaHbFbBP7AYhAYcjvOF6bB": "coach_starter",
+  "price_1SRaI8FbBP7AYhAYWHNeSPMW": "coach_professional",
+  "price_1SRaIbFbBP7AYhAYgbDmmBdG": "coach_enterprise"
+};
+
+// Função para obter mapeamento de Price IDs baseado no modo
+function getPriceToPlanMapping(isTestMode: boolean): Record<string, string> {
+  return isTestMode ? STRIPE_PRICES_TEST : STRIPE_PRICES_LIVE;
+}
+
 // Configuração de planos Coach
 const COACH_PLANS = {
   coach_starter: {
@@ -214,6 +235,15 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error("STRIPE_SECRET_KEY não configurado");
     }
 
+    // Verificar se é chave de teste ou produção
+    const isTestMode = stripeSecretKey.startsWith("sk_test_");
+    const isLiveMode = stripeSecretKey.startsWith("sk_live_");
+    
+    if (!isTestMode && !isLiveMode) {
+      console.error("[stripe-webhook] Chave Stripe inválida (deve começar com sk_test_ ou sk_live_)");
+      throw new Error("Chave Stripe inválida");
+    }
+
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
     // Obter o corpo da requisição e a assinatura
@@ -331,12 +361,7 @@ serve(async (req: Request): Promise<Response> => {
         // Se não encontrou planId, tentar identificar pelo price_id
         if (!planId && subscription.items.data.length > 0) {
           const priceId = subscription.items.data[0]?.price?.id;
-          const priceToPlan: Record<string, string> = {
-            "price_1SRagSFBsZSweLR7D5kE6D7h": "pro",
-            "price_1SRaimFBsZSweLR714Du0mqE": "coach_starter",
-            "price_1SRah0FBsZSweLR7DI1hiPsv": "coach_professional",
-            "price_1SRai8FBsZSweLR7A93PGay8": "coach_enterprise"
-          };
+          const priceToPlan = getPriceToPlanMapping(isTestMode);
           planId = priceToPlan[priceId || ""] || "pro";
         }
         
@@ -438,12 +463,7 @@ serve(async (req: Request): Promise<Response> => {
           // Identificar pelo price_id se necessário
           if (!planId && subscription.items.data.length > 0) {
             const priceId = subscription.items.data[0]?.price?.id;
-            const priceToPlan: Record<string, string> = {
-              "price_1SRagSFBsZSweLR7D5kE6D7h": "pro",
-              "price_1SRaimFBsZSweLR714Du0mqE": "coach_starter",
-              "price_1SRah0FBsZSweLR7DI1hiPsv": "coach_professional",
-              "price_1SRai8FBsZSweLR7A93PGay8": "coach_enterprise"
-            };
+            const priceToPlan = getPriceToPlanMapping(isTestMode);
             planId = priceToPlan[priceId || ""] || "pro";
           }
           

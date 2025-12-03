@@ -3,6 +3,34 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StudyStatistics } from '@/types/userStudy';
 
+// Componente customizado para label com fonte ajustada e cores semânticas
+const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, value, formatHours, formatPercentage }: any) => {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const percentage = formatPercentage(value);
+  const hours = formatHours(value);
+
+  // Usar token semântico do sistema - card-foreground para textos em cards
+  // Se adapta automaticamente ao modo escuro
+  const textColor = 'hsl(var(--card-foreground))';
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill={textColor}
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      fontSize="8.4"
+      fontWeight="500"
+    >
+      {`${name}: ${hours} (${percentage})`}
+    </text>
+  );
+};
+
 interface SubjectTimeDistributionChartProps {
   statistics: StudyStatistics;
 }
@@ -144,10 +172,13 @@ const SubjectTimeDistributionChart: React.FC<SubjectTimeDistributionChartProps> 
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value }) => {
-                  const percentage = formatPercentage(value);
-                  return `${name}: ${formatHours(value)} (${percentage})`;
-                }}
+                label={(props: any) => (
+                  <CustomLabel
+                    {...props}
+                    formatHours={formatHours}
+                    formatPercentage={formatPercentage}
+                  />
+                )}
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"

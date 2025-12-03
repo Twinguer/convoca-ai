@@ -29,13 +29,26 @@ const LOCAL_IP_PATTERN = /^http:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])
 // ============================================
 // CONFIGURAÇÃO DE PLANOS E PRICES DO STRIPE
 // ============================================
-// Price IDs do Stripe (Nova Conta - Modo Teste)
-const STRIPE_PRICES = {
+// Price IDs do Stripe - Modo TESTE
+const STRIPE_PRICES_TEST = {
   pro: "price_1SRagSFBsZSweLR7D5kE6D7h", // R$ 14,90/mês - Aluno Pro
   coach_starter: "price_1SRaimFBsZSweLR714Du0mqE", // R$ 49,90/mês - Modo Coach Inicial (5 alunos)
   coach_professional: "price_1SRah0FBsZSweLR7DI1hiPsv", // R$ 89,90/mês - Modo Coach Intermediário (10 alunos)
   coach_enterprise: "price_1SRai8FBsZSweLR7A93PGay8", // R$ 149,90/mês - Modo Coach Avançado (25 alunos)
 };
+
+// Price IDs do Stripe - Modo PRODUÇÃO (LIVE)
+const STRIPE_PRICES_LIVE = {
+  pro: "price_1SRaGrFbBP7AYhAYK3UISUzO", // R$ 14,90/mês - Aluno Pro
+  coach_starter: "price_1SRaHbFbBP7AYhAYcjvOF6bB", // R$ 49,90/mês - Modo Coach Inicial (5 alunos)
+  coach_professional: "price_1SRaI8FbBP7AYhAYWHNeSPMW", // R$ 89,90/mês - Modo Coach Intermediário (10 alunos)
+  coach_enterprise: "price_1SRaIbFbBP7AYhAYgbDmmBdG", // R$ 149,90/mês - Modo Coach Avançado (25 alunos)
+};
+
+// Função para obter Price IDs baseado no modo (teste ou produção)
+function getStripePrices(isTestMode: boolean) {
+  return isTestMode ? STRIPE_PRICES_TEST : STRIPE_PRICES_LIVE;
+}
 
 // Configuração de planos Coach
 const COACH_PLANS = {
@@ -208,15 +221,10 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const priceId = STRIPE_PRICES[requestData.planId as keyof typeof STRIPE_PRICES];
-    if (!priceId) {
-      throw new Error(`Price ID não encontrado para o plano: ${requestData.planId}`);
-    }
-
     // Determinar se é plano Coach
     const isCoachPlan = requestData.planId.startsWith("coach_");
     
-    // Inicializar Stripe
+    // Inicializar Stripe e detectar modo
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
       console.error("[create-checkout] STRIPE_SECRET_KEY não configurado");
@@ -227,12 +235,35 @@ serve(async (req: Request): Promise<Response> => {
     const isTestMode = stripeSecretKey.startsWith("sk_test_");
     const isLiveMode = stripeSecretKey.startsWith("sk_live_");
     
+    console.log(`[create-checkout] 🔍 Detecção de modo Stripe:`, {
+      keyPrefix: stripeSecretKey.substring(0, 12),
+      isTestMode,
+      isLiveMode,
+      keyLength: stripeSecretKey.length
+    });
+    
     if (!isTestMode && !isLiveMode) {
       console.error("[create-checkout] Chave Stripe inválida (deve começar com sk_test_ ou sk_live_)");
       throw new Error("Chave Stripe inválida");
     }
     
-    console.log(`[create-checkout] Inicializando Stripe com chave: ${stripeSecretKey.substring(0, 12)}... (modo: ${isTestMode ? "TESTE" : "LIVE"})`);
+    // Obter Price IDs baseado no modo (teste ou produção)
+    const STRIPE_PRICES = getStripePrices(isTestMode);
+    const priceId = STRIPE_PRICES[requestData.planId as keyof typeof STRIPE_PRICES];
+    
+    console.log(`[create-checkout] 📋 Price IDs selecionados:`, {
+      mode: isTestMode ? "TESTE" : "PRODUÇÃO",
+      planId: requestData.planId,
+      priceId: priceId || "NÃO ENCONTRADO",
+      availablePlans: Object.keys(STRIPE_PRICES)
+    });
+    
+    if (!priceId || priceId.includes("PREENCHER")) {
+      const mode = isTestMode ? "TESTE" : "PRODUÇÃO";
+      throw new Error(`Price ID não configurado para o plano ${requestData.planId} no modo ${mode}. Verifique STRIPE_PRICES_${isTestMode ? "TEST" : "LIVE"}`);
+    }
+    
+    console.log(`[create-checkout] ✅ Inicializando Stripe com chave: ${stripeSecretKey.substring(0, 12)}... (modo: ${isTestMode ? "TESTE" : "LIVE"})`);
     
     let stripe;
     try {
@@ -505,6 +536,14 @@ serve(async (req: Request): Promise<Response> => {
           },
         },
         payment_method_types: ["card"],
+        // Desabilitar Stripe Link e forçar apenas cartão de crédito
+        payment_method_options: {
+          card: {
+            request_three_d_secure: "automatic",
+          },
+        },
+        // Garantir que apenas cartão seja coletado (desabilita Link)
+        payment_method_collection: "always",
       };
       
       // Adicionar cupons de desconto se houver
@@ -532,7 +571,14 @@ serve(async (req: Request): Promise<Response> => {
         console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
       } else if (stripeError?.message?.includes("No such price")) {
         errorMessage = `Price ID não encontrado no Stripe. Verifique se o Price ID existe no modo correto (teste ou live). Price usado: ${priceId}`;
-        console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
+        console.error("[create-checkout] ERRO CRÍTICO:", {
+          errorMessage,
+          priceId,
+          stripeKeyPrefix: stripeSecretKey.substring(0, 12),
+          detectedMode: isTestMode ? "TESTE" : "PRODUÇÃO",
+          planId: requestData.planId,
+          availablePrices: Object.entries(STRIPE_PRICES).map(([plan, price]) => `${plan}: ${price}`)
+        });
       } else if (stripeError?.code === "resource_missing") {
         errorMessage = `Recurso não encontrado no Stripe: ${stripeError?.param || "desconhecido"}. Verifique se está usando os IDs corretos para o modo (teste/live).`;
         console.error("[create-checkout] ERRO CRÍTICO:", errorMessage);
