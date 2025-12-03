@@ -50,15 +50,23 @@ const DialogContent = React.forwardRef<
             setIsOpen(newIsOpen);
             
             // ✅ CORREÇÃO: Remover aria-hidden quando o dialog estiver aberto
-            // O Radix UI define aria-hidden no body, mas não deve estar no dialog content
             if (newIsOpen && contentElement.getAttribute('aria-hidden') === 'true') {
               contentElement.removeAttribute('aria-hidden');
+            }
+            
+            // ✅ CORREÇÃO: Quando fechado, garantir que não há elementos focados
+            if (!newIsOpen) {
+              const focusedElement = contentElement.querySelector(':focus');
+              if (focusedElement) {
+                (focusedElement as HTMLElement).blur();
+              }
             }
           }
           
           // ✅ CORREÇÃO: Monitorar mudanças em aria-hidden e remover se o dialog estiver aberto
           if (mutation.attributeName === 'aria-hidden' && target === contentElement) {
-            if (isOpen && contentElement.getAttribute('aria-hidden') === 'true') {
+            const currentIsOpen = contentElement.getAttribute('data-state') === 'open';
+            if (currentIsOpen && contentElement.getAttribute('aria-hidden') === 'true') {
               contentElement.removeAttribute('aria-hidden');
             }
           }
@@ -72,7 +80,8 @@ const DialogContent = React.forwardRef<
     });
 
     // Remover aria-hidden inicialmente se presente e o dialog estiver aberto
-    if (isOpen && contentElement.getAttribute('aria-hidden') === 'true') {
+    const initialState = contentElement.getAttribute('data-state') === 'open';
+    if (initialState && contentElement.getAttribute('aria-hidden') === 'true') {
       contentElement.removeAttribute('aria-hidden');
     }
 

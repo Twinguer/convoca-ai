@@ -89,17 +89,14 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
   } = useQuery({
     queryKey: ['rankings-v3', id],
     queryFn: async () => {
-      console.log('🔵 [useResultadosData] Chamando fetchUserRankings com id:', id);
       if (!id) {
-        console.warn('⚠️ [useResultadosData] id é vazio, retornando array vazio');
         return [];
       }
       try {
         const result = await fetchUserRankings(id, undefined, 0, 100);
-        console.log('✅ [useResultadosData] fetchUserRankings retornou:', result.length, 'rankings');
         return result;
       } catch (error) {
-        console.error('❌ [useResultadosData] Erro ao chamar fetchUserRankings:', error);
+        devLog.error('[useResultadosData] Erro ao chamar fetchUserRankings:', error);
         throw error;
       }
     },
@@ -107,10 +104,7 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
     staleTime: 0, // Sempre buscar dados frescos para garantir atualizações imediatas
     enabled: !!id, // HABILITADO - buscar rankings para exibir classificação
     onError: (error) => {
-      console.error('❌ [useResultadosData] Erro na query:', error);
-    },
-    onSuccess: (data) => {
-      console.log('✅ [useResultadosData] Query bem-sucedida:', data.length, 'rankings');
+      devLog.error('[useResultadosData] Erro na query:', error);
     }
   });
   

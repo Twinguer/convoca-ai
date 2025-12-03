@@ -1981,6 +1981,9 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
             })}
             </DialogTitle>
             <DialogDescription>
+              Visualize e gerencie as tarefas de estudo agendadas para este dia
+            </DialogDescription>
+            <DialogDescription>
               Detalhes das tarefas de estudo realizadas neste dia
             </DialogDescription>
           </DialogHeader>
