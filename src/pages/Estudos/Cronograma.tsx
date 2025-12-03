@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check } from 'lucide-react';
+import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, generateId } from '@/lib/utils';
@@ -738,8 +738,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
   };
 
-  // ✅ SEGURANÇA: Abrir documento via Edge Function com token seguro
-  const handleViewDocument = async (
+  // ✅ SEGURANÇA: Download documento via Edge Function com token seguro
+  const handleDownloadDocument = async (
     type: 'trilha_semanal' | 'subjetiva'
   ) => {
     const cycle = cycles.find(c => c.id === selectedCycle);
@@ -773,19 +773,60 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       }
     }
 
-    // Gerar token seguro e abrir via Edge Function
+    // Gerar token seguro e fazer download via Edge Function
     const token = await generateDocumentToken(type, selectedCycle, filePath);
     if (!token) return;
 
     // Construir URL da Edge Function usando a URL do Supabase
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl) {
-      toast.error('Erro de configuração: URL do Supabase não encontrada');
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      toast.error('Erro de configuração: URL ou chave do Supabase não encontrada');
       return;
     }
     
-    const functionUrl = `${supabaseUrl}/functions/v1/serve-document?token=${token}`;
-    window.open(functionUrl, '_blank');
+    // ✅ Download: Fazer fetch com header de autorização e fazer download
+    try {
+      const functionUrl = `${supabaseUrl}/functions/v1/serve-document?token=${token}`;
+      
+      const response = await fetch(functionUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'apikey': supabaseAnonKey
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        toast.error(`Erro ao baixar documento: ${errorData.error || response.statusText}`);
+        return;
+      }
+
+      // Criar blob e fazer download
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Extrair nome do arquivo do filePath
+      const fileName = filePath.split('/').pop() || `documento_${type}_${selectedCycle}.pdf`;
+      
+      // Criar link temporário para download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Limpar blob URL
+      URL.revokeObjectURL(blobUrl);
+      
+      toast.success('Download iniciado!');
+    } catch (error: any) {
+      devLog.error('Erro ao baixar documento:', error);
+      toast.error('Erro ao baixar documento. Tente novamente.');
+    }
   };
 
   const handlePDFRemove = async (type: 'trilha_semanal' | 'subjetiva') => {
@@ -1385,10 +1426,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                           variant="outline"
                           size="sm"
                           className="h-7 px-2 text-xs"
-                          onClick={() => handleViewDocument('trilha_semanal')}
+                          onClick={() => handleDownloadDocument('trilha_semanal')}
                         >
-                          <FileText className="h-3 w-3 mr-1" />
-                          Ver
+                          <Download className="h-3 w-3 mr-1" />
+                          Download
                         </Button>
                         <Button
                           variant="ghost"
@@ -1515,10 +1556,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                           variant="outline"
                           size="sm"
                           className="h-7 px-2 text-xs"
-                          onClick={() => handleViewDocument('subjetiva')}
+                          onClick={() => handleDownloadDocument('subjetiva')}
                         >
-                          <FileText className="h-3 w-3 mr-1" />
-                          Ver
+                          <Download className="h-3 w-3 mr-1" />
+                          Download
                         </Button>
                         <Button
                           variant="ghost"

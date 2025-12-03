@@ -146,40 +146,78 @@ serve(async (req) => {
     }
 
     // Verificar se o usuário tem acesso ao ciclo
-    // Os ciclos estão armazenados em user_study_v2.study_cycles (JSONB)
-    const { data: userStudy, error: userStudyError } = await supabase
-      .from('user_study_v2')
-      .select('study_cycles')
+    // Primeiro, tentar buscar na tabela study_cycles_v2 (estrutura nova)
+    const { data: cycleV2, error: cycleV2Error } = await supabase
+      .from('study_cycles_v2')
+      .select('id, user_id')
+      .eq('id', cycleId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (userStudyError || !userStudy) {
-      return new Response(
-        JSON.stringify({ error: 'User study data not found' }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    let hasAccess = false;
+
+    // Se encontrou na tabela V2, usuário tem acesso
+    if (cycleV2 && !cycleV2Error) {
+      hasAccess = true;
+    } else {
+      // Fallback: verificar na estrutura antiga (user_study_v2.study_cycles JSONB)
+      const { data: userStudy, error: userStudyError } = await supabase
+        .from('user_study_v2')
+        .select('study_cycles')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (userStudyError) {
+        console.error('Error fetching user study:', userStudyError);
+        return new Response(
+          JSON.stringify({ error: 'Error checking access' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      if (!userStudy) {
+        return new Response(
+          JSON.stringify({ error: 'User study data not found' }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Verificar se o ciclo existe no JSONB
+      const cycles = userStudy.study_cycles as any[];
+      if (!cycles || !Array.isArray(cycles)) {
+        return new Response(
+          JSON.stringify({ error: 'Cycle not found' }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      const cycle = cycles.find((c: any) => c.id === cycleId);
+
+      if (!cycle) {
+        return new Response(
+          JSON.stringify({ error: 'Cycle not found' }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Se chegou aqui, o ciclo existe e pertence ao usuário (já filtramos por user_id na query)
+      hasAccess = true;
     }
 
-    // Verificar se o ciclo existe e pertence ao usuário
-    const cycles = userStudy.study_cycles as any[];
-    const cycle = cycles.find((c: any) => c.id === cycleId);
-
-    if (!cycle) {
-      return new Response(
-        JSON.stringify({ error: 'Cycle not found' }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Verificar permissão: usuário deve ser o dono do ciclo
-    // TODO: Adicionar verificação de coach aqui se necessário
-    if (cycle.user_id !== userId) {
+    // Verificar se tem acesso
+    if (!hasAccess) {
       return new Response(
         JSON.stringify({ error: 'Access denied' }),
         {
@@ -230,7 +268,7 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Content-Type': contentType,
-        'Content-Disposition': `inline; filename="${filePath.split('/').pop()}"`,
+        'Content-Disposition': `attachment; filename="${filePath.split('/').pop()}"`,
         'Cache-Control': 'private, max-age=3600', // Cache por 1 hora
         'X-RateLimit-Limit': '20',
         'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
