@@ -607,16 +607,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         throw uploadError;
       }
 
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(filePath);
-
-      // Atualizar ciclo com nova URL
-      const updateField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
+      // ✅ SEGURANÇA: Salvar apenas filePath (não URL pública)
+      // A URL será gerada via Edge Function com token seguro quando necessário
+      const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
+      const urlField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
+      
+      // Atualizar ciclo com filePath (e manter URL para compatibilidade temporária)
       await UserStudyService.updateCycle(targetUserId, selectedCycle, {
-        [updateField]: publicUrl
-      });
+        [filePathField]: filePath,
+        [urlField]: null // Remover URL pública antiga
+      } as any);
 
       // Recarregar ciclos
       await fetchCycles();
@@ -628,6 +628,164 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       setUploadingPDF(null);
       event.target.value = '';
     }
+  };
+
+  // ✅ SEGURANÇA: Gerar token seguro para visualizar documento
+  const generateDocumentToken = async (
+    type: 'trilha_semanal' | 'subjetiva',
+    cycleId: string,
+    filePath: string
+  ): Promise<string | null> => {
+    if (!user?.id) {
+      toast.error('Erro ao identificar usuário');
+      return null;
+    }
+
+    try {
+      const { data: tokenHash, error } = await supabase.rpc('generate_secure_token', {
+        p_entity_type: 'study_document',
+        p_entity_id: user.id,
+        p_metadata: {
+          filePath: filePath,
+          cycleId: cycleId,
+          documentType: type
+        },
+        p_expires_in_minutes: 60 // Token expira em 1 hora
+      });
+
+      if (error || !tokenHash) {
+        devLog.error('Erro ao gerar token seguro:', error);
+        toast.error('Erro ao gerar link seguro');
+        return null;
+      }
+
+      return tokenHash;
+    } catch (error: any) {
+      devLog.error('Erro ao gerar token seguro:', error);
+      toast.error('Erro ao gerar link seguro');
+      return null;
+    }
+  };
+
+  // ✅ SEGURANÇA: Migrar URL antiga para filePath (se necessário)
+  const migrateLegacyUrlToFilePath = async (
+    type: 'trilha_semanal' | 'subjetiva',
+    legacyUrl: string
+  ): Promise<string | null> => {
+    try {
+      devLog.log('Iniciando migração de URL legada para filePath:', { type, legacyUrl: legacyUrl.substring(0, 100) + '...' });
+      
+      // Extrair filePath da URL pública
+      // Formato: https://{project}.supabase.co/storage/v1/object/public/{bucket}/{filePath}
+      const urlPattern = /\/storage\/v1\/object\/public\/profiles\/(.+)$/;
+      const match = legacyUrl.match(urlPattern);
+      
+      if (!match || !match[1]) {
+        devLog.error('Não foi possível extrair filePath da URL:', legacyUrl);
+        toast.error('Erro ao processar URL do documento. Por favor, faça upload novamente.');
+        return null;
+      }
+
+      const filePath = match[1];
+      devLog.log('FilePath extraído:', filePath);
+      
+      // Verificar se o arquivo existe no storage (tentar fazer download)
+      const { error: checkError } = await supabase.storage
+        .from('profiles')
+        .download(filePath);
+
+      if (checkError) {
+        devLog.error('Arquivo não encontrado no storage:', checkError);
+        // Mesmo assim, tentar salvar o filePath (pode ser que o arquivo exista mas tenha erro de permissão)
+        // O sistema seguro vai validar novamente quando tentar servir
+      } else {
+        devLog.log('Arquivo confirmado no storage');
+      }
+
+      // Salvar filePath no banco
+      const targetUserId = coachMode ? targetStudentId : user?.id;
+      if (!targetUserId) {
+        devLog.error('User ID não encontrado para migração');
+        return null;
+      }
+
+      const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
+      const urlField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
+      
+      devLog.log('Salvando filePath no banco...', { filePathField, urlField });
+      
+      const updateResult = await UserStudyService.updateCycle(targetUserId, selectedCycle, {
+        [filePathField]: filePath,
+        [urlField]: null // Remover URL pública
+      } as any);
+
+      if (!updateResult) {
+        devLog.error('Erro ao atualizar ciclo com filePath');
+        toast.error('Erro ao migrar documento. Tente novamente.');
+        return null;
+      }
+
+      devLog.log('Migração concluída com sucesso');
+      
+      // Recarregar ciclos
+      await fetchCycles();
+      
+      return filePath;
+    } catch (error) {
+      devLog.error('Erro ao migrar URL legada:', error);
+      toast.error('Erro ao migrar documento. Por favor, faça upload novamente.');
+      return null;
+    }
+  };
+
+  // ✅ SEGURANÇA: Abrir documento via Edge Function com token seguro
+  const handleViewDocument = async (
+    type: 'trilha_semanal' | 'subjetiva'
+  ) => {
+    const cycle = cycles.find(c => c.id === selectedCycle);
+    if (!cycle || !selectedCycle) {
+      toast.error('Ciclo não encontrado');
+      return;
+    }
+
+    // Verificar se tem filePath (sistema seguro obrigatório)
+    const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
+    let filePath = (cycle as any)[filePathField] as string | undefined;
+
+    // Se não tem filePath mas tem URL legada, tentar migrar automaticamente
+    if (!filePath) {
+      const legacyUrl = type === 'trilha_semanal' ? cycle.trilha_semanal_pdf_url : cycle.subjetiva_pdf_url;
+      
+      if (legacyUrl) {
+        // Tentar migrar URL antiga para filePath
+        toast.info('Migrando documento para sistema seguro...');
+        filePath = await migrateLegacyUrlToFilePath(type, legacyUrl);
+        
+        if (!filePath) {
+          toast.error('Não foi possível migrar o documento. Por favor, faça upload novamente.');
+          return;
+        }
+        
+        toast.success('Documento migrado com sucesso!');
+      } else {
+        toast.error('Documento não encontrado. Por favor, faça upload novamente.');
+        return;
+      }
+    }
+
+    // Gerar token seguro e abrir via Edge Function
+    const token = await generateDocumentToken(type, selectedCycle, filePath);
+    if (!token) return;
+
+    // Construir URL da Edge Function usando a URL do Supabase
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      toast.error('Erro de configuração: URL do Supabase não encontrada');
+      return;
+    }
+    
+    const functionUrl = `${supabaseUrl}/functions/v1/serve-document?token=${token}`;
+    window.open(functionUrl, '_blank');
   };
 
   const handlePDFRemove = async (type: 'trilha_semanal' | 'subjetiva') => {
@@ -642,12 +800,40 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       return;
     }
 
-    const updateField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
+    const cycle = cycles.find(c => c.id === selectedCycle);
+    if (!cycle) {
+      toast.error('Ciclo não encontrado');
+      return;
+    }
+
+    // Remover arquivo do storage se existir filePath
+    const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
+    const filePath = (cycle as any)[filePathField] as string | undefined;
+
+    if (filePath) {
+      try {
+        const { error: deleteError } = await supabase.storage
+          .from('profiles')
+          .remove([filePath]);
+
+        if (deleteError) {
+          devLog.error('Erro ao remover arquivo do storage:', deleteError);
+          // Continuar mesmo se falhar (pode já ter sido removido)
+        }
+      } catch (error) {
+        devLog.error('Erro ao remover arquivo:', error);
+        // Continuar mesmo se falhar
+      }
+    }
+
+    // Remover campos do banco
+    const urlField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
     
     try {
       await UserStudyService.updateCycle(targetUserId, selectedCycle, {
-        [updateField]: null
-      });
+        [filePathField]: null,
+        [urlField]: null
+      } as any);
       
       await fetchCycles();
       toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} removida`);
@@ -1192,18 +1378,14 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_pdf_url ? (
+                    {(cycles.find(c => c.id === selectedCycle) as any)?.trilha_semanal_file_path || 
+                      cycles.find(c => c.id === selectedCycle)?.trilha_semanal_pdf_url ? (
                       <>
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-7 px-2 text-xs"
-                          onClick={() => {
-                            const cycle = cycles.find(c => c.id === selectedCycle);
-                            if (cycle?.trilha_semanal_pdf_url) {
-                              window.open(cycle.trilha_semanal_pdf_url, '_blank');
-                            }
-                          }}
+                          onClick={() => handleViewDocument('trilha_semanal')}
                         >
                           <FileText className="h-3 w-3 mr-1" />
                           Ver
@@ -1326,18 +1508,14 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                     )}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {cycles.find(c => c.id === selectedCycle)?.subjetiva_pdf_url ? (
+                    {(cycles.find(c => c.id === selectedCycle) as any)?.subjetiva_file_path || 
+                      cycles.find(c => c.id === selectedCycle)?.subjetiva_pdf_url ? (
                       <>
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-7 px-2 text-xs"
-                          onClick={() => {
-                            const cycle = cycles.find(c => c.id === selectedCycle);
-                            if (cycle?.subjetiva_pdf_url) {
-                              window.open(cycle.subjetiva_pdf_url, '_blank');
-                            }
-                          }}
+                          onClick={() => handleViewDocument('subjetiva')}
                         >
                           <FileText className="h-3 w-3 mr-1" />
                           Ver
