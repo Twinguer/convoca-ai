@@ -94,6 +94,7 @@ serve(async (req) => {
 
     // Calcular score de forma segura
     let totalScore = 0;
+    let objectiveScore = 0; // ✅ CORREÇÃO: Score objetivo (sem subjetivas) para verificar mínimo global
     const subjectScores: Record<string, number> = {};
     const blockScores: Record<string, number> = {};
     const examType = concurso.exam_type || 'Múltipla Escolha';
@@ -109,6 +110,16 @@ serve(async (req) => {
       minimumTotalScore = Number(concurso.disciplines.minimum_total_score) || 0;
       minimumTotalScoreCotas = Number(concurso.disciplines.minimum_total_score_cotas) || 0;
       blocks = concurso.disciplines.blocks || [];
+      
+      // ✅ DEBUG: Log dos mínimos lidos
+      console.log(`[calculate-ranking-score] Mínimos lidos do banco:`, {
+        minimum_total_score: concurso.disciplines.minimum_total_score,
+        minimum_total_score_cotas: concurso.disciplines.minimum_total_score_cotas,
+        minimumTotalScore,
+        minimumTotalScoreCotas
+      });
+    } else {
+      console.warn(`[calculate-ranking-score] Estrutura disciplines inválida ou não encontrada`);
     }
 
     console.log(`[calculate-ranking-score] Calculating score for ${Object.keys(answers).length} answers`);
@@ -152,6 +163,7 @@ serve(async (req) => {
       }
 
       totalScore += questionScore;
+      objectiveScore += questionScore; // ✅ CORREÇÃO: Acumular score objetivo (sem subjetivas)
 
       // Acumular por disciplina/seção
       if (sectionType) {
@@ -172,7 +184,7 @@ serve(async (req) => {
       }
     }
 
-    // Adicionar pontuações subjetivas
+    // Adicionar pontuações subjetivas (apenas ao totalScore, não ao objectiveScore)
     if (subjectiveScores) {
       totalScore += subjectiveScores.discursive_score || 0;
       totalScore += subjectiveScores.case_study_1_score || 0;
@@ -182,11 +194,37 @@ serve(async (req) => {
     }
 
     console.log(`[calculate-ranking-score] Total score calculated: ${totalScore}`);
+    console.log(`[calculate-ranking-score] Objective score (sem subjetivas): ${objectiveScore}`);
+    console.log(`[calculate-ranking-score] Minimum scores - Global (AC): ${minimumTotalScore}, Global (Cotas): ${minimumTotalScoreCotas}`);
 
+    // ✅ CORREÇÃO: Normalizar reservationType antes de verificar se é cota
+    // Função de normalização (mesma lógica do frontend)
+    const normalizeReservationType = (type: string | null | undefined): string => {
+      if (!type || type.trim() === '') {
+        return 'Ampla Concorrência';
+      }
+      const trimmed = type.trim();
+      
+      // Normalizar abreviações e variações de Ampla Concorrência
+      if (trimmed === 'AC' || trimmed === 'ac' || trimmed === 'Ampla') {
+        return 'Ampla Concorrência';
+      }
+      // Normalizar outros códigos antigos
+      if (trimmed === 'PPI') return 'PPP';
+      if (trimmed === 'PC') return 'Hipossuficientes';
+      if (trimmed === 'PD') return 'Pessoas Trans';
+      
+      return trimmed;
+    };
+    
+    const normalizedReservationType = normalizeReservationType(reservationType);
+    
     // Verificar mínimos
-    const isCotas = reservationType !== 'Ampla Concorrência';
+    const isCotas = normalizedReservationType !== 'Ampla Concorrência';
     const applicableMinimum = isCotas ? minimumTotalScoreCotas : minimumTotalScore;
-    const belowMinimum = totalScore < applicableMinimum;
+    // ✅ CORREÇÃO CRÍTICA: Verificar mínimo global usando apenas score objetivo (sem subjetivas)
+    // O mínimo global é verificado apenas contra questões objetivas, não inclui subjetivas
+    const belowMinimum = applicableMinimum > 0 && objectiveScore < applicableMinimum;
     
     const belowDisciplineMinimums: string[] = [];
     const belowBlockMinimums: string[] = [];
@@ -221,8 +259,8 @@ serve(async (req) => {
     }
 
     // Verificar mínimo global
-    if (belowMinimum) {
-      eliminationReasons.push(`Abaixo do mínimo global: ${totalScore.toFixed(2)} < ${applicableMinimum}`);
+    if (belowMinimum && applicableMinimum > 0) {
+      eliminationReasons.push(`Abaixo do mínimo global (objetivo): ${objectiveScore.toFixed(2)} < ${applicableMinimum}`);
     }
 
     // Determinar status
@@ -279,7 +317,22 @@ serve(async (req) => {
     rankingsObj[rankingKey] = {
       concurso_id: concursoId,
       selected_booklet_id: bookletId,
-      reservation_type: reservationType,
+      reservation_type: normalizedReservationType, // ✅ CORREÇÃO: Salvar valor normalizado
+      // ✅ CORREÇÃO: Salvar também em user_data para consistência com backend PostgreSQL
+      user_data: {
+        reservation_type: normalizedReservationType, // ✅ Normalizado
+        score: totalScore,
+        below_minimum: belowMinimum,
+        belowMinimum: belowMinimum,
+        status,
+        elimination_reasons: eliminationReasons,
+        belowDisciplineMinimums,
+        belowBlockMinimums,
+        subjectives: subjectiveScores || {},
+        subjective_scores: subjectiveScores || {},
+        object_scores: subjectScores, // ✅ Scores por disciplina (objetivas)
+        answers: answers, // Respostas do usuário
+      },
       score: totalScore,
       subject_scores: subjectScores,
       block_scores: blockScores,

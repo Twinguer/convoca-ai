@@ -250,33 +250,69 @@ export const fetchUserRankings = async (
       total: rankingsForConcurso.length
     });
 
-    // ✅ CORREÇÃO CRÍTICA: Buscar dados do concurso para verificar exam_type
+    // ✅ CORREÇÃO CRÍTICA: Buscar dados do concurso para verificar exam_type e mínimos
     const { data: concursoData, error: concursoError } = await supabase
       .from('concursos')
-      .select('exam_type')
+      .select('exam_type, disciplines')
       .eq('id', concursoId)
       .maybeSingle();
 
     if (concursoError) {
-      devLog.warn('⚠️ [RANKING_SERVICE] Erro ao buscar exam_type do concurso, usando padrão', sanitizeForLog(concursoError));
+      devLog.warn('⚠️ [RANKING_SERVICE] Erro ao buscar dados do concurso, usando padrão', sanitizeForLog(concursoError));
     }
 
     const examType = concursoData?.exam_type || 'Múltipla Escolha';
+    
+    // ✅ CORREÇÃO CRÍTICA: Extrair mínimos globais do concurso
+    let minimumTotalScore = 0;
+    let minimumTotalScoreCotas = 0;
+    
+    if (concursoData?.disciplines && typeof concursoData.disciplines === 'object' && !Array.isArray(concursoData.disciplines)) {
+      minimumTotalScore = Number(concursoData.disciplines.minimum_total_score) || 0;
+      minimumTotalScoreCotas = Number(concursoData.disciplines.minimum_total_score_cotas) || 0;
+    }
 
     // ✅ CORREÇÃO CRÍTICA: Função para verificar se ranking está abaixo do mínimo
+    // A verificação de mínimos é feita no backend (Edge Function e função do banco)
+    // O frontend confia no flag belowMinimum que vem do backend, mas adiciona fallback
     const isBelowMinimum = (rankingData: any): boolean => {
       const userData = rankingData?.user_data || rankingData || {};
-      const score = userData?.score || rankingData?.score || 0;
+      const totalScore = userData?.score || rankingData?.score || 0;
+      const reservationType = userData?.reservation_type || rankingData?.reservation_type || 'Ampla Concorrência';
       
-      // Verificação de mínimos por disciplina/bloco
+      // Calcular score objetivo (sem subjetivas) para verificação de mínimo global
+      const subjectiveScores = userData?.subjectives || userData?.subjective_scores || {};
+      const subjectiveTotal = 
+        (Number(subjectiveScores.discursive) || 0) +
+        (Number(subjectiveScores.case_study_1) || 0) +
+        (Number(subjectiveScores.case_study_2) || 0) +
+        (Number(subjectiveScores.case_study_3) || 0) +
+        (Number(subjectiveScores.other_subjective) || 0);
+      
+      const objectiveScore = totalScore - subjectiveTotal;
+      
+      // 1. Verificar flag belowMinimum (mínimo global) - calculado no backend usando score objetivo
+      const belowMinimum = !!(userData?.belowMinimum || userData?.below_minimum);
+      
+      // 2. ✅ FALLBACK: Verificar mínimo global atual do concurso (caso flag esteja desatualizado)
+      // Normalizar reservation_type para garantir consistência
+      const normalizedReservationType = normalizeReservationType(reservationType);
+      const isCotas = normalizedReservationType !== 'Ampla Concorrência';
+      const applicableMinimum = isCotas ? minimumTotalScoreCotas : minimumTotalScore;
+      const belowGlobalMinimum = applicableMinimum > 0 && objectiveScore < applicableMinimum;
+      
+      // 3. Verificar mínimos por disciplina/bloco (flags salvos)
       const hasDisciplineMinimums = (userData?.belowDisciplineMinimums || userData?.below_discipline_minimums || []).length > 0;
       const hasBlockMinimums = (userData?.belowBlockMinimums || userData?.below_block_minimums || []).length > 0;
       
-      // Para provas "Certo ou Errado" ou "Alternativas", eliminar se nota <= 0
-      const isCertoErradoEliminated = examType === 'Certo ou Errado' && score <= 0;
-      const isAlternativasEliminated = examType === 'Alternativas' && score <= 0;
+      // 4. Para provas "Certo ou Errado" ou "Alternativas", eliminar se nota <= 0
+      // NOTA: Para essas provas, o score já é o objetivo (não há subjetivas)
+      const isCertoErradoEliminated = examType === 'Certo ou Errado' && totalScore <= 0;
+      const isAlternativasEliminated = examType === 'Alternativas' && totalScore <= 0;
       
-      return !!(userData?.belowMinimum || userData?.below_minimum) || 
+      // ✅ Usar flag salvo OU verificar mínimo global atual (fallback)
+      return belowMinimum || 
+             belowGlobalMinimum || // ✅ FALLBACK: Verificar mínimo global atual
              hasDisciplineMinimums || 
              hasBlockMinimums || 
              isCertoErradoEliminated || 
@@ -587,7 +623,8 @@ export const fetchUserRankings = async (
           }
           return fallback;
         })(),
-        belowMinimum: !!(userData?.belowMinimum || userData?.below_minimum),
+        // ✅ CORREÇÃO CRÍTICA: Usar o resultado da função isBelowMinimum para garantir consistência
+        belowMinimum: isEliminated,
         belowDisciplineMinimums: userData?.belowDisciplineMinimums || userData?.below_discipline_minimums || [],
         belowBlockMinimums: userData?.belowBlockMinimums || userData?.below_block_minimums || [],
       };
