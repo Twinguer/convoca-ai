@@ -250,15 +250,75 @@ export const fetchUserRankings = async (
       total: rankingsForConcurso.length
     });
 
-    // Ordenar por score (descendente)
-    rankingsForConcurso.sort((a, b) => {
+    // ✅ CORREÇÃO CRÍTICA: Buscar dados do concurso para verificar exam_type
+    const { data: concursoData, error: concursoError } = await supabase
+      .from('concursos')
+      .select('exam_type')
+      .eq('id', concursoId)
+      .maybeSingle();
+
+    if (concursoError) {
+      devLog.warn('⚠️ [RANKING_SERVICE] Erro ao buscar exam_type do concurso, usando padrão', sanitizeForLog(concursoError));
+    }
+
+    const examType = concursoData?.exam_type || 'Múltipla Escolha';
+
+    // ✅ CORREÇÃO CRÍTICA: Função para verificar se ranking está abaixo do mínimo
+    const isBelowMinimum = (rankingData: any): boolean => {
+      const userData = rankingData?.user_data || rankingData || {};
+      const score = userData?.score || rankingData?.score || 0;
+      
+      // Verificação de mínimos por disciplina/bloco
+      const hasDisciplineMinimums = (userData?.belowDisciplineMinimums || userData?.below_discipline_minimums || []).length > 0;
+      const hasBlockMinimums = (userData?.belowBlockMinimums || userData?.below_block_minimums || []).length > 0;
+      
+      // Para provas "Certo ou Errado" ou "Alternativas", eliminar se nota <= 0
+      const isCertoErradoEliminated = examType === 'Certo ou Errado' && score <= 0;
+      const isAlternativasEliminated = examType === 'Alternativas' && score <= 0;
+      
+      return !!(userData?.belowMinimum || userData?.below_minimum) || 
+             hasDisciplineMinimums || 
+             hasBlockMinimums || 
+             isCertoErradoEliminated || 
+             isAlternativasEliminated;
+    };
+
+    // ✅ CORREÇÃO CRÍTICA: Separar classificados de eliminados ANTES de ordenar
+    const classifiedRankings: typeof rankingsForConcurso = [];
+    const eliminatedRankings: typeof rankingsForConcurso = [];
+
+    rankingsForConcurso.forEach((item) => {
+      if (isBelowMinimum(item.rankingData)) {
+        eliminatedRankings.push(item);
+      } else {
+        classifiedRankings.push(item);
+      }
+    });
+
+    devLog.debug('✅ [RANKING_SERVICE] Rankings separados', {
+      classified: classifiedRankings.length,
+      eliminated: eliminatedRankings.length
+    });
+
+    // Ordenar classificados por score (descendente)
+    classifiedRankings.sort((a, b) => {
       const scoreA = (a.rankingData as any).user_data?.score || 0;
       const scoreB = (b.rankingData as any).user_data?.score || 0;
       return scoreB - scoreA;
     });
 
+    // Ordenar eliminados por score (descendente) - apenas para manter ordem consistente
+    eliminatedRankings.sort((a, b) => {
+      const scoreA = (a.rankingData as any).user_data?.score || 0;
+      const scoreB = (b.rankingData as any).user_data?.score || 0;
+      return scoreB - scoreA;
+    });
+
+    // ✅ CORREÇÃO: Combinar classificados primeiro, depois eliminados
+    const sortedRankingsForConcurso = [...classifiedRankings, ...eliminatedRankings];
+
     // Buscar perfis de usuários separadamente (RPC não retorna perfis)
-    const userIds = [...new Set(rankingsForConcurso.map((item: any) => item.user_id))];
+    const userIds = [...new Set(sortedRankingsForConcurso.map((item: any) => item.user_id))];
     
     const { data: userProfiles, error: profileError } = await supabase
       .from('users_profiles')
@@ -279,7 +339,7 @@ export const fetchUserRankings = async (
     }
 
     // Mapear resultados para o formato esperado
-    const paginatedData = rankingsForConcurso.map((item: any) => {
+    const paginatedData = sortedRankingsForConcurso.map((item: any) => {
       const userProfile = profileMap.get(item.user_id) || { name: 'Usuário', avatar_url: null };
       return {
         user_id: item.user_id,
@@ -287,6 +347,67 @@ export const fetchUserRankings = async (
         rankingData: item.rankingData,
         users_profiles: userProfile
       };
+    });
+
+    // ✅ CORREÇÃO CRÍTICA: Calcular posições considerando empates APENAS para classificados
+    // Separar índices de classificados e eliminados
+    const classifiedIndices: number[] = [];
+    const eliminatedIndices: number[] = [];
+
+    paginatedData.forEach((item: any, index: number) => {
+      if (isBelowMinimum(item.rankingData)) {
+        eliminatedIndices.push(index);
+      } else {
+        classifiedIndices.push(index);
+      }
+    });
+
+    // Agrupar classificados por score para identificar empates
+    const scoreGroups: { score: number; indices: number[] }[] = [];
+    let currentScore: number | null = null;
+    let currentGroup: number[] = [];
+
+    classifiedIndices.forEach((index) => {
+      const item = paginatedData[index];
+      const rankingData = item.rankingData || item;
+      const userData = rankingData?.user_data || rankingData || {};
+      const score = userData?.score || rankingData?.score || 0;
+
+      if (currentScore === null || score !== currentScore) {
+        // Novo grupo de score
+        if (currentGroup.length > 0) {
+          scoreGroups.push({ score: currentScore!, indices: currentGroup });
+        }
+        currentScore = score;
+        currentGroup = [index];
+      } else {
+        // Mesmo score, adicionar ao grupo atual
+        currentGroup.push(index);
+      }
+    });
+
+    // Adicionar último grupo
+    if (currentGroup.length > 0 && currentScore !== null) {
+      scoreGroups.push({ score: currentScore, indices: currentGroup });
+    }
+
+    // ✅ CORREÇÃO CRÍTICA: Calcular posições considerando empates APENAS para classificados
+    let positionCounter = offset + 1;
+    const positionMap = new Map<number, number>();
+
+    scoreGroups.forEach((group) => {
+      // Todos os índices neste grupo recebem a mesma posição
+      const position = positionCounter;
+      group.indices.forEach((index) => {
+        positionMap.set(index, position);
+      });
+      // Próxima posição será positionCounter + quantidade de pessoas neste grupo
+      positionCounter += group.indices.length;
+    });
+
+    // Eliminados não recebem posição (ou recebem 0)
+    eliminatedIndices.forEach((index) => {
+      positionMap.set(index, 0);
     });
 
     // Mapear resultados para o formato esperado
@@ -373,9 +494,11 @@ export const fetchUserRankings = async (
         });
       }
 
+      const isEliminated = isBelowMinimum(rankingData);
+      
       return {
         id: item.rankingId || rankingData?.id || `ranking-${item.user_id}-${index}`, // Usar o rankingId específico
-        position: offset + index + 1,
+        position: isEliminated ? 0 : (positionMap.get(index) || 0), // ✅ CORREÇÃO CRÍTICA: Eliminados recebem posição 0, classificados recebem posição considerando empates
         name: item.users_profiles?.name || 'Usuário',
         score: userData?.score || rankingData?.score || 0,
         userId: item.user_id,
