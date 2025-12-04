@@ -146,6 +146,8 @@ serve(async (req) => {
     }
 
     // Verificar se o usuário tem acesso ao ciclo
+    console.log('[serve-document] Verificando acesso:', { cycleId, userId });
+    
     // Primeiro, tentar buscar na tabela study_cycles_v2 (estrutura nova)
     const { data: cycleV2, error: cycleV2Error } = await supabase
       .from('study_cycles_v2')
@@ -154,13 +156,21 @@ serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle();
 
+    console.log('[serve-document] Resultado study_cycles_v2:', { 
+      found: !!cycleV2, 
+      error: cycleV2Error?.message || null 
+    });
+
     let hasAccess = false;
 
     // Se encontrou na tabela V2, usuário tem acesso
     if (cycleV2 && !cycleV2Error) {
+      console.log('[serve-document] ✅ Acesso confirmado via study_cycles_v2');
       hasAccess = true;
     } else {
       // Fallback: verificar na estrutura antiga (user_study_v2.study_cycles JSONB)
+      console.log('[serve-document] Tentando fallback para user_study_v2...');
+      
       const { data: userStudy, error: userStudyError } = await supabase
         .from('user_study_v2')
         .select('study_cycles')
@@ -168,9 +178,12 @@ serve(async (req) => {
         .maybeSingle();
 
       if (userStudyError) {
-        console.error('Error fetching user study:', userStudyError);
+        console.error('[serve-document] ❌ Erro ao buscar user_study_v2:', userStudyError);
         return new Response(
-          JSON.stringify({ error: 'Error checking access' }),
+          JSON.stringify({ 
+            error: 'Error checking access',
+            details: userStudyError.message 
+          }),
           {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -179,6 +192,7 @@ serve(async (req) => {
       }
 
       if (!userStudy) {
+        console.error('[serve-document] ❌ user_study_v2 não encontrado para userId:', userId);
         return new Response(
           JSON.stringify({ error: 'User study data not found' }),
           {
@@ -190,9 +204,12 @@ serve(async (req) => {
 
       // Verificar se o ciclo existe no JSONB
       const cycles = userStudy.study_cycles as any[];
+      console.log('[serve-document] Ciclos encontrados:', cycles?.length || 0);
+      
       if (!cycles || !Array.isArray(cycles)) {
+        console.error('[serve-document] ❌ study_cycles não é array:', typeof cycles);
         return new Response(
-          JSON.stringify({ error: 'Cycle not found' }),
+          JSON.stringify({ error: 'Cycle not found - invalid data structure' }),
           {
             status: 404,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -201,10 +218,19 @@ serve(async (req) => {
       }
 
       const cycle = cycles.find((c: any) => c.id === cycleId);
+      console.log('[serve-document] Ciclo procurado:', cycleId);
+      console.log('[serve-document] Ciclo encontrado:', !!cycle);
 
       if (!cycle) {
+        console.error('[serve-document] ❌ Ciclo não encontrado no JSONB. IDs disponíveis:', 
+          cycles.map((c: any) => c.id).slice(0, 5)
+        );
         return new Response(
-          JSON.stringify({ error: 'Cycle not found' }),
+          JSON.stringify({ 
+            error: 'Cycle not found',
+            cycleId,
+            availableCycles: cycles.length
+          }),
           {
             status: 404,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -213,11 +239,13 @@ serve(async (req) => {
       }
 
       // Se chegou aqui, o ciclo existe e pertence ao usuário (já filtramos por user_id na query)
+      console.log('[serve-document] ✅ Acesso confirmado via user_study_v2 JSONB');
       hasAccess = true;
     }
 
     // Verificar se tem acesso
     if (!hasAccess) {
+      console.error('[serve-document] ❌ Acesso negado - hasAccess = false');
       return new Response(
         JSON.stringify({ error: 'Access denied' }),
         {
@@ -226,6 +254,8 @@ serve(async (req) => {
         }
       );
     }
+    
+    console.log('[serve-document] ✅ Acesso confirmado, buscando arquivo...');
 
     // Buscar arquivo do storage
     const { data: fileData, error: fileError } = await supabase.storage
