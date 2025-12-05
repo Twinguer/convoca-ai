@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { CommentSection } from './CommentSection';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface PostCardProps {
   post: GroupPost;
@@ -43,7 +44,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={authorAvatar || undefined} alt={authorName} />
+            <AvatarImage src={getAvatarUrl(authorAvatar)} alt={authorName} />
             <AvatarFallback>{getInitials(authorName)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">

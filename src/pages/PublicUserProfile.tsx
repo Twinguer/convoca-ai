@@ -16,6 +16,7 @@ import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
 import { fetchUserRankings } from '@/services/rankingService';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface UserProfile {
   id: string;
@@ -360,9 +361,10 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
                   <Avatar className="h-32 w-32" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
-                    {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.name} /> : <AvatarFallback className="text-3xl">
-                        {getInitials(profile?.name || '')}
-                      </AvatarFallback>}
+                    <AvatarImage src={getAvatarUrl(profile?.avatar_url)} alt={profile.name} />
+                    <AvatarFallback className="text-3xl">
+                      {getInitials(profile?.name || '')}
+                    </AvatarFallback>
                   </Avatar>
                   <OnlineIndicator userId={profile?.id as string} />
                 </div>

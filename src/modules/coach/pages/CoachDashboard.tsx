@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { coachRelationshipService } from '@/integrations/supabase/coach/relationships';
 import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { supabase } from '@/integrations/supabase/client';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { UserStudyService } from '@/services/userStudyService';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import type { StudentRelationship, CanInviteResponse } from '@/types/coach';
@@ -571,7 +572,7 @@ const CoachDashboard = () => {
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={invitation.student_avatar || undefined} />
+                      <AvatarImage src={getAvatarUrl(invitation.student_avatar)} />
                       <AvatarFallback className="text-xs">
                         {getInitials(invitation.student_name || invitation.student_email || 'A')}
                       </AvatarFallback>
@@ -664,8 +665,7 @@ const CoachDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {students.map((student) => {
-                const fallbackAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(student.student_name || student.student_email || 'student')}`;
-                const avatarUrl = student.avatar_url || fallbackAvatarUrl;
+                const avatarUrl = getAvatarUrl(student.avatar_url);
                 
                 return (
                   <Card 

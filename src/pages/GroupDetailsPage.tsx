@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PostCard } from '@/components/studyGroups/PostCard';
 import { CreatePostForm } from '@/components/studyGroups/CreatePostForm';
 import { GroupSettingsButton } from '@/components/studyGroups/GroupSettingsButton';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
@@ -338,13 +339,13 @@ export const GroupDetailsPage: React.FC = () => {
                       <>
                         {group.created_by !== user?.id && (
                           <>
-                            <Button
-                              variant="outline"
-                              className="w-full"
+                          <Button
+                            variant="outline"
+                            className="w-full"
                               onClick={() => setShowLeaveDialog(true)}
-                              disabled={isLeaving}
-                            >
-                              <LogOut className="h-4 w-4 mr-2" />
+                            disabled={isLeaving}
+                          >
+                            <LogOut className="h-4 w-4 mr-2" />
                               Sair do Grupo
                             </Button>
                             <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
@@ -364,7 +365,7 @@ export const GroupDetailsPage: React.FC = () => {
                                     className="bg-destructive hover:bg-destructive/90"
                                     disabled={isLeaving}
                                   >
-                                    {isLeaving ? 'Saindo...' : 'Sair do Grupo'}
+                            {isLeaving ? 'Saindo...' : 'Sair do Grupo'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -455,7 +456,7 @@ export const GroupDetailsPage: React.FC = () => {
                     <div key={request.id} className="p-3 bg-muted/50 rounded-lg border border-border">
                       <div className="flex items-center gap-3 mb-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={request.avatar_url} />
+                          <AvatarImage src={getAvatarUrl(request.avatar_url)} />
                           <AvatarFallback>{getInitials(request.name || '')}</AvatarFallback>
                         </Avatar>
                         <div>

@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 const InviteStudentPage = () => {
   const navigate = useNavigate();
@@ -295,7 +296,7 @@ const InviteStudentPage = () => {
                     }}
                   >
                     <Avatar className="h-10 w-10 flex-shrink-0 pointer-events-none">
-                      <AvatarImage src={user.avatar_url || undefined} />
+                      <AvatarImage src={getAvatarUrl(user.avatar_url)} />
                       <AvatarFallback>
                         {user.name?.charAt(0).toUpperCase() || <User className="h-5 w-5" />}
                       </AvatarFallback>
@@ -315,7 +316,7 @@ const InviteStudentPage = () => {
               <div className="border rounded-lg p-3 mt-2 bg-primary/10 border-primary/20">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={selectedUser.avatar_url || undefined} />
+                    <AvatarImage src={getAvatarUrl(selectedUser.avatar_url)} />
                     <AvatarFallback>
                       {selectedUser.name?.charAt(0).toUpperCase() || <User className="h-5 w-5" />}
                     </AvatarFallback>

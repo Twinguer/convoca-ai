@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { logError } from '@/utils/secureLogger';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface CommentSectionProps {
   postId: string;
@@ -163,11 +164,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
     <div className="space-y-2">
       <div className="flex gap-2">
         <Avatar className="h-8 w-8">
-          {comment.author_avatar ? (
-            <AvatarImage src={comment.author_avatar} alt={comment.author_name || 'Usuário'} />
-          ) : (
-            <AvatarFallback>{getInitials(comment.author_name)}</AvatarFallback>
-          )}
+          <AvatarImage src={getAvatarUrl(comment.author_avatar)} alt={comment.author_name || 'Usuário'} />
+          <AvatarFallback>{getInitials(comment.author_name)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <div className="bg-muted rounded-lg p-3">

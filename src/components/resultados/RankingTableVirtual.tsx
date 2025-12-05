@@ -14,6 +14,7 @@ import { logger } from '@/utils/logger';
 // ✅ CONSOLIDADO: Usar interface única do rankingService
 import type { Ranking } from '@/services/rankingService';
 import { formatScore } from '@/lib/utils';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface RankingTableVirtualProps {
   rankings: Ranking[];
@@ -68,7 +69,7 @@ const RankingRow: React.FC<{
       {/* Avatar e Nome */}
       <div className="flex items-center flex-1 min-w-0">
         <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
-          <AvatarImage src={ranking.avatarUrl || undefined} />
+          <AvatarImage src={getAvatarUrl(ranking.avatarUrl)} />
           <AvatarFallback>
             {ranking.name.charAt(0).toUpperCase()}
           </AvatarFallback>

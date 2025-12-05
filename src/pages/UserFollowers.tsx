@@ -14,6 +14,7 @@ import { Users, UserPlus, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface FollowerUser {
   id: string;
@@ -217,11 +218,8 @@ const UserFollowers = () => {
           <Card key={userProfile.id} className="overflow-hidden">
             <div className="p-4 flex space-x-4">
               <Avatar className="h-16 w-16">
-                {userProfile.avatar_url ? (
-                  <AvatarImage src={userProfile.avatar_url} alt={userProfile.name} />
-                ) : (
-                  <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
-                )}
+                <AvatarImage src={getAvatarUrl(userProfile.avatar_url)} alt={userProfile.name} />
+                <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
               </Avatar>
               
               <div className="flex-1">

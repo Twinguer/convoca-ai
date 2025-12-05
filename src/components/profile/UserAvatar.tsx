@@ -2,6 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { OnlineIndicator } from './OnlineIndicator';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface UserAvatarProps {
   name: string;
@@ -35,17 +36,17 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ').substring(0, 15) : 'Usuário';
 
+  // Usar avatar padrão se não houver avatar_url
+  const displayAvatarUrl = getAvatarUrl(avatarUrl);
+
   return (
     <div className="relative inline-block">
       <Avatar 
         className={sizeClass}
         style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }}
       >
-        {avatarUrl ? (
-          <AvatarImage src={avatarUrl} alt={displayName} />
-        ) : (
-          <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-        )}
+        <AvatarImage src={displayAvatarUrl} alt={displayName} />
+        <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
       </Avatar>
       {showOnlineStatus && userId && (
         <OnlineIndicator userId={userId} />

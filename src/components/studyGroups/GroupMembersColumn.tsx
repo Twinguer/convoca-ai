@@ -9,6 +9,7 @@ import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import type { GroupMember } from '@/types/studyGroups';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface GroupMembersColumnProps {
   groupId: string;
@@ -83,7 +84,7 @@ export const GroupMembersColumn: React.FC<GroupMembersColumnProps> = ({
                 style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }}
                 onClick={() => handleViewProfile(creatorProfile.id)}
               >
-                <AvatarImage src={creatorProfile.avatar_url || ''} alt={creatorProfile.name} />
+                <AvatarImage src={getAvatarUrl(creatorProfile.avatar_url)} alt={creatorProfile.name} />
                 <AvatarFallback className="text-base">
                   {getInitials(creatorProfile.name)}
                 </AvatarFallback>
@@ -124,7 +125,7 @@ export const GroupMembersColumn: React.FC<GroupMembersColumnProps> = ({
                         style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }}
                         onClick={() => userId && handleViewProfile(userId)}
                       >
-                        <AvatarImage src={member.avatar_url || ''} alt={member.name} />
+                        <AvatarImage src={getAvatarUrl(member.avatar_url)} alt={member.name} />
                         <AvatarFallback className="text-xs">
                           {getInitials(member.name)}
                         </AvatarFallback>

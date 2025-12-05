@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { StudyGroup, GroupMember, GroupPost } from '@/types/studyGroups';
 import { useGroupFeed } from '@/hooks/useGroupPosts';
 import { useGroupMembers } from '@/hooks/useGroupMembers';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { useInviteUser } from '@/hooks/useGroupRequests';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -388,7 +389,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
+                      <AvatarImage src={getAvatarUrl(member.avatar_url)} alt={member.name} />
                       <AvatarFallback className="bg-muted">
                         {getInitials(member.name)}
                       </AvatarFallback>

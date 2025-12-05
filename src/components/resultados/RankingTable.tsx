@@ -16,6 +16,7 @@ import { LoadMoreButton } from './LoadMoreButton';
 import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -77,8 +78,26 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   }, [concurso]);
 
   // Helper function to determine if a ranking is below the required minimum
+  // ✅ CORREÇÃO CRÍTICA: Verificar mínimo global ATUAL do concurso, não apenas flag salvo
   const isBelowMinimum = (ranking: Ranking): boolean => {
-    // Verificação existente para mínimos por disciplina/bloco
+    const score = ranking.score || 0;
+    const reservationType = ranking.reservationType || 'Ampla Concorrência';
+    
+    // ✅ CORREÇÃO CRÍTICA: Extrair e verificar mínimo global ATUAL do concurso
+    let minimumTotalScore = 0;
+    let minimumTotalScoreCotas = 0;
+    
+    if (concurso?.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines)) {
+      minimumTotalScore = Number(concurso.disciplines.minimum_total_score) || 0;
+      minimumTotalScoreCotas = Number(concurso.disciplines.minimum_total_score_cotas) || 0;
+    }
+    
+    // ✅ CORREÇÃO CRÍTICA: Verificar mínimo global ATUAL (não apenas flag salvo)
+    const isCotas = reservationType !== 'Ampla Concorrência';
+    const applicableMinimum = isCotas ? minimumTotalScoreCotas : minimumTotalScore;
+    const belowGlobalMinimum = applicableMinimum > 0 && score < applicableMinimum;
+    
+    // Verificação de mínimos por disciplina/bloco (do flag salvo)
     const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
       ranking.belowDisciplineMinimums.length > 0;
     const hasBlockMinimums = ranking.belowBlockMinimums && 
@@ -86,14 +105,19 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     
     // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
     const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
-      ranking.score <= 0;
+      score <= 0;
     
     // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
     const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
-      ranking.score <= 0;
+      score <= 0;
     
-    
-    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
+    // ✅ CORREÇÃO: Usar flag salvo OU verificar mínimo global atual
+    return !!ranking.belowMinimum || 
+           belowGlobalMinimum || // ✅ NOVO: Verificar mínimo global atual
+           hasDisciplineMinimums || 
+           hasBlockMinimums || 
+           isCertoErradoEliminated || 
+           isAlternativasEliminated;
   };
 
   // Calculate quota positions for each ranking, separating classified from eliminated
@@ -349,23 +373,30 @@ const RankingTableContent: React.FC<{
   };
 
   // Function to determine if a ranking is below the required minimum
+  // A verificação de mínimos é feita no backend (Edge Function e função do banco)
+  // O frontend confia no flag belowMinimum que vem do backend
   const isBelowMinimum = (ranking: Ranking): boolean => {
-    // Verificação existente para mínimos por disciplina/bloco
+    const score = ranking.score || 0;
+    
+    // 1. Verificar flag belowMinimum (mínimo global) - calculado no backend usando score objetivo
+    const belowMinimum = !!ranking.belowMinimum;
+    
+    // 2. Verificar mínimos por disciplina/bloco (flags salvos)
     const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
       ranking.belowDisciplineMinimums.length > 0;
     const hasBlockMinimums = ranking.belowBlockMinimums && 
       ranking.belowBlockMinimums.length > 0;
     
-    // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-    const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
-      ranking.score <= 0;
+    // 3. Para provas "Certo ou Errado" ou "Alternativas", eliminar se nota <= 0
+    // NOTA: Para essas provas, o score já é o objetivo (não há subjetivas)
+    const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && score <= 0;
+    const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && score <= 0;
     
-    // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-    const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
-      ranking.score <= 0;
-    
-    
-    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
+    return belowMinimum || 
+           hasDisciplineMinimums || 
+           hasBlockMinimums || 
+           isCertoErradoEliminated || 
+           isAlternativasEliminated;
   };
 
   // Recalculate quota positions for the filtered rankings (only within the current quota tab)
@@ -529,7 +560,7 @@ const RankingTableContent: React.FC<{
               <TableCell>
                 <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
                   <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
+                    <AvatarImage src={getAvatarUrl(ranking.avatarUrl)} alt={ranking.name} />
                     <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <span className="whitespace-nowrap">{ranking.name}</span>

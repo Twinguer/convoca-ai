@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface UserProfile {
   id: string;
@@ -32,11 +33,10 @@ export const UserCard: React.FC<UserCardProps> = ({
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  // Generate a fallback avatar URL if none exists or if the original has an error
-  const fallbackAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userProfile.name || 'user')}`;
-
-  // Use the user's avatar_url if available and not erroring, otherwise use fallback
-  const avatarUrl = avatarError || !userProfile.avatar_url ? fallbackAvatarUrl : userProfile.avatar_url;
+  // Usar avatar padrão se não houver avatar_url ou se houver erro
+  const avatarUrl = avatarError || !userProfile.avatar_url 
+    ? getAvatarUrl(null) 
+    : userProfile.avatar_url;
 
   const handleCardClick = () => {
     if (onClick) {
