@@ -120,6 +120,13 @@ const UserProfile = () => {
     staleTime: 300000
   });
 
+  // Redirecionar visitante não autenticado sem quebrar a ordem dos hooks
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+
 
 
   // Verificar se o usuário é coach (has active coach subscription)
@@ -520,9 +527,6 @@ const UserProfile = () => {
   }
 
   if (!user) {
-    useEffect(() => {
-      navigate("/auth");
-    }, [navigate]);
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;

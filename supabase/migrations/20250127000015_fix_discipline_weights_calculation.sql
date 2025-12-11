@@ -177,8 +177,28 @@ BEGIN
     RETURN 0;
   END IF;
 
-  -- Detectar se o usuário concorre por cota
+  -- ✅ CORREÇÃO CRÍTICA: Normalizar reservation_type antes de verificar se é cota
+  -- Isso garante que "AC", "ac", "Ampla" sejam tratados como "Ampla Concorrência"
   v_quota_type := v_user_ranking_data->'user_data'->>'reservation_type';
+  
+  -- Normalizar códigos comuns para nomes completos (mesma lógica do frontend)
+  IF v_quota_type IS NOT NULL THEN
+    v_quota_type := TRIM(v_quota_type);
+    
+    -- Normalizar abreviações e variações de Ampla Concorrência
+    IF v_quota_type = 'AC' OR v_quota_type = 'ac' OR v_quota_type = 'Ampla' THEN
+      v_quota_type := 'Ampla Concorrência';
+    -- Normalizar outros códigos antigos
+    ELSIF v_quota_type = 'PPI' THEN
+      v_quota_type := 'PPP';
+    ELSIF v_quota_type = 'PC' THEN
+      v_quota_type := 'Hipossuficientes';
+    ELSIF v_quota_type = 'PD' THEN
+      v_quota_type := 'Pessoas Trans';
+    END IF;
+  END IF;
+  
+  -- Verificar se é cota (apenas se não for Ampla Concorrência após normalização)
   v_is_quota := (v_quota_type IS NOT NULL AND v_quota_type != 'Ampla Concorrência');
 
   SELECT 
@@ -462,10 +482,11 @@ BEGIN
   -- REGRAS DE MÍNIMO - VERIFICAÇÃO COMPLETA
   
   -- ✅ 1. Verificar mínimo global (usando apenas score objetivo, não subjetivo)
+  -- CORREÇÃO: Verificar se o mínimo está configurado (> 0) antes de comparar
   IF v_has_global_minimum AND v_global_minimum_score > 0 AND v_objective_score < v_global_minimum_score THEN
     v_below_minimum := true;
     v_elimination_reasons := array_append(v_elimination_reasons, 
-      'Mínimo global (objetivo): ' || v_objective_score || ' < ' || v_global_minimum_score);
+      'Abaixo do mínimo global (objetivo): ' || v_objective_score || ' < ' || v_global_minimum_score);
   END IF;
   
   -- 2. Verificar mínimos subjetivos (considerando AC vs Cotas)

@@ -218,7 +218,7 @@ serve(async (req) => {
     };
     
     const normalizedReservationType = normalizeReservationType(reservationType);
-    
+
     // Verificar mínimos
     const isCotas = normalizedReservationType !== 'Ampla Concorrência';
     const applicableMinimum = isCotas ? minimumTotalScoreCotas : minimumTotalScore;

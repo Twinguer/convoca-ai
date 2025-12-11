@@ -27,3 +27,9 @@ podem acessar todos os dados via bypass de RLS usando set_config(''row_security'
 
 
 
+
+
+
+
+
+

@@ -30,8 +30,9 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
   const navigate = useNavigate();
 
   const handleDeleteProfile = async () => {
-    // Add confirmation check for destructive action
-    if (confirmationText !== 'EXCLUIR') {
+    // Add confirmation check for destructive action (case-insensitive, trimmed)
+    const confirmation = (confirmationText || '').trim().toUpperCase();
+    if (confirmation !== 'EXCLUIR') {
       showErrorToast(
         "Confirmação incorreta",
         "Digite 'EXCLUIR' para confirmar."
@@ -48,6 +49,9 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
       });
       
       if (error) throw error;
+      if (data !== true) {
+        throw new Error('Não foi possível excluir o perfil. Tente novamente.');
+      }
       
       // Sign out the user
       await supabase.auth.signOut();
@@ -123,7 +127,7 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
                 e.preventDefault();
                 handleDeleteProfile();
               }}
-              disabled={isDeleting || confirmationText !== 'EXCLUIR'}
+              disabled={isDeleting || (confirmationText || '').trim().toUpperCase() !== 'EXCLUIR'}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (

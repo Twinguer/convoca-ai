@@ -249,3 +249,9 @@ console.log('✅ Relatório salvo em: ANALISE_SEGURANCA_FRONTEND.json');
 
 
 
+
+
+
+
+
+
