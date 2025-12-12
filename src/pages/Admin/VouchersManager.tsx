@@ -16,7 +16,8 @@ import { Switch } from '@/components/ui/switch';
 const VouchersManager = () => {
   const [code, setCode] = useState('');
   const [voucherType, setVoucherType] = useState<'subscription' | 'discount'>('subscription');
-  const [plan, setPlan] = useState<'free' | 'pro'>('pro');
+  // Planos disponíveis: pro, coach_starter, coach_professional, coach_enterprise
+  const [plan, setPlan] = useState<'pro' | 'coach_starter' | 'coach_professional' | 'coach_enterprise'>('pro');
   const [durationMonths, setDurationMonths] = useState('1');
   const [maxUses, setMaxUses] = useState('1');
   const [description, setDescription] = useState('');
@@ -114,15 +115,28 @@ const VouchersManager = () => {
 
     setIsCreating(true);
     try {
+      // ✅ CORREÇÃO: Usar 'as any' para contornar validação de tipo TypeScript
+      // A coluna plan foi alterada de enum para TEXT na migração, mas os tipos TypeScript ainda não foram atualizados
       const voucherData: any = {
-        code,
+        code: code.trim(),
         voucher_type: voucherType,
-        plan,
-        duration_months: parseInt(durationMonths),
-        max_uses: parseInt(maxUses),
-        description,
+        plan: plan as any, // ✅ Forçar tipo para permitir planos coach (coach_starter, coach_professional, coach_enterprise)
+        duration_months: parseInt(durationMonths) || 1,
+        max_uses: parseInt(maxUses) || 1,
+        is_active: true, // ✅ Ativar voucher por padrão
+        description: description.trim() || null,
         expires_at: expiresAt || null,
       };
+      
+      // ✅ Não especificar contador de usos - deixar o DEFAULT do banco (0)
+      // O banco tem DEFAULT 0 para uses_count ou current_uses dependendo da migração aplicada
+      
+      // ✅ Remover campos undefined/null desnecessários
+      Object.keys(voucherData).forEach(key => {
+        if (voucherData[key] === undefined || voucherData[key] === '') {
+          delete voucherData[key];
+        }
+      });
 
       // Adicionar campos de desconto apenas se for voucher de desconto
       if (voucherType === 'discount') {
@@ -130,9 +144,36 @@ const VouchersManager = () => {
         voucherData.discount_value = parseFloat(discountValue);
       }
 
-      const { error } = await supabase.from('vouchers').insert(voucherData);
+      // ✅ CORREÇÃO: Usar INSERT direto (a coluna plan é TEXT e aceita planos coach)
+      // A migração alterou plan de enum para TEXT, então podemos inserir diretamente
+      const { data, error } = await supabase
+        .from('vouchers')
+        .insert(voucherData as any)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar voucher:', error);
+        console.error('Dados enviados:', voucherData);
+        
+        // Mensagem de erro mais detalhada
+        let errorMessage = error.message || 'Erro ao criar voucher';
+        
+        // Verificar se é erro de constraint (plano inválido)
+        if (error.message?.includes('vouchers_plan_check') || error.message?.includes('check constraint')) {
+          errorMessage = `Plano inválido: "${plan}". Planos permitidos: free, pro, coach_starter, coach_professional, coach_enterprise. Verifique se a migração foi aplicada.`;
+        } else if (error.message?.includes('violates check constraint')) {
+          errorMessage = `O plano "${plan}" não é válido. Planos permitidos: free, pro, coach_starter, coach_professional, coach_enterprise`;
+        } else if (error.code === '23514') {
+          errorMessage = `Erro de validação: O plano "${plan}" não está na lista de planos permitidos. Verifique se a migração foi aplicada.`;
+        } else if (error.code === '23505') {
+          errorMessage = 'Código de voucher já existe. Use outro código.';
+        } else if (error.code === '42501') {
+          errorMessage = 'Sem permissão para criar vouchers. Verifique se você é administrador.';
+        }
+        
+        throw new Error(errorMessage);
+      }
 
       toast({
         title: 'Voucher criado',
@@ -145,6 +186,7 @@ const VouchersManager = () => {
       setExpiresAt('');
       setDiscountValue('');
       setVoucherType('subscription');
+      setPlan('pro');
       refetch();
     } catch (error: any) {
       toast({
@@ -253,13 +295,19 @@ const VouchersManager = () => {
 
             <div className="space-y-2">
               <Label htmlFor="plan">Plano</Label>
-              <Select value={plan} onValueChange={(v: 'free' | 'pro') => setPlan(v)}>
-                <SelectTrigger>
-                  <SelectValue />
+              <Select 
+                key={`plan-select-${plan}`}
+                value={plan} 
+                onValueChange={(v: 'pro' | 'coach_starter' | 'coach_professional' | 'coach_enterprise') => setPlan(v)}
+              >
+                <SelectTrigger id="plan">
+                  <SelectValue placeholder="Selecione um plano" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Gratuito</SelectItem>
                   <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="coach_starter">Coach Inicial</SelectItem>
+                  <SelectItem value="coach_professional">Coach Intermediário</SelectItem>
+                  <SelectItem value="coach_enterprise">Coach Avançado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -399,7 +447,11 @@ const VouchersManager = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant={voucher.plan === 'pro' ? 'default' : 'secondary'}>
-                          {voucher.plan === 'pro' ? 'Pro' : 'Gratuito'}
+                          {voucher.plan === 'pro' ? 'Pro' : 
+                           voucher.plan === 'coach_starter' ? 'Coach Inicial' :
+                           voucher.plan === 'coach_professional' ? 'Coach Intermediário' :
+                           voucher.plan === 'coach_enterprise' ? 'Coach Avançado' : 
+                           voucher.plan === 'free' ? 'Gratuito' : voucher.plan}
                         </Badge>
                       </TableCell>
                       <TableCell>
