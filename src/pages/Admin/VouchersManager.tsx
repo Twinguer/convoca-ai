@@ -115,12 +115,12 @@ const VouchersManager = () => {
 
     setIsCreating(true);
     try {
-      // ✅ CORREÇÃO: Usar 'as any' para contornar validação de tipo TypeScript
-      // A coluna plan foi alterada de enum para TEXT na migração, mas os tipos TypeScript ainda não foram atualizados
+      // ✅ CORREÇÃO: A coluna plan foi alterada de enum para TEXT na migração
+      // Os tipos TypeScript foram atualizados para aceitar string
       const voucherData: any = {
         code: code.trim(),
         voucher_type: voucherType,
-        plan: plan as any, // ✅ Forçar tipo para permitir planos coach (coach_starter, coach_professional, coach_enterprise)
+        plan: plan, // ✅ Agora aceita string (coach_starter, coach_professional, coach_enterprise)
         duration_months: parseInt(durationMonths) || 1,
         max_uses: parseInt(maxUses) || 1,
         is_active: true, // ✅ Ativar voucher por padrão

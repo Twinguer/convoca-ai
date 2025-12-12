@@ -906,7 +906,7 @@ export type Database = {
           is_active: boolean
           max_uses: number
           max_uses_per_user: number | null
-          plan: Database["public"]["Enums"]["subscription_plan"]
+          plan: string
           updated_at: string
           usage_limit_per_ip: number | null
           uses_count: number
@@ -927,7 +927,7 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           max_uses_per_user?: number | null
-          plan: Database["public"]["Enums"]["subscription_plan"]
+          plan: string
           updated_at?: string
           usage_limit_per_ip?: number | null
           uses_count?: number
@@ -948,7 +948,7 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           max_uses_per_user?: number | null
-          plan?: Database["public"]["Enums"]["subscription_plan"]
+          plan?: string
           updated_at?: string
           usage_limit_per_ip?: number | null
           uses_count?: number
@@ -1154,7 +1154,7 @@ export type Database = {
           voucher_created_at: string | null
           voucher_description: string | null
           voucher_expires_at: string | null
-          voucher_plan: Database["public"]["Enums"]["subscription_plan"] | null
+          voucher_plan: string | null
           voucher_type: string | null
         }
         Relationships: []
