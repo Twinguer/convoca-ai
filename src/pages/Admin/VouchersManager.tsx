@@ -28,13 +28,36 @@ const VouchersManager = () => {
   const { data: vouchers, isLoading, refetch } = useQuery({
     queryKey: ['vouchers'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: vouchersData, error: vouchersError } = await supabase
         .from('vouchers')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (vouchersError) throw vouchersError;
+
+      // Buscar contagem real de usos de vouchers_applied
+      const { data: appliedData, error: appliedError } = await supabase
+        .from('vouchers_applied')
+        .select('voucher_id');
+
+      if (appliedError) {
+        console.warn('Erro ao buscar vouchers aplicados:', appliedError);
+      }
+
+      // Contar usos por voucher
+      const usesCountMap = new Map<string, number>();
+      if (appliedData) {
+        appliedData.forEach((applied) => {
+          const count = usesCountMap.get(applied.voucher_id) || 0;
+          usesCountMap.set(applied.voucher_id, count + 1);
+        });
+      }
+
+      // Adicionar contagem real aos vouchers (usa uses_count como fallback)
+      return vouchersData?.map((voucher) => ({
+        ...voucher,
+        current_uses: usesCountMap.get(voucher.id) ?? voucher.uses_count ?? 0,
+      })) || [];
     },
   });
 
@@ -389,7 +412,7 @@ const VouchersManager = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {voucher.current_uses} / {voucher.max_uses}
+                        {voucher.current_uses ?? voucher.uses_count ?? 0} / {voucher.max_uses}
                       </TableCell>
                       <TableCell>
                         {voucher.expires_at
