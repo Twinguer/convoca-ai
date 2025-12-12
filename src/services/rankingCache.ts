@@ -16,6 +16,10 @@ class RankingCache {
   
   // TTL simples: 5 minutos para todos os dados
   private readonly TTL = 5 * 60 * 1000;
+  
+  // ✅ Versão do cache - incrementar quando a lógica de ordenação mudar
+  // Isso força invalidação de todos os caches antigos
+  private readonly CACHE_VERSION = 'v2-tiebreaker-by-date';
 
   /**
    * Armazena dados no cache
@@ -83,14 +87,15 @@ class RankingCache {
   /**
    * Métodos específicos para rankings
    * ✅ FASE 3: Adicionado suporte a reservationType
+   * ✅ Versão de cache para forçar invalidação quando a lógica mudar
    */
   setRankings(concursoId: string, rankings: Ranking[], page: number, limit: number, reservationType?: string): void {
-    const key = `rankings:${concursoId}:${page}:${limit}:${reservationType || 'all'}`;
+    const key = `rankings:${this.CACHE_VERSION}:${concursoId}:${page}:${limit}:${reservationType || 'all'}`;
     this.set(key, rankings);
   }
 
   getRankings(concursoId: string, page: number, limit: number, reservationType?: string): Ranking[] | null {
-    const key = `rankings:${concursoId}:${page}:${limit}:${reservationType || 'all'}`;
+    const key = `rankings:${this.CACHE_VERSION}:${concursoId}:${page}:${limit}:${reservationType || 'all'}`;
     return this.get<Ranking[]>(key);
   }
 
@@ -129,11 +134,17 @@ class RankingCache {
   /**
    * ✅ FASE 3: Invalidar cache de um ranking específico
    * Incorporado do V2
+   * ✅ Atualizado para considerar versão do cache
    */
   invalidateRanking(concursoId: string): void {
     const keysToDelete: string[] = [];
     for (const key of this.cache.keys()) {
-      if (key.startsWith(`rankings:${concursoId}:`) || key.startsWith(`concurso:${concursoId}`)) {
+      // Invalidar tanto chaves com versão quanto sem versão (para compatibilidade)
+      if (
+        key.startsWith(`rankings:${this.CACHE_VERSION}:${concursoId}:`) ||
+        key.startsWith(`rankings:${concursoId}:`) ||
+        key.startsWith(`concurso:${concursoId}`)
+      ) {
         keysToDelete.push(key);
       }
     }

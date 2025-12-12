@@ -72,7 +72,7 @@ export const fetchUserRankings = async (
 ): Promise<Ranking[]> => {
   const startTime = performance.now();
   
-  // ✅ SEGURANÇA: Log sanitizado (sem dados sensíveis)
+  // ✅ SEGURANÇA: Log sanitizado (sem dados sensíveis) - apenas em desenvolvimento
   devLog.debug('🚀 [RANKING_SERVICE] Início fetchUserRankings', {
     hasConcursoId: !!concursoId,
     hasReservationType: !!reservationType,
@@ -96,37 +96,21 @@ export const fetchUserRankings = async (
 
     const page = Math.floor(offset / limit) + 1;
 
-    // ✅ FORÇAR LIMPEZA DO CACHE TEMPORARIAMENTE PARA DEBUG
-    // TODO: Remover após corrigir o problema
-    rankingCache.invalidateRanking(concursoId);
-    devLog.debug('🧹 [RANKING_SERVICE] Cache invalidado');
-
-    // Verificar cache local primeiro
+    // ✅ Cache reabilitado: Agora que o bug foi corrigido, podemos usar o cache normalmente
+    // O cache armazena os dados já processados com a lógica de desempate correta
+    // A versão do cache (v2-tiebreaker-by-date) garante que dados antigos não sejam retornados
     const localCachedRankings = rankingCache.getRankings(concursoId, page, limit, reservationType);
     
     if (localCachedRankings && localCachedRankings.length > 0) {
-      // ✅ CORREÇÃO: Verificar se os dados do cache têm os campos necessários
-      // Se não tiverem weightedCustomDisciplineScores, invalidar o cache
-      const hasWeightedScores = localCachedRankings.some(r => 
-        r.weightedCustomDisciplineScores && Object.keys(r.weightedCustomDisciplineScores).length > 0
-      );
-      
-      if (!hasWeightedScores && localCachedRankings.length > 0) {
-        // Cache antigo sem os campos necessários, invalidar
-        devLog.warn('⚠️ [RANKING_SERVICE] Cache inválido detectado (sem weightedCustomDisciplineScores), invalidando');
-        logger.warn('Cache inválido detectado (sem weightedCustomDisciplineScores), invalidando', 'RANKING_SERVICE');
-        rankingCache.invalidateRanking(concursoId);
-        // Continuar para buscar dados frescos
-      } else {
-        devLog.debug('✅ [RANKING_SERVICE] Usando cache válido');
-        logger.ranking('Rankings loaded from local cache V3', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
-        
-        const endTime = performance.now();
-        logger.performance('fetchUserRankings (local cached)', endTime - startTime, 'RANKING_SERVICE');
-        
-        return localCachedRankings as Ranking[];
-      }
+      devLog.debug('✅ [RANKING_SERVICE] Cache hit - retornando dados do cache', {
+        count: localCachedRankings.length,
+        page,
+        limit
+      });
+      return localCachedRankings as Ranking[];
     }
+    
+    devLog.debug('📡 [RANKING_SERVICE] Cache miss - buscando dados do servidor');
 
     // ✅ FASE 2: Migrar para usar RPC em vez de query direta
     // Usar função RPC que retorna rankings do concurso (acesso público)
@@ -147,6 +131,13 @@ export const fetchUserRankings = async (
     let rankingError: any = null;
 
     try {
+      devLog.debug('📡 [RANKING_SERVICE] Chamando RPC get_rankings_for_concurso', {
+        hasConcursoId: !!concursoId,
+        hasReservationType: !!reservationType,
+        offset,
+        limit
+      });
+      
       const rpcResult = await supabase.rpc('get_rankings_for_concurso', {
         p_concurso_id: concursoId,
         p_reservation_type: reservationType || null,
@@ -217,16 +208,6 @@ export const fetchUserRankings = async (
         for (const [rankingId, ranking] of Object.entries(consolidatedData.rankings)) {
           const rankingConcursoId = (ranking as any).concurso_id;
           
-          // ✅ SEGURANÇA: Log sanitizado da comparação (sem dados completos)
-          if (rankingsForConcurso.length === 0) {
-            devLog.debug('🔍 [RANKING_SERVICE] Comparando concurso_id', {
-              match: rankingConcursoId === concursoId,
-              rankingType: typeof ranking,
-              rankingIsObject: typeof ranking === 'object',
-              hasUserData: !!(ranking as any).user_data
-            });
-          }
-          
           // ✅ CORREÇÃO: Comparar como string para evitar problemas de tipo UUID
           if (String(rankingConcursoId) === String(concursoId)) {
             rankingsForConcurso.push({
@@ -249,6 +230,11 @@ export const fetchUserRankings = async (
     devLog.debug('✅ [RANKING_SERVICE] Rankings encontrados para o concurso', {
       total: rankingsForConcurso.length
     });
+    
+    // ✅ CRÍTICO: Se não houver rankings, retornar vazio imediatamente
+    if (rankingsForConcurso.length === 0) {
+      return [];
+    }
 
     // ✅ CORREÇÃO CRÍTICA: Buscar dados do concurso para verificar exam_type e mínimos
     const { data: concursoData, error: concursoError } = await supabase
@@ -336,12 +322,9 @@ export const fetchUserRankings = async (
       eliminated: eliminatedRankings.length
     });
 
-    // Ordenar classificados por score (descendente)
-    classifiedRankings.sort((a, b) => {
-      const scoreA = (a.rankingData as any).user_data?.score || 0;
-      const scoreB = (b.rankingData as any).user_data?.score || 0;
-      return scoreB - scoreA;
-    });
+    // ❌ NÃO ORDENAR CLASSIFICADOS AQUI: A ordenação completa (score + desempate por data) será feita depois
+    // Ordenar aqui apenas por score interfere com o desempate que será aplicado depois
+    // A ordenação completa será feita na linha 403-443 após criar paginatedData
 
     // Ordenar eliminados por score (descendente) - apenas para manter ordem consistente
     eliminatedRankings.sort((a, b) => {
@@ -351,6 +334,7 @@ export const fetchUserRankings = async (
     });
 
     // ✅ CORREÇÃO: Combinar classificados primeiro, depois eliminados
+    // IMPORTANTE: classifiedRankings NÃO está ordenado aqui - será ordenado depois com desempate
     const sortedRankingsForConcurso = [...classifiedRankings, ...eliminatedRankings];
 
     // Buscar perfis de usuários separadamente (RPC não retorna perfis)
@@ -384,6 +368,11 @@ export const fetchUserRankings = async (
         users_profiles: userProfile
       };
     });
+    
+    devLog.debug('📊 [RANKING_SERVICE] paginatedData criado', {
+      paginatedDataLength: paginatedData.length,
+      sortedRankingsLength: sortedRankingsForConcurso.length
+    });
 
     // ✅ CORREÇÃO CRÍTICA: Calcular posições considerando empates APENAS para classificados
     // Separar índices de classificados e eliminados
@@ -398,47 +387,98 @@ export const fetchUserRankings = async (
       }
     });
 
-    // Agrupar classificados por score para identificar empates
-    const scoreGroups: { score: number; indices: number[] }[] = [];
-    let currentScore: number | null = null;
-    let currentGroup: number[] = [];
+    // ✅ NOVO: Ordenar todos os classificados por score (decrescente) e depois por data de registro (crescente)
+    devLog.debug('🔍 [RANKING_SERVICE] Iniciando ordenação de classificados', {
+      totalClassified: classifiedIndices.length,
+      totalEliminated: eliminatedIndices.length
+    });
+    
+    classifiedIndices.sort((a, b) => {
+      const itemA = paginatedData[a];
+      const itemB = paginatedData[b];
+      const rankingDataA = itemA.rankingData || itemA;
+      const rankingDataB = itemB.rankingData || itemB;
+      const userDataA = rankingDataA?.user_data || rankingDataA || {};
+      const userDataB = rankingDataB?.user_data || rankingDataB || {};
+      
+      const scoreA = userDataA?.score || rankingDataA?.score || 0;
+      const scoreB = userDataB?.score || rankingDataB?.score || 0;
+      
+      // Primeiro critério: score (decrescente - maior score primeiro)
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA;
+      }
+      
+      // Segundo critério: data de registro (crescente - quem registrou primeiro fica na frente)
+      const controlMetadataA = rankingDataA?.control_metadata || {};
+      const controlMetadataB = rankingDataB?.control_metadata || {};
+      const createdAtA = controlMetadataA?.created_at || rankingDataA?.created_at || '';
+      const createdAtB = controlMetadataB?.created_at || rankingDataB?.created_at || '';
+      
+      let timestampA = 0;
+      let timestampB = 0;
+      
+      if (createdAtA) {
+        const dateA = new Date(createdAtA);
+        timestampA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+      }
+      
+      if (createdAtB) {
+        const dateB = new Date(createdAtB);
+        timestampB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+      }
+      
+      // ✅ DEBUG: Log para verificar desempate
+      if (scoreA === scoreB) {
+        if (timestampA !== timestampB && timestampA > 0 && timestampB > 0) {
+          devLog.debug('🔍 [RANKING_SERVICE] Aplicando desempate por data', {
+            score: scoreA,
+            timestampA,
+            timestampB,
+            createdAtA: createdAtA.substring(0, 19),
+            createdAtB: createdAtB.substring(0, 19),
+            diff: timestampA - timestampB
+          });
+        } else if (timestampA === 0 && timestampB === 0) {
+          devLog.warn('⚠️ [RANKING_SERVICE] Empate sem data de criação disponível', {
+            score: scoreA,
+            userIdA: itemA.user_id,
+            userIdB: itemB.user_id
+          });
+        }
+      }
+      
+      // Quem registrou primeiro (menor timestamp) fica na frente
+      // Se ambos têm timestamp 0, usar user_id como critério de desempate (ordem determinística)
+      if (timestampA === 0 && timestampB === 0) {
+        // Usar user_id como critério de desempate para garantir ordem determinística
+        const userIdA = itemA.user_id || '';
+        const userIdB = itemB.user_id || '';
+        return userIdA.localeCompare(userIdB);
+      }
+      
+      return timestampA - timestampB;
+    });
+    
+    // ✅ DEBUG: Verificar se a ordenação foi aplicada (apenas em desenvolvimento)
+    if (classifiedIndices.length > 0) {
+      devLog.debug('🔍 [RANKING_SERVICE] Ordenação de classificados concluída', {
+        totalClassified: classifiedIndices.length
+      });
+    }
+
+    // ✅ Calcular posições sequenciais para os classificados ordenados
+    let positionCounter = offset + 1;
+    const positionMap = new Map<number, number>();
 
     classifiedIndices.forEach((index) => {
       const item = paginatedData[index];
       const rankingData = item.rankingData || item;
       const userData = rankingData?.user_data || rankingData || {};
       const score = userData?.score || rankingData?.score || 0;
-
-      if (currentScore === null || score !== currentScore) {
-        // Novo grupo de score
-        if (currentGroup.length > 0) {
-          scoreGroups.push({ score: currentScore!, indices: currentGroup });
-        }
-        currentScore = score;
-        currentGroup = [index];
-      } else {
-        // Mesmo score, adicionar ao grupo atual
-        currentGroup.push(index);
-      }
-    });
-
-    // Adicionar último grupo
-    if (currentGroup.length > 0 && currentScore !== null) {
-      scoreGroups.push({ score: currentScore, indices: currentGroup });
-    }
-
-    // ✅ CORREÇÃO CRÍTICA: Calcular posições considerando empates APENAS para classificados
-    let positionCounter = offset + 1;
-    const positionMap = new Map<number, number>();
-
-    scoreGroups.forEach((group) => {
-      // Todos os índices neste grupo recebem a mesma posição
-      const position = positionCounter;
-      group.indices.forEach((index) => {
-        positionMap.set(index, position);
-      });
-      // Próxima posição será positionCounter + quantidade de pessoas neste grupo
-      positionCounter += group.indices.length;
+      
+      positionMap.set(index, positionCounter);
+      positionCounter++;
     });
 
     // Eliminados não recebem posição (ou recebem 0)
@@ -446,14 +486,39 @@ export const fetchUserRankings = async (
       positionMap.set(index, 0);
     });
 
-    // Mapear resultados para o formato esperado
-    const rankings: Ranking[] = paginatedData.map((item: any, index: number) => {
+    // ✅ NOVO: Criar array ordenado combinando classificados (ordenados) e eliminados
+    const orderedIndices = [...classifiedIndices, ...eliminatedIndices];
+    
+    // ✅ CRÍTICO: Verificar se orderedIndices está vazio
+    if (orderedIndices.length === 0) {
+      devLog.warn('⚠️ [RANKING_SERVICE] orderedIndices está vazio');
+      return [];
+    }
+    
+    // ✅ CRÍTICO: Verificar se paginatedData está vazio
+    if (paginatedData.length === 0) {
+      devLog.warn('⚠️ [RANKING_SERVICE] paginatedData está vazio');
+      return [];
+    }
+    
+    // Mapear resultados para o formato esperado usando a ordem correta
+    const rankings: Ranking[] = orderedIndices.map((originalIndex: number, mapIndex: number) => {
+      // ✅ CRÍTICO: Verificar se o índice é válido
+      if (originalIndex < 0 || originalIndex >= paginatedData.length) {
+        devLog.error('❌ [RANKING_SERVICE] Índice inválido', {
+          originalIndex,
+          paginatedDataLength: paginatedData.length
+        });
+        return null;
+      }
+      
+      const item = paginatedData[originalIndex];
       // RPC retorna dados já formatados, mas precisamos extrair user_data
       // item.rankingData já é o objeto ranking de consolidated_data->rankings->[rankingId]
       const rankingData = item.rankingData || item;
       
       // ✅ DEBUG DETALHADO: Verificar estrutura completa
-      if (index === 0) {
+      if (mapIndex === 0) {
         devLog.debug('🔍 [RANKING_SERVICE] rankingData structure (primeiro item - sanitizado)', {
           itemKeyCount: Object.keys(item).length,
           rankingDataKeyCount: Object.keys(rankingData || {}).length,
@@ -467,7 +532,7 @@ export const fetchUserRankings = async (
       const userData = rankingData?.user_data || rankingData || {};
       
       // ✅ DEBUG: Verificar se userData está vazio ou tem dados
-      if (index === 0) {
+      if (mapIndex === 0) {
         // ✅ SEGURANÇA: Log sanitizado da estrutura userData (sem dados completos)
         const allUserDataKeys = Object.keys(userData);
         devLog.debug('🔍 [RANKING_SERVICE] Estrutura userData (primeiro item):', {
@@ -518,7 +583,7 @@ export const fetchUserRankings = async (
                                   userData?.weighted_subjectives || {};
       
       // ✅ SEGURANÇA: Log sanitizado dos dados extraídos (sem valores completos)
-      if (index === 0) {
+      if (mapIndex === 0) {
         devLog.debug('🔍 [RANKING_SERVICE] Dados extraídos (primeiro item - sanitizado):', {
           weightedObjectScoresKeyCount: Object.keys(weightedObjectScores).length,
           objectScoresKeyCount: Object.keys(objectScores).length,
@@ -532,9 +597,12 @@ export const fetchUserRankings = async (
 
       const isEliminated = isBelowMinimum(rankingData);
       
+      const positionFromMap = positionMap.get(originalIndex);
+      const assignedPosition = isEliminated ? 0 : (positionFromMap || 0);
+      
       return {
-        id: item.rankingId || rankingData?.id || `ranking-${item.user_id}-${index}`, // Usar o rankingId específico
-        position: isEliminated ? 0 : (positionMap.get(index) || 0), // ✅ CORREÇÃO CRÍTICA: Eliminados recebem posição 0, classificados recebem posição considerando empates
+        id: item.rankingId || rankingData?.id || `ranking-${item.user_id}-${originalIndex}`, // Usar o rankingId específico
+        position: assignedPosition, // ✅ CORREÇÃO CRÍTICA: Eliminados recebem posição 0, classificados recebem posição considerando empates
         name: item.users_profiles?.name || 'Usuário',
         score: userData?.score || rankingData?.score || 0,
         userId: item.user_id,
@@ -582,7 +650,7 @@ export const fetchUserRankings = async (
         // Caso contrário, filtrar apenas as que começam com custom_
         weightedCustomDisciplineScores: (() => {
           // ✅ SEGURANÇA: Log sanitizado da criação de weightedCustomDisciplineScores (sem dados completos)
-          if (index === 0) {
+          if (mapIndex === 0) {
             devLog.debug('🔍 [RANKING_SERVICE] Criando weightedCustomDisciplineScores (sanitizado):', {
               weightedObjectScoresKeyCount: Object.keys(weightedObjectScores).length,
               objectScoresKeyCount: Object.keys(objectScores).length,
@@ -596,7 +664,7 @@ export const fetchUserRankings = async (
           if (Object.keys(weightedObjectScores).length > 0) {
             // ✅ CORREÇÃO: Usar TODOS os dados diretamente, sem filtro
             // O backend já salva apenas as disciplinas customizadas em weightedCustomDisciplineScores
-            if (index === 0) {
+            if (mapIndex === 0) {
               devLog.debug('✅ [RANKING_SERVICE] Usando weightedObjectScores completo (sanitizado):', {
                 keyCount: Object.keys(weightedObjectScores).length,
                 keys: Object.keys(weightedObjectScores).slice(0, 10) // Apenas chaves, não valores
@@ -608,7 +676,7 @@ export const fetchUserRankings = async (
           const fallback = Object.fromEntries(
             Object.entries(objectScores).filter(([k]) => k.startsWith('custom_'))
           );
-          if (index === 0) {
+          if (mapIndex === 0) {
             devLog.debug('⚠️ [RANKING_SERVICE] Usando fallback (object_scores filtrado)', {
               fallbackKeyCount: Object.keys(fallback).length,
               fallbackKeys: Object.keys(fallback).slice(0, 5) // Apenas chaves, não valores
@@ -616,7 +684,7 @@ export const fetchUserRankings = async (
           }
           // ✅ CORREÇÃO: Se o fallback resultou em vazio mas há objectScores, usar TODOS
           if (Object.keys(fallback).length === 0 && Object.keys(objectScores).length > 0) {
-            if (index === 0) {
+            if (mapIndex === 0) {
               devLog.debug('⚠️ [RANKING_SERVICE] Fallback resultou vazio, usando todos os objectScores');
             }
             return objectScores;
@@ -628,8 +696,12 @@ export const fetchUserRankings = async (
         belowDisciplineMinimums: userData?.belowDisciplineMinimums || userData?.below_discipline_minimums || [],
         belowBlockMinimums: userData?.belowBlockMinimums || userData?.below_block_minimums || [],
       };
-    });
+    }).filter((r): r is Ranking => r !== null); // ✅ CRÍTICO: Filtrar nulls
 
+    devLog.debug('✅ [RANKING_SERVICE] Rankings mapeados', {
+      total: rankings.length
+    });
+    
     // ✅ SEGURANÇA: Log sanitizado dos dados finais (sem valores completos)
     if (rankings.length > 0) {
       devLog.debug('✅ [RANKING_SERVICE] Rankings mapeados (primeiro item - sanitizado):', {
@@ -673,6 +745,13 @@ export const fetchUserRankings = async (
       sampleWeightedScores: rankings[0]?.weightedCustomDisciplineScores || {}
     });
     
+    // ✅ DEBUG: Verificar posições finais antes de retornar (apenas em desenvolvimento)
+    devLog.debug('🔍 [RANKING_SERVICE] Rankings processados com sucesso', {
+      total: rankings.length,
+      classified: rankings.filter(r => r.position > 0).length,
+      eliminated: rankings.filter(r => r.position === 0).length
+    });
+
     // Armazenar no cache local apenas se os dados estiverem completos
     rankingCache.setRankings(concursoId, rankings, page, limit, reservationType);
 

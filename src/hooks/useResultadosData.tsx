@@ -81,19 +81,23 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
   });
   
   // ✅ FASE 1: Configuração para rankings usando V3 (com RPC)
+  // ✅ Versão do cache atualizada para forçar invalidação de dados antigos
   const { 
     data: rankings = [], 
     isLoading: isLoadingRankings, 
     refetch: refetchRankings,
     isRefetching
   } = useQuery({
-    queryKey: ['rankings-v3', id],
+    queryKey: ['rankings-v3', 'v2-tiebreaker-by-date', id],
     queryFn: async () => {
       if (!id) {
         return [];
       }
       try {
         const result = await fetchUserRankings(id, undefined, 0, 100);
+        devLog.debug('[useResultadosData] Rankings buscados com sucesso', {
+          count: result.length
+        });
         return result;
       } catch (error) {
         devLog.error('[useResultadosData] Erro ao chamar fetchUserRankings:', error);
@@ -101,7 +105,9 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
       }
     },
     refetchOnWindowFocus: false,
-    staleTime: 0, // Sempre buscar dados frescos para garantir atualizações imediatas
+    staleTime: 30 * 1000, // 30 segundos - dados considerados frescos por 30s
+    gcTime: 5 * 60 * 1000, // 5 minutos - manter no cache do React Query por 5min
+    refetchOnMount: true, // Revalidar dados ao montar (mas usar cache se ainda estiver fresco)
     enabled: !!id, // HABILITADO - buscar rankings para exibir classificação
     onError: (error) => {
       devLog.error('[useResultadosData] Erro na query:', error);
