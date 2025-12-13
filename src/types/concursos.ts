@@ -124,6 +124,9 @@ export interface Concurso {
   // Flag de administrador
   is_admin_update?: boolean;
 
+  // Modo vitrine (showcase) - permite visualização pública mas bloqueia novos cadastros
+  is_showcase?: boolean;
+
   // Estrutura JSONB de disciplinas (suporte a nova e antiga estrutura)
   disciplines?: DisciplinesStructure | (DisciplineBlock | NestedDiscipline)[]; // Nova estrutura ou compatibilidade
   

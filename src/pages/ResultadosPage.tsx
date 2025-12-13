@@ -23,7 +23,7 @@ import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { showProRequiredToast } from '@/utils/planRestrictions';
 import { toast as sonnerToast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Lock } from 'lucide-react';
+import { AlertCircle, Lock, Info } from 'lucide-react';
 import { UrlObfuscationService } from '@/services/urlObfuscation';
 // ✅ REMOVIDO: showProRequiredToast não é mais necessário - rankings são públicos
 import {
@@ -99,12 +99,21 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
 
   // ✅ Verificar se usuário Free pode ver a classificação
   // Free users só podem ver classificação se participam ou criaram o ranking
+  // EXCEÇÃO: Rankings em modo vitrine podem ser visualizados por qualquer usuário
   useEffect(() => {
     const checkAccess = async () => {
       if (!concurso || !user) {
         // Se não há concurso ou usuário, permitir visualização (usuário não autenticado pode ver)
         setCanViewRanking(true);
         setIsCheckingAccess(false);
+        return;
+      }
+
+      // ✅ MODE VITRINE: Se o ranking está em modo vitrine, permitir visualização para todos
+      if (concurso.is_showcase === true) {
+        setCanViewRanking(true);
+        setIsCheckingAccess(false);
+        devLog.log('[ResultadosPage] Acesso permitido: ranking em modo vitrine');
         return;
       }
 
@@ -284,7 +293,8 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
   }
 
   // ✅ BLOQUEIO PARA USUÁRIOS FREE: Não podem ver classificação se não participam e não criaram
-  if (canViewRanking === false && user) {
+  // ✅ Não mostrar alerta de acesso restrito se o ranking estiver em modo vitrine
+  if (canViewRanking === false && user && !concurso?.is_showcase) {
     return (
       <div className="page-content-container">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
@@ -394,7 +404,16 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
           </Button>
           
           
-          {concurso && !isParticipating && user && <Button onClick={async () => {
+          {concurso && !isParticipating && user && !concurso.is_showcase && (() => {
+            devLog.log('[ResultadosPage] Botão Participar - condições:', {
+              temConcurso: !!concurso,
+              isParticipating,
+              temUser: !!user,
+              isShowcase: concurso.is_showcase,
+              deveMostrar: !concurso.is_showcase
+            });
+            return (
+            <Button onClick={async () => {
               if (!concurso.id) return;
               try {
                 const token = await UrlObfuscationService.generateConcursoToken(concurso.id);
@@ -410,7 +429,9 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
             }} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
-            </Button>}
+            </Button>
+            );
+          })()}
           
           {concurso && isParticipating && user && (
             <Button onClick={() => setShowLeaveDialog(true)} variant="destructive" className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isLeaving}>
@@ -442,7 +463,19 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
       />
       {/* Debug logs removed for security */}
       
-      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">
+      {/* Aviso de modo vitrine */}
+      {concurso?.is_showcase === true && (
+        <Alert className="mt-1 sm:mt-2">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Modo Vitrine</AlertTitle>
+          <AlertDescription>
+            Este ranking está em modo demonstração. Você pode visualizar os resultados, mas novos cadastros não são permitidos.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      
+      {!isAuthenticated && !concurso?.is_showcase && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">
           <p className="text-center text-muted-foreground">
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>

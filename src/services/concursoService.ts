@@ -119,16 +119,18 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
 
     // ✅ Verificar se o parent é unificado (para exibir state_uf corretamente)
     let parentIsUnified = false;
+    let parentIsShowcase = false;
     if (rankingData.parent_concurso_id) {
       try {
         const { data: parentData } = await supabase
           .from('concursos')
-          .select('is_unified')
+          .select('is_unified, is_showcase')
           .eq('id', rankingData.parent_concurso_id)
           .single();
         parentIsUnified = parentData?.is_unified || false;
+        parentIsShowcase = parentData?.is_showcase || false;
       } catch (error) {
-        devLog.error('[fetchConcursoById] Erro ao verificar se parent é unificado:', error);
+        devLog.error('[fetchConcursoById] Erro ao verificar dados do parent:', error);
       }
     }
 
@@ -177,6 +179,8 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
         min_cota: 0
       },
       is_admin_update: false,
+      // ✅ Herdar is_showcase do parent se for cargo, senão usar do próprio ranking
+      is_showcase: rankingData.parent_concurso_id ? parentIsShowcase : (rankingData.is_showcase || false),
       disciplines: disciplines, // Usar disciplinas já convertidas
       has_basic_knowledge: false,
       has_specific_knowledge_1: false,
