@@ -71,18 +71,21 @@ BEGIN
       ELSE RETURN jsonb_build_object('success', false, 'error', 'Plano coach inválido');
     END CASE;
     
-    -- Verificar se o voucher já foi usado por outro usuário
-    SELECT coach_id INTO v_existing_user_id
-    FROM coach_subscriptions
-    WHERE voucher_code = voucher_code_param
-      AND coach_id != v_user_id
-    LIMIT 1;
-    
-    IF v_existing_user_id IS NOT NULL THEN
-      RETURN jsonb_build_object(
-        'success', false, 
-        'error', 'Este voucher já foi utilizado por outro usuário. Cada voucher só pode ser usado uma vez.'
-      );
+    -- ✅ CORRIGIDO: Verificar se o voucher já foi usado por outro usuário APENAS se max_uses = 1
+    -- Se max_uses > 1, permitir múltiplos usuários até atingir o limite
+    IF v_voucher.max_uses = 1 THEN
+      SELECT coach_id INTO v_existing_user_id
+      FROM coach_subscriptions
+      WHERE voucher_code = voucher_code_param
+        AND coach_id != v_user_id
+      LIMIT 1;
+      
+      IF v_existing_user_id IS NOT NULL THEN
+        RETURN jsonb_build_object(
+          'success', false, 
+          'error', 'Este voucher já foi utilizado por outro usuário. Cada voucher só pode ser usado uma vez.'
+        );
+      END IF;
     END IF;
     
     -- Verificar se o usuário atual já usou este voucher
@@ -113,18 +116,21 @@ BEGIN
       updated_at = NOW();
   ELSE
     -- Lógica Pro/Free
-    -- Verificar se o voucher já foi usado por outro usuário
-    SELECT user_id INTO v_existing_user_id
-    FROM user_subscriptions
-    WHERE voucher_code = voucher_code_param
-      AND user_id != v_user_id
-    LIMIT 1;
-    
-    IF v_existing_user_id IS NOT NULL THEN
-      RETURN jsonb_build_object(
-        'success', false, 
-        'error', 'Este voucher já foi utilizado por outro usuário. Cada voucher só pode ser usado uma vez.'
-      );
+    -- ✅ CORRIGIDO: Verificar se o voucher já foi usado por outro usuário APENAS se max_uses = 1
+    -- Se max_uses > 1, permitir múltiplos usuários até atingir o limite
+    IF v_voucher.max_uses = 1 THEN
+      SELECT user_id INTO v_existing_user_id
+      FROM user_subscriptions
+      WHERE voucher_code = voucher_code_param
+        AND user_id != v_user_id
+      LIMIT 1;
+      
+      IF v_existing_user_id IS NOT NULL THEN
+        RETURN jsonb_build_object(
+          'success', false, 
+          'error', 'Este voucher já foi utilizado por outro usuário. Cada voucher só pode ser usado uma vez.'
+        );
+      END IF;
     END IF;
 
     -- Verificar se o usuário atual já usou este voucher
@@ -174,4 +180,4 @@ $$;
 
 COMMENT ON FUNCTION apply_voucher IS 
 'Função para aplicar vouchers de subscription. Suporta planos free, pro e coach.
-Corrigida para usar APENAS uses_count (current_uses não existe mais na tabela vouchers).';
+Respeita max_uses: se max_uses = 1, apenas um usuário pode usar. Se max_uses > 1, permite múltiplos usuários até atingir o limite.';
