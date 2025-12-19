@@ -45,9 +45,8 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Voucher inválido, expirado ou não é um voucher de assinatura');
   END IF;
 
-  -- ✅ CORRIGIDO: Verificar limite de usos usando uses_count (ou current_uses se ainda existir)
-  IF (v_voucher.uses_count IS NOT NULL AND v_voucher.uses_count >= v_voucher.max_uses) OR
-     (v_voucher.current_uses IS NOT NULL AND v_voucher.current_uses >= v_voucher.max_uses) THEN
+  -- ✅ CORRIGIDO: Verificar limite de usos usando APENAS uses_count (current_uses não existe mais na tabela)
+  IF v_voucher.uses_count >= v_voucher.max_uses THEN
     RETURN jsonb_build_object('success', false, 'error', 'Voucher atingiu o limite de usos');
   END IF;
 
@@ -158,11 +157,10 @@ BEGIN
       updated_at = NOW();
   END IF;
 
-  -- ✅ CORRIGIDO: Increment voucher usage usando uses_count (ou current_uses se ainda existir)
+  -- ✅ CORRIGIDO: Increment voucher usage usando APENAS uses_count (current_uses não existe mais na tabela)
   UPDATE vouchers
   SET 
-    uses_count = CASE WHEN uses_count IS NOT NULL THEN uses_count + 1 ELSE NULL END,
-    current_uses = CASE WHEN current_uses IS NOT NULL THEN current_uses + 1 ELSE NULL END,
+    uses_count = uses_count + 1,
     updated_at = NOW()
   WHERE code = voucher_code_param;
 
@@ -176,5 +174,4 @@ $$;
 
 COMMENT ON FUNCTION apply_voucher IS 
 'Função para aplicar vouchers de subscription. Suporta planos free, pro e coach.
-Corrigida para usar uses_count em vez de current_uses (campo foi renomeado).
-Mantém compatibilidade verificando ambos os campos caso ainda existam.';
+Corrigida para usar APENAS uses_count (current_uses não existe mais na tabela vouchers).';
