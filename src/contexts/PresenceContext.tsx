@@ -15,53 +15,24 @@ const PresenceContext = createContext<PresenceContextValue>({
 export const PresenceProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
-  // Buscar usuários online do banco de dados periodicamente
-  useEffect(() => {
-    const fetchOnlineUsers = async () => {
-      try {
-        // Verificar se o cliente Supabase está configurado corretamente
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (!supabaseUrl || supabaseUrl.includes('xuovcuefnullpmpktrzd')) {
-          // Não tentar buscar se a URL estiver inválida
-          devLog.warn('Supabase não configurado corretamente. Pulando busca de usuários online.');
-          return;
-        }
+  // ✅ CORRIGIDO: Removida busca periódica da tabela que causava conflito
+  // Agora usamos APENAS o Presence do Supabase Realtime para uma fonte única e consistente
 
-        const { data, error } = await supabase
-          .from('users_profiles')
-          .select('id')
-          .eq('is_online', true);
-        
-        if (error) {
-          // Não logar erros de rede como ERR_NAME_NOT_RESOLVED (URL inválida)
-          if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_NAME_NOT_RESOLVED')) {
-            devLog.warn('Erro de conexão ao buscar usuários online. Verifique a configuração do Supabase.');
-            return;
-          }
-          devLog.error('Error fetching online users:', error);
-          return;
-        }
-        
-        const userIds = data?.map(user => user.id) || [];
-        setOnlineUserIds(new Set(userIds));
-      } catch (error: any) {
-        // Não logar erros de rede como ERR_NAME_NOT_RESOLVED
-        if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_NAME_NOT_RESOLVED')) {
-          devLog.warn('Erro de conexão ao buscar usuários online. Verifique a configuração do Supabase.');
-          return;
-        }
-        devLog.error('Error in fetchOnlineUsers:', error);
+  // Função helper para extrair user_ids do presence state de forma consistente
+  const extractUserIdsFromPresence = (state: Record<string, any>): Set<string> => {
+    const userIds = new Set<string>();
+    
+    // O presence state do Supabase tem estrutura: { [key]: [{ user_id, online_at, ... }] }
+    // A chave (key) é o user_id configurado no presence config
+    Object.keys(state).forEach((key) => {
+      // A chave já é o user_id quando configuramos presence: { key: user?.id }
+      if (key && key !== 'viewer') {
+        userIds.add(key);
       }
-    };
-
-    // Buscar imediatamente
-    fetchOnlineUsers();
-
-    // Configurar intervalo para buscar a cada 10 segundos
-    const interval = setInterval(fetchOnlineUsers, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
+    });
+    
+    return userIds;
+  };
 
   useEffect(() => {
     // Verificar se o cliente Supabase está configurado corretamente
@@ -85,22 +56,18 @@ export const PresenceProvider: React.FC<React.PropsWithChildren> = ({ children }
           },
         });
 
+        // ✅ CORRIGIDO: Usar função helper para extrair user_ids de forma consistente
+        const updateOnlineUsers = () => {
+          if (!isMounted || !channel) return;
+          const state = channel.presenceState();
+          const userIds = extractUserIdsFromPresence(state);
+          setOnlineUserIds(userIds);
+        };
+
         channel
-          .on('presence', { event: 'sync' }, () => {
-            if (!isMounted) return;
-            const state = channel!.presenceState();
-            setOnlineUserIds(new Set(Object.keys(state)));
-          })
-          .on('presence', { event: 'join' }, () => {
-            if (!isMounted) return;
-            const state = channel!.presenceState();
-            setOnlineUserIds(new Set(Object.keys(state)));
-          })
-          .on('presence', { event: 'leave' }, () => {
-            if (!isMounted) return;
-            const state = channel!.presenceState();
-            setOnlineUserIds(new Set(Object.keys(state)));
-          })
+          .on('presence', { event: 'sync' }, updateOnlineUsers)
+          .on('presence', { event: 'join' }, updateOnlineUsers)
+          .on('presence', { event: 'leave' }, updateOnlineUsers)
           .subscribe(async (status) => {
             if (status === 'SUBSCRIBED' && user?.id) {
               await channel!.track({
