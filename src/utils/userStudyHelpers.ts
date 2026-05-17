@@ -268,7 +268,9 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
     date: session.sessionDate,
     duration: session.duration,
     type: (session.study_type || 'timer') as 'timer' | 'manual',
-    subject: session.disciplineName
+    subject: session.disciplineName,
+    questions: session.questions,
+    correctAnswers: session.correctAnswers,
   }));
 
   // Calculate subject stats (usar dados normalizados)

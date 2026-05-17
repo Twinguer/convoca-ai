@@ -423,27 +423,26 @@ export class UserStudyService {
   }
 
   /**
-   * Update study statistics
+   * Persiste estatísticas em user_study_v2 (via upsert — alinhado ao restante do app).
    */
   static async updateStatistics(userId: string, statistics: StudyStatistics): Promise<boolean> {
-    try {
-      const { error } = await supabase.rpc('update_study_statistics', {
-        user_uuid: userId,
-        stats_data: statistics
-      });
+    return this.upsertUserStudyData(userId, {
+      study_statistics: statistics,
+    });
+  }
 
-      if (error) {
-        // Log sanitizado - sem exposição de dados sensíveis
-        devLog.error('Error updating statistics: Database operation failed');
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      // Log sanitizado - sem exposição de dados sensíveis
-      devLog.error('Error updating statistics: Database operation failed');
-      return false;
-    }
+  /**
+   * Persiste sessões e estatísticas derivadas no mesmo write (fonte única de verdade).
+   */
+  static async saveSessionsAndStatistics(
+    userId: string,
+    studySessions: StudySession[],
+    statistics: StudyStatistics
+  ): Promise<boolean> {
+    return this.upsertUserStudyData(userId, {
+      study_sessions: studySessions,
+      study_statistics: statistics,
+    });
   }
 
   // ===== STUDY CYCLES =====

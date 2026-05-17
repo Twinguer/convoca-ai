@@ -84,9 +84,12 @@ export interface StudyStatistics {
   };
   sessionHistory: Array<{
     date: string;
+    /** Duração em minutos */
     duration: number;
     type: 'timer' | 'manual';
     subject?: string;
+    questions?: number;
+    correctAnswers?: number;
   }>;
   subjectStats: Record<string, {
     totalHours: number;

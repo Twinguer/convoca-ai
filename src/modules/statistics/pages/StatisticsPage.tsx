@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import SubjectTimeDistributionChart from '@/components/StudyStats/SubjectTimeDistributionChart';
 import AccuracyEvolutionChart from '@/components/StudyStats/AccuracyEvolutionChart';
+import { getStatisticsForPeriod } from '@/utils/studyStatisticsFilters';
 const StatisticsPage = () => {
   const {
     statistics,
@@ -43,6 +44,13 @@ const StatisticsPage = () => {
     return (value / total * 100).toFixed(1) + '%';
   };
   const filteredStats = getFilteredStats(timeFilter);
+  const periodStatistics = useMemo(
+    () => getStatisticsForPeriod(statistics, timeFilter),
+    [statistics, timeFilter]
+  );
+
+  const periodLabel =
+    timeFilter === 'day' ? 'hoje' : timeFilter === 'week' ? '7 dias' : '30 dias';
   if (isLoading) {
     return <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
@@ -57,6 +65,9 @@ const StatisticsPage = () => {
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Estatísticas de Estudo</h1>
+          <p className="text-sm text-muted-foreground">
+            Gráficos refletem o período selecionado ({periodLabel}). Totais históricos aparecem nos cards quando aplicável.
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Select value={timeFilter} onValueChange={(value: 'day' | 'week' | 'month') => setTimeFilter(value)}>
@@ -95,7 +106,7 @@ const StatisticsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 mb-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Horas</CardTitle>
@@ -134,22 +145,51 @@ const StatisticsPage = () => {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Questões</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-2xl font-bold">{statistics.questionsAnswered}</div>
+            <div className="flex flex-col gap-1 text-xs">
+              <span className="text-success font-medium">
+                {statistics.correctAnswers} acertos ·{' '}
+                {formatPercentage(statistics.correctAnswers, statistics.questionsAnswered)}
+              </span>
+              <span className="text-destructive font-medium">
+                {statistics.wrongAnswers} erros ·{' '}
+                {formatPercentage(statistics.wrongAnswers, statistics.questionsAnswered)}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filteredStats.questionsAnswered} nos últimos{' '}
+              {timeFilter === 'day' ? '1 dia' : timeFilter === 'week' ? '7 dias' : '30 dias'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Primeira linha: Gráfico de Desempenho (sozinho) */}
       <div className="mb-6">
-        <PerformanceChart statistics={statistics} timeFilter={timeFilter} onTimeFilterChange={setTimeFilter} />
+        <PerformanceChart
+          statistics={periodStatistics}
+          timeFilter={timeFilter}
+          onTimeFilterChange={setTimeFilter}
+        />
       </div>
 
       {/* Segunda linha: 3 gráficos enfileirados */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-        <SubjectTimeDistributionChart statistics={statistics} />
+        <SubjectTimeDistributionChart statistics={periodStatistics} />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-success" />
               Desempenho em Questões
             </CardTitle>
+            <CardDescription>No período: {periodLabel}</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="geral" className="w-full">
@@ -162,16 +202,16 @@ const StatisticsPage = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Total Respondidas</span>
-                    <Badge variant="secondary">{statistics.questionsAnswered}</Badge>
+                    <Badge variant="secondary">{periodStatistics.questionsAnswered}</Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-success">Acertos</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="bg-success/10 text-success">
-                        {statistics.correctAnswers}
+                        {periodStatistics.correctAnswers}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        ({formatPercentage(statistics.correctAnswers, statistics.questionsAnswered)})
+                        ({formatPercentage(periodStatistics.correctAnswers, periodStatistics.questionsAnswered)})
                       </span>
                     </div>
                   </div>
@@ -179,10 +219,10 @@ const StatisticsPage = () => {
                     <span className="text-sm font-medium text-destructive">Erros</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="bg-destructive/10 text-destructive">
-                        {statistics.wrongAnswers}
+                        {periodStatistics.wrongAnswers}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        ({formatPercentage(statistics.wrongAnswers, statistics.questionsAnswered)})
+                        ({formatPercentage(periodStatistics.wrongAnswers, periodStatistics.questionsAnswered)})
                       </span>
                     </div>
                   </div>
@@ -190,8 +230,8 @@ const StatisticsPage = () => {
               </TabsContent>
               
               <TabsContent value="disciplinas" className="mt-4">
-                {Object.keys(statistics.subjectStats).length > 0 ? <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                    {Object.entries(statistics.subjectStats).map(([subject, stats]) => <div key={subject} className="p-3 border rounded-lg">
+                {Object.keys(periodStatistics.subjectStats).length > 0 ? <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {Object.entries(periodStatistics.subjectStats).map(([subject, stats]) => <div key={subject} className="p-3 border rounded-lg">
                         <h4 className="font-medium text-sm mb-2">{subject}</h4>
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           <div className="text-center">
@@ -231,11 +271,11 @@ const StatisticsPage = () => {
             </Tabs>
           </CardContent>
         </Card>
-        <AccuracyEvolutionChart statistics={statistics} />
+        <AccuracyEvolutionChart statistics={periodStatistics} />
       </div>
 
       {/* Desempenho por Disciplina */}
-      {Object.keys(statistics.subjectStats).length > 0}
+      {Object.keys(periodStatistics.subjectStats).length > 0}
     </div>;
 };
 export default StatisticsPage;

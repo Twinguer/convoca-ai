@@ -1,19 +1,48 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
-import { StudyStatistics, defaultUserStudy } from '@/types/userStudy';
+import { StudyStatistics, defaultUserStudy, StudySession } from '@/types/userStudy';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import {
+  getFilteredPeriodSummary,
+  type StudyTimeFilter,
+} from '@/utils/studyStatisticsFilters';
+import {
+  resolveStudySessions,
+  resolveStudyStatistics,
+  findOrCreateQuestionTrackerSession,
+  QUESTION_TRACKER_SUBJECT,
+} from '@/utils/studyStatisticsMerge';
+import { toLocalDateKey } from '@/utils/studyStatisticsFilters';
+import { generateId } from '@/lib/utils';
+import { devLog } from '@/utils/productionLogger';
 
-// Mutex global para evitar operações simultâneas
-let globalUpdateInProgress = false;
+let globalPersistInProgress = false;
 
 export const useStudyStatistics = () => {
   const { user } = useAuth();
-  const [statistics, setStatistics] = useState<StudyStatistics>(defaultUserStudy.study_statistics as StudyStatistics);
+  const [statistics, setStatistics] = useState<StudyStatistics>(
+    defaultUserStudy.study_statistics as StudyStatistics
+  );
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const persistSessionsAndStats = useCallback(
+    async (sessions: StudySession[], stats: StudyStatistics) => {
+      if (!user) return false;
+      if (globalPersistInProgress) return false;
+
+      globalPersistInProgress = true;
+      try {
+        const ok = await UserStudyService.saveSessionsAndStatistics(user.id, sessions, stats);
+        if (!ok) {
+          devLog.error('Error persisting study statistics');
+        }
+        return ok;
+      } finally {
+        globalPersistInProgress = false;
+      }
+    },
+    [user]
+  );
 
   const loadStatistics = async () => {
     if (!user) {
@@ -22,29 +51,34 @@ export const useStudyStatistics = () => {
     }
 
     try {
-      // Buscar dados consolidados do user_study_v2
-      const userStudyData = await UserStudyService.getUserStudyData(user.id);
-      
-      if (userStudyData) {
-        // SEMPRE recalcular estatísticas com base nas sessões atuais
-        // Isso garante que os dados estejam sempre corretos e atualizados
-        if (userStudyData.study_sessions && userStudyData.study_sessions.length > 0) {
-          const calculatedStats = calculateStudyStatistics(userStudyData.study_sessions);
-          setStatistics(calculatedStats);
-          
-          // Salvar estatísticas recalculadas no banco em background
-          // (não bloqueia a UI)
-          UserStudyService.updateStatistics(user.id, calculatedStats).catch(err => {
-            devLog.error('Error updating statistics in background:', err);
-          });
-        } else {
-          // Sem sessões, usar estatísticas vazias
-          setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
-        }
-      } else {
-        // Inicializar dados do usuário
+      UserStudyService.clearCache(user.id);
+      const userStudyData = await UserStudyService.getUserStudyData(user.id, true);
+
+      if (!userStudyData) {
         await UserStudyService.initializeUserStudyData(user.id);
         setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
+        return;
+      }
+
+      const sessions = resolveStudySessions(
+        userStudyData.study_sessions,
+        userStudyData.study_statistics
+      );
+      const resolvedStats = resolveStudyStatistics(
+        sessions,
+        userStudyData.study_statistics
+      );
+
+      setStatistics(resolvedStats);
+
+      // Migrar histórico legado para study_sessions uma única vez (sem dupla contagem)
+      const rawCount = userStudyData.study_sessions?.length ?? 0;
+      const mergedOrphans = sessions.length > rawCount;
+      const importedFromHistory = rawCount === 0 && sessions.length > 0;
+      if (importedFromHistory || mergedOrphans) {
+        persistSessionsAndStats(sessions, resolvedStats).catch((err) => {
+          devLog.error('Error persisting merged study sessions:', err);
+        });
       }
     } catch (error) {
       devLog.error('Error loading statistics:', error);
@@ -53,160 +87,123 @@ export const useStudyStatistics = () => {
     }
   };
 
-  const saveStatisticsToDatabase = async (stats: StudyStatistics) => {
-    if (!user) return;
-    await UserStudyService.updateStatistics(user.id, stats);
-  };
-
-  const createInitialStatistics = async () => {
-    if (!user) return;
-    await UserStudyService.initializeUserStudyData(user.id);
-  };
-
-  const updateStatistics = async (newStats: Partial<StudyStatistics>) => {
-    if (!user) return;
-
-    // Atualizar estado local imediatamente
-    const updatedStats = { ...statistics, ...newStats };
-    setStatistics(updatedStats);
-
-    // Cancelar timeout anterior se existir
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-
-    // Debounce: aguardar 500ms antes de salvar no banco
-    updateTimeoutRef.current = setTimeout(async () => {
-      await performDatabaseUpdate(updatedStats);
-    }, 500);
-  };
-
-  const performDatabaseUpdate = async (updatedStats: StudyStatistics) => {
-    if (!user) return;
-
-    // Mutex global para evitar operações simultâneas de qualquer instância
-    if (globalUpdateInProgress) {
-      return;
-    }
-
-    // Prevenir múltiplas chamadas simultâneas da mesma instância
-    if (isUpdating) {
-      return;
-    }
-
-    globalUpdateInProgress = true;
-    setIsUpdating(true);
+  const addStudySession = async (
+    durationMinutes: number,
+    type: 'timer' | 'manual' = 'timer',
+    subject?: string
+  ) => {
+    if (!user || durationMinutes < 20) return;
 
     try {
-      await UserStudyService.updateStatistics(user.id, updatedStats);
+      UserStudyService.clearCache(user.id);
+      const userStudyData = await UserStudyService.getUserStudyData(user.id, true);
+      const existingSessions = resolveStudySessions(
+        userStudyData?.study_sessions,
+        userStudyData?.study_statistics
+      );
+
+      const now = new Date();
+      const today = toLocalDateKey(now);
+
+      const newSession: StudySession = {
+        id: generateId(),
+        duration_minutes: durationMinutes,
+        questions: 0,
+        correct_answers: 0,
+        session_date: today,
+        discipline_name: subject?.trim() || 'Sem Disciplina',
+        study_type: type,
+        session_count: 1,
+        start_time: now.toTimeString().split(' ')[0],
+        end_time: new Date(now.getTime() + durationMinutes * 60000)
+          .toTimeString()
+          .split(' ')[0],
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      };
+
+      const updatedSessions = [...existingSessions, newSession];
+      const calculatedStats = calculateStudyStatistics(updatedSessions);
+
+      setStatistics(calculatedStats);
+      await persistSessionsAndStats(updatedSessions, calculatedStats);
     } catch (error) {
-      devLog.error('Error updating statistics:', error);
-    } finally {
-      globalUpdateInProgress = false;
-      setIsUpdating(false);
+      devLog.error('Error adding study session:', error);
     }
   };
 
-  // Cleanup do timeout quando o componente for desmontado
-  useEffect(() => {
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const addStudySession = async (durationMinutes: number, type: 'timer' | 'manual' = 'timer', subject?: string) => {
-    if (!user || durationMinutes < 20) return; // Só conta sessões > 20min
-
-    const now = new Date();
-    // Usar apenas a data local sem manipulação de timezone
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const hours = durationMinutes / 60;
-
-    // Calcular streak
-    let newCurrentStreak = statistics.currentStreak;
-    const lastStudyDate = statistics.lastStudyDate;
-    
-    if (lastStudyDate) {
-      const lastDate = new Date(lastStudyDate);
-      const diffTime = now.getTime() - lastDate.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
-        newCurrentStreak += 1;
-      } else if (diffDays > 1) {
-        newCurrentStreak = 1;
-      }
-    } else {
-      newCurrentStreak = 1;
-    }
-
-    // Atualizar estatísticas diárias
-    const newDailyStats = { ...statistics.dailyStats };
-    if (!newDailyStats[today]) {
-      newDailyStats[today] = { hours: 0, sessions: 0 };
-    }
-    newDailyStats[today].hours += hours;
-    newDailyStats[today].sessions += 1;
-
-    // Atualizar estatísticas por disciplina
-    const newSubjectStats = { ...statistics.subjectStats };
-    if (subject) {
-      if (!newSubjectStats[subject]) {
-        newSubjectStats[subject] = {
-          totalHours: 0,
-          totalSessions: 0,
-          questionsAnswered: 0,
-          correctAnswers: 0,
-          wrongAnswers: 0
-        };
-      }
-      newSubjectStats[subject].totalHours += hours;
-      newSubjectStats[subject].totalSessions += 1;
-    }
-
-    // Calcular médias
-    const totalDays = Object.keys(newDailyStats).length;
-    const totalHours = statistics.totalHours + hours;
-    const dailyAverage = totalHours / totalDays;
-
-    const newStats: Partial<StudyStatistics> = {
-      totalHours: totalHours,
-      totalSessions: statistics.totalSessions + 1,
-      currentStreak: newCurrentStreak,
-      longestStreak: Math.max(statistics.longestStreak, newCurrentStreak),
-        lastStudyDate: today,
-      dailyStats: newDailyStats,
-      subjectStats: newSubjectStats,
-      averages: {
-        ...statistics.averages,
-        dailyHours: dailyAverage
-      },
-      sessionHistory: [
-        ...statistics.sessionHistory,
-        {
-          date: now.toISOString(),
-          duration: durationMinutes,
-          type,
-          subject
-        }
-      ].slice(-100) // Manter apenas últimas 100 sessões
-    };
-
-    await updateStatistics(newStats);
-  };
-
-  const addQuestionResult = async (isCorrect: boolean) => {
+  const addQuestionResult = async (isCorrect: boolean, subject?: string) => {
     if (!user) return;
 
-    const newStats: Partial<StudyStatistics> = {
-      questionsAnswered: statistics.questionsAnswered + 1,
-      correctAnswers: statistics.correctAnswers + (isCorrect ? 1 : 0),
-      wrongAnswers: statistics.wrongAnswers + (isCorrect ? 0 : 1)
-    };
+    try {
+      UserStudyService.clearCache(user.id);
+      const userStudyData = await UserStudyService.getUserStudyData(user.id, true);
+      let sessions = resolveStudySessions(
+        userStudyData?.study_sessions,
+        userStudyData?.study_statistics
+      );
 
-    await updateStatistics(newStats);
+      const today = toLocalDateKey(new Date());
+      const discipline = subject?.trim() || QUESTION_TRACKER_SUBJECT;
+
+      let targetIndex = sessions.findIndex((s) => {
+        const d = s.session_date ?? s.date ?? s.last_session_date;
+        return (
+          d &&
+          toLocalDateKey(d) === today &&
+          (s.discipline_name ?? '') === discipline &&
+          (s.duration_minutes ?? s.total_duration_minutes ?? 0) === 0
+        );
+      });
+
+      if (targetIndex < 0 && discipline === QUESTION_TRACKER_SUBJECT) {
+        const created = findOrCreateQuestionTrackerSession(sessions, today);
+        sessions = created.sessions;
+        targetIndex = created.index;
+      } else if (targetIndex < 0) {
+        sessions = [
+          ...sessions,
+          {
+            id: generateId(),
+            duration_minutes: 0,
+            questions: 0,
+            correct_answers: 0,
+            session_date: today,
+            discipline_name: discipline,
+            study_type: 'manual',
+            session_count: 1,
+            start_time: '00:00:00',
+            created_at: new Date().toISOString(),
+          },
+        ];
+        targetIndex = sessions.length - 1;
+      }
+
+      const current = sessions[targetIndex];
+      const prevQuestions =
+        current.questions ?? current.total_questions ?? 0;
+      const prevCorrect =
+        current.correct_answers ?? current.total_correct_answers ?? 0;
+
+      sessions = sessions.map((s, i) =>
+        i === targetIndex
+          ? {
+              ...s,
+              questions: prevQuestions + 1,
+              correct_answers: prevCorrect + (isCorrect ? 1 : 0),
+              total_questions: prevQuestions + 1,
+              total_correct_answers: prevCorrect + (isCorrect ? 1 : 0),
+              updated_at: new Date().toISOString(),
+            }
+          : s
+      );
+
+      const calculatedStats = calculateStudyStatistics(sessions);
+      setStatistics(calculatedStats);
+      await persistSessionsAndStats(sessions, calculatedStats);
+    } catch (error) {
+      devLog.error('Error adding question result:', error);
+    }
   };
 
   const resetStatistics = async () => {
@@ -221,43 +218,8 @@ export const useStudyStatistics = () => {
     }
   };
 
-  const getFilteredStats = (filter: 'day' | 'week' | 'month') => {
-    const now = new Date();
-    let startDate: Date;
-
-    switch (filter) {
-      case 'day':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 6); // Incluir hoje = 7 dias
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 29); // Incluir hoje = 30 dias
-        startDate.setHours(0, 0, 0, 0);
-        break;
-    }
-
-    // Garantir que sessionHistory existe e é um array
-    const sessionHistory = statistics.sessionHistory || [];
-    const filteredSessions = sessionHistory.filter(session => 
-      session && session.date && new Date(session.date) >= startDate
-    );
-
-    const totalHours = filteredSessions.reduce((sum, session) => 
-      sum + ((session.duration || 0) / 60), 0
-    );
-
-    const divisor = filter === 'day' ? 1 : filter === 'week' ? 7 : 30;
-
-    return {
-      hours: totalHours,
-      sessions: filteredSessions.length,
-      average: totalHours / divisor
-    };
+  const getFilteredStats = (filter: StudyTimeFilter) => {
+    return getFilteredPeriodSummary(statistics, filter);
   };
 
   useEffect(() => {
@@ -271,6 +233,6 @@ export const useStudyStatistics = () => {
     addQuestionResult,
     resetStatistics,
     getFilteredStats,
-    refreshStatistics: loadStatistics
+    refreshStatistics: loadStatistics,
   };
 };
