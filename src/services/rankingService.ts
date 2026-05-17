@@ -107,7 +107,7 @@ export const fetchUserRankings = async (
         page,
         limit
       });
-      return localCachedRankings as Ranking[];
+        return localCachedRankings as Ranking[];
     }
     
     devLog.debug('📡 [RANKING_SERVICE] Cache miss - buscando dados do servidor');
@@ -392,7 +392,7 @@ export const fetchUserRankings = async (
       totalClassified: classifiedIndices.length,
       totalEliminated: eliminatedIndices.length
     });
-    
+
     classifiedIndices.sort((a, b) => {
       const itemA = paginatedData[a];
       const itemB = paginatedData[b];
@@ -421,7 +421,7 @@ export const fetchUserRankings = async (
       if (createdAtA) {
         const dateA = new Date(createdAtA);
         timestampA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
-      }
+        }
       
       if (createdAtB) {
         const dateB = new Date(createdAtB);
@@ -445,7 +445,7 @@ export const fetchUserRankings = async (
             userIdA: itemA.user_id,
             userIdB: itemB.user_id
           });
-        }
+      }
       }
       
       // Quem registrou primeiro (menor timestamp) fica na frente
@@ -701,7 +701,7 @@ export const fetchUserRankings = async (
     devLog.debug('✅ [RANKING_SERVICE] Rankings mapeados', {
       total: rankings.length
     });
-    
+
     // ✅ SEGURANÇA: Log sanitizado dos dados finais (sem valores completos)
     if (rankings.length > 0) {
       devLog.debug('✅ [RANKING_SERVICE] Rankings mapeados (primeiro item - sanitizado):', {
@@ -751,7 +751,7 @@ export const fetchUserRankings = async (
       classified: rankings.filter(r => r.position > 0).length,
       eliminated: rankings.filter(r => r.position === 0).length
     });
-
+    
     // Armazenar no cache local apenas se os dados estiverem completos
     rankingCache.setRankings(concursoId, rankings, page, limit, reservationType);
 

@@ -22,6 +22,10 @@ interface VoucherApplied {
   user_name: string | null;
   user_email: string | null;
   auth_email: string | null;
+  coach_plan_type?: string | null;
+  coach_max_students?: number | null;
+  coach_price?: number | null;
+  coach_status?: string | null;
 }
 
 export const VouchersAppliedList: React.FC = () => {
@@ -138,8 +142,17 @@ export const VouchersAppliedList: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant={voucher.voucher_plan === 'pro' ? 'default' : 'secondary'}>
-                          {voucher.voucher_plan === 'pro' ? 'Pro' : 'Free'}
+                          {voucher.voucher_plan === 'pro' ? 'Pro' : 
+                           voucher.voucher_plan === 'coach_starter' ? 'Coach Inicial' :
+                           voucher.voucher_plan === 'coach_professional' ? 'Coach Intermediário' :
+                           voucher.voucher_plan === 'coach_enterprise' ? 'Coach Avançado' :
+                           voucher.voucher_plan === 'free' ? 'Gratuito' : voucher.voucher_plan}
                         </Badge>
+                        {user?.coach_plan_type && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            ({user.coach_plan_type})
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {voucher.duration_months} {voucher.duration_months === 1 ? 'mês' : 'meses'}

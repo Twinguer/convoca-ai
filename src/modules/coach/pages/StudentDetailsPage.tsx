@@ -816,8 +816,14 @@ const StudentDetailsPage = () => {
                     <CardDescription>Horas estudadas por matéria</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {Object.entries(fullStatistics.subjectStats).map(([subject, stats]: [string, any]) => {
+                    <div className="space-y-4 max-h-[min(60vh,560px)] overflow-y-auto pr-1 overscroll-contain">
+                      {Object.entries(fullStatistics.subjectStats)
+                        .sort(
+                          ([, a], [, b]) =>
+                            ((b as { totalHours?: number }).totalHours || 0) -
+                            ((a as { totalHours?: number }).totalHours || 0)
+                        )
+                        .map(([subject, stats]: [string, any]) => {
                         const totalHours = stats.totalHours || 0;
                         const totalQuestions = stats.questionsAnswered || 0;
                         const correctAnswers = stats.correctAnswers || 0;
