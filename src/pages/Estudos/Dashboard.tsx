@@ -44,7 +44,9 @@ const EstudosDashboard = () => {
       
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
       
-      const cycles = userStudyData?.study_cycles.filter(cycle => cycle.is_active) || [];
+      const cycles = (userStudyData?.study_cycles ?? []).filter(
+        (cycle) => cycle.is_active
+      );
       logger.debug('Ciclos ativos encontrados', 'Dashboard', { 
         count: cycles.length,
         cycles: cycles.map(c => ({ id: c.id, name: c.cycle_name }))

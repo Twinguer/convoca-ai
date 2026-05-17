@@ -11,6 +11,10 @@ import { studyGroupMembersService } from '@/integrations/supabase/studyGroups/me
 import { getInitials } from '@/lib/utils';
 import { UserStudyService } from '@/services/userStudyService';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
+import {
+  resolveStudySessions,
+  resolveStudyStatistics,
+} from '@/utils/studyStatisticsMerge';
 
 interface ProfileStatsColumnProps {
   userId: string;
@@ -43,13 +47,25 @@ export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, 
         };
       }
 
-      // Calcular estatísticas a partir das sessões
-      if (userStudyData.study_sessions && userStudyData.study_sessions.length > 0) {
-        const calculatedStats = calculateStudyStatistics(userStudyData.study_sessions);
-        const accuracy = calculatedStats.questionsAnswered > 0
-          ? Math.round((calculatedStats.correctAnswers / calculatedStats.questionsAnswered) * 100)
-          : 0;
-        
+      const sessions = resolveStudySessions(
+        userStudyData.study_sessions,
+        userStudyData.study_statistics
+      );
+      const resolved = resolveStudyStatistics(
+        sessions,
+        userStudyData.study_statistics
+      );
+
+      if (sessions.length > 0) {
+        const calculatedStats = calculateStudyStatistics(sessions);
+        const accuracy =
+          calculatedStats.questionsAnswered > 0
+            ? Math.round(
+                (calculatedStats.correctAnswers / calculatedStats.questionsAnswered) *
+                  100
+              )
+            : 0;
+
         return {
           totalHours: calculatedStats.totalHours,
           questionsAnswered: calculatedStats.questionsAnswered,
@@ -59,40 +75,17 @@ export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, 
         };
       }
 
-      // Tentar usar estatísticas do cronograma se não houver sessões
-      if (userStudyData.study_schedule && userStudyData.study_schedule.length > 0) {
-        let totalHours = 0;
-        let totalQuestions = 0;
-        let totalCorrect = 0;
-
-        userStudyData.study_schedule.forEach((session: any) => {
-          const stats = session.total_stats || {};
-          if (stats.session_count > 0) {
-            totalHours += (stats.total_duration_minutes || 0) / 60;
-            totalQuestions += stats.total_questions || 0;
-            totalCorrect += stats.total_correct || 0;
-          }
-        });
-
-        const accuracy = totalQuestions > 0
-          ? Math.round((totalCorrect / totalQuestions) * 100)
+      const accuracy =
+        resolved.questionsAnswered > 0
+          ? Math.round((resolved.correctAnswers / resolved.questionsAnswered) * 100)
           : 0;
 
-        return {
-          totalHours,
-          questionsAnswered: totalQuestions,
-          correctAnswers: totalCorrect,
-          wrongAnswers: totalQuestions - totalCorrect,
-          accuracy,
-        };
-      }
-
       return {
-        totalHours: 0,
-        questionsAnswered: 0,
-        correctAnswers: 0,
-        wrongAnswers: 0,
-        accuracy: 0,
+        totalHours: resolved.totalHours,
+        questionsAnswered: resolved.questionsAnswered,
+        correctAnswers: resolved.correctAnswers,
+        wrongAnswers: resolved.wrongAnswers,
+        accuracy,
       };
     },
     enabled: !!userId,

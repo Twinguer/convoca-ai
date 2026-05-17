@@ -22,6 +22,70 @@ import {
   defaultUserStudy
 } from '@/types/userStudy';
 
+/** Payload mínimo para criar linha sem sobrescrever ciclos/sessões existentes no upsert. */
+function buildInitialStudyDataPatch(
+  overrides: StudyDataUpdate = {}
+): StudyDataUpdate {
+  return {
+    study_statistics: defaultUserStudy.study_statistics as StudyStatistics,
+    study_plans: [],
+    study_subjects: [],
+    study_goals: [],
+    study_goals_tracking: {},
+    study_progress: [],
+    study_reminders: [],
+    spaced_repetition_queue: [],
+    user_study_days: [],
+    study_contests: [],
+    ...overrides,
+  };
+}
+
+function parseJsonArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? (parsed as T[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function mapRowToUserStudy(data: Record<string, unknown>): UserStudy {
+  const metadata = (data.study_metadata as Record<string, unknown> | null) ?? {};
+  const studySessions = parseJsonArray<StudySession>(data.study_sessions);
+  const studySchedule = parseJsonArray<StudySchedule>(data.study_schedule);
+  const studyCycles = parseJsonArray<StudyCycleV2>(data.study_cycles);
+  const studyStatistics =
+    (data.study_statistics as StudyStatistics | null) ??
+    (defaultUserStudy.study_statistics as StudyStatistics);
+
+  return {
+    ...(data as unknown as UserStudy),
+    study_sessions: studySessions,
+    study_schedule: studySchedule,
+    study_cycles: studyCycles,
+    study_statistics: studyStatistics,
+    study_plans: parseJsonArray<StudyPlan>(metadata.study_plans),
+    study_subjects: parseJsonArray<StudySubject>(metadata.study_subjects),
+    study_goals: parseJsonArray<StudyGoal>(metadata.study_goals),
+    study_goals_tracking:
+      (metadata.study_goals_tracking as StudyGoalsTracking) ?? {},
+    study_progress: parseJsonArray<StudyProgress>(metadata.study_progress),
+    study_reminders: parseJsonArray<StudyReminder>(metadata.study_reminders),
+    spaced_repetition_queue: parseJsonArray<SpacedRepetitionItem>(
+      metadata.spaced_repetition_queue
+    ),
+    user_study_days: parseJsonArray<UserStudyDay>(metadata.user_study_days),
+    study_contests: parseJsonArray<StudyContest>(metadata.study_contests),
+    total_sessions_count: studySessions.length,
+    total_schedule_count: studySchedule.length,
+  };
+}
+
 /**
  * Service for managing user study data in the consolidated user_study table
  * This service replaces direct access to multiple study tables
@@ -87,22 +151,7 @@ export class UserStudyService {
         return null;
       }
       
-      // Mapear dados da estrutura v2 para a estrutura esperada
-      const userData: UserStudy = {
-        ...data,
-        // Expandir study_metadata para os campos esperados pela interface
-        study_plans: data.study_metadata?.study_plans || [],
-        study_subjects: data.study_metadata?.study_subjects || [],
-        study_goals: data.study_metadata?.study_goals || [],
-        study_goals_tracking: data.study_metadata?.study_goals_tracking || {},
-        study_progress: data.study_metadata?.study_progress || [],
-        study_reminders: data.study_metadata?.study_reminders || [],
-        spaced_repetition_queue: data.study_metadata?.spaced_repetition_queue || [],
-        user_study_days: data.study_metadata?.user_study_days || [],
-        study_contests: data.study_metadata?.study_contests || [],
-        total_sessions_count: data.study_sessions?.length || 0,
-        total_schedule_count: data.study_schedule?.length || 0
-      };
+      const userData = mapRowToUserStudy(data as Record<string, unknown>);
       
       // Armazenar no cache
       this.cache.set(userId, { data: userData, timestamp: Date.now() });
@@ -161,7 +210,7 @@ export class UserStudyService {
       // Usar a função RPC upsert_user_study_data para garantir que apenas uma linha seja criada
       const { error } = await supabase.rpc('upsert_user_study_data', {
         user_uuid: userId,
-        study_data: defaultUserStudy
+        study_data: buildInitialStudyDataPatch(),
       });
 
       if (error) {
@@ -478,10 +527,10 @@ export class UserStudyService {
       
       if (!data) {
         // Se não existir dados, criar com ciclo já incluído
-        return await this.upsertUserStudyData(userId, {
-          study_cycles: [newCycle],
-          ...defaultUserStudy
-        });
+        return await this.upsertUserStudyData(
+          userId,
+          buildInitialStudyDataPatch({ study_cycles: [newCycle] })
+        );
       }
 
       // Se existir, adicionar ciclo aos existentes

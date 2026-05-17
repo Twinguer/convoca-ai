@@ -55,7 +55,6 @@ export const useStudyStatistics = () => {
       const userStudyData = await UserStudyService.getUserStudyData(user.id, true);
 
       if (!userStudyData) {
-        await UserStudyService.initializeUserStudyData(user.id);
         setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
         return;
       }

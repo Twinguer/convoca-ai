@@ -60,7 +60,9 @@ export const useStudyCyclesV2 = () => {
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       if (userStudyData) {
         // Filtrar apenas ciclos ativos (study_cycles contém StudyCycleV2[])
-        const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
+        const activeCycles = (userStudyData.study_cycles ?? []).filter(
+          (cycle) => cycle.is_active
+        );
         setCycles(activeCycles);
       } else {
         setCycles([]);
