@@ -5,12 +5,24 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronDown, BookOpen, Plus, Trash2 } from 'lucide-react';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { useSubscription } from '@/hooks/useSubscription';
+import type { DisciplineStudyStats } from '@/utils/disciplineStudyStats';
+import {
+  aggregateBlockStats,
+  DisciplineProgressStatus,
+  formatLastStudyDateDisplay,
+  formatStudyDurationDisplay,
+  getAccuracyColorClass,
+  getAccuracyPercent,
+  isDisciplineCompletedForProgress,
+  normalizeDisciplineKey,
+  resolveDisciplineStats,
+} from '@/utils/disciplineStudyStats';
 
 interface Discipline {
   id: string;
   name: string;
   isCompleted?: boolean;
-  status?: 'em_andamento' | 'finalizada' | 'em_revisao' | null;
+  status?: DisciplineProgressStatus | 'finalizada' | string | null;
 }
 
 interface Block {
@@ -21,9 +33,10 @@ interface Block {
 
 interface EditalVerticalizadoProps {
   blocks: Block[];
+  disciplineStats?: Record<string, DisciplineStudyStats>;
   onToggleDiscipline?: (blockId: string, disciplineId: string) => void;
   onToggleBlock?: (blockId: string) => void;
-  onStatusChange?: (blockId: string, disciplineId: string, status: 'em_andamento' | 'finalizada' | 'em_revisao' | null) => void;
+  onStatusChange?: (blockId: string, disciplineId: string, status: DisciplineProgressStatus) => void;
   onAddDiscipline?: (blockId: string) => void;
   onEditDiscipline?: (blockId: string, disciplineId: string) => void;
   onRemoveDiscipline?: (blockId: string, disciplineId: string) => void;
@@ -33,8 +46,37 @@ interface EditalVerticalizadoProps {
   allowEdit?: boolean;
 }
 
+function StatChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+      {children}
+    </span>
+  );
+}
+
+function StatsLegend() {
+  return (
+    <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-[10px] sm:text-xs text-muted-foreground">
+      <span className="font-medium text-foreground">Legenda: </span>
+      <span className="inline-flex flex-wrap gap-x-3 gap-y-1">
+        <span>⏱ Tempo de estudo</span>
+        <span>
+          📝 Questões (
+          <span className="text-red-600 dark:text-red-400 font-semibold">&lt;70%</span>
+          {' · '}
+          <span className="text-amber-600 dark:text-amber-400 font-semibold">70–80%</span>
+          {' · '}
+          <span className="text-green-600 dark:text-green-400 font-semibold">&gt;80%</span>)
+        </span>
+        <span>📅 Último estudo (passe o mouse para ver o que foi registrado)</span>
+      </span>
+    </div>
+  );
+}
+
 export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   blocks,
+  disciplineStats = {},
   onToggleDiscipline,
   onToggleBlock,
   onStatusChange,
@@ -43,15 +85,14 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   onRemoveDiscipline,
   expandedBlocks: externalExpandedBlocks,
   showProgress = true,
-  className = "",
-  allowEdit = false
+  className = '',
+  allowEdit = false,
 }) => {
   const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const [internalExpandedBlocks, setInternalExpandedBlocks] = useState<Set<string>>(new Set());
-  
-  // Usar estado externo se fornecido, senão usar interno
+
   const expandedBlocks = externalExpandedBlocks || internalExpandedBlocks;
-  const setExpandedBlocks = externalExpandedBlocks ? (() => {}) : setInternalExpandedBlocks;
+  const setExpandedBlocks = externalExpandedBlocks ? () => {} : setInternalExpandedBlocks;
 
   const handleToggleBlock = (blockId: string) => {
     if (onToggleBlock) {
@@ -68,62 +109,92 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   };
 
   const handleToggleDiscipline = (blockId: string, disciplineId: string) => {
-    if (onToggleDiscipline) {
-      onToggleDiscipline(blockId, disciplineId);
-    }
+    onToggleDiscipline?.(blockId, disciplineId);
   };
 
-  const handleStatusChange = (blockId: string, disciplineId: string, status: 'em_andamento' | 'finalizada' | 'em_revisao' | null) => {
-    if (onStatusChange) {
-      // Se um status está sendo marcado, garantir que os outros sejam desmarcados
-      // Isso é feito automaticamente pela lógica de atualização no componente pai
-      onStatusChange(blockId, disciplineId, status);
-    }
+  const handleStatusChange = (
+    blockId: string,
+    disciplineId: string,
+    status: DisciplineProgressStatus
+  ) => {
+    onStatusChange?.(blockId, disciplineId, status);
   };
 
-  // Calcular estatísticas
   const totalDisciplines = blocks.reduce((total, block) => total + block.disciplines.length, 0);
-  const completedDisciplines = blocks.reduce((total, block) => 
-    total + block.disciplines.filter(d => d.isCompleted).length, 0
+  const completedDisciplines = blocks.reduce(
+    (total, block) =>
+      total + block.disciplines.filter((d) => isDisciplineCompletedForProgress(d)).length,
+    0
   );
-  const progressPercentage = totalDisciplines > 0 ? Math.round((completedDisciplines / totalDisciplines) * 100) : 0;
+  const progressPercentage =
+    totalDisciplines > 0 ? Math.round((completedDisciplines / totalDisciplines) * 100) : 0;
+
+  const renderStatsChips = (stats: DisciplineStudyStats | null | undefined) => {
+    const s = resolveDisciplineStats(stats);
+    const durationLabel = formatStudyDurationDisplay(s.totalMinutes);
+    const accuracyPct = getAccuracyPercent(s.totalQuestions, s.correctAnswers) ?? 0;
+    const dateLabel = formatLastStudyDateDisplay(s.lastDate);
+
+    return (
+      <div className="flex flex-wrap items-center gap-1 mt-1 sm:mt-0 sm:ml-2">
+        <StatChip>⏱ {durationLabel}</StatChip>
+        <StatChip>
+          📝 {s.totalQuestions}Q (
+          <span className={getAccuracyColorClass(accuracyPct)}>{accuracyPct}%</span>)
+        </StatChip>
+        <StatChip>
+          <span title={s.lastSummary ?? undefined}>📅 {dateLabel}</span>
+        </StatChip>
+      </div>
+    );
+  };
+
+  const renderStatsChipsForDiscipline = (disciplineName: string) =>
+    renderStatsChips(disciplineStats[normalizeDisciplineKey(disciplineName)]);
 
   const renderBlock = (block: Block, blockIndex: number) => {
     const isExpanded = expandedBlocks.has(block.id);
     const hasDisciplines = block.disciplines && block.disciplines.length > 0;
-    const blockCompleted = hasDisciplines && block.disciplines.every(d => d.isCompleted);
-    
+    const blockCompleted =
+      hasDisciplines && block.disciplines.every((d) => isDisciplineCompletedForProgress(d));
+    const blockCompletedCount = block.disciplines.filter((d) =>
+      isDisciplineCompletedForProgress(d)
+    ).length;
+    const blockStats = aggregateBlockStats(
+      block.disciplines.map((d) => d.name),
+      disciplineStats
+    );
+
     return (
       <div key={block.id}>
-        {/* Tópico Principal (Bloco) */}
-        <div 
+        <div
           className={`flex items-center py-2 px-2 sm:px-4 ${
             blockIndex % 2 === 0 ? 'bg-muted/20' : 'bg-background'
-          } hover:bg-muted/40 transition-colors ${
-            hasDisciplines ? 'cursor-pointer' : ''
-          }`}
+          } hover:bg-muted/40 transition-colors ${hasDisciplines ? 'cursor-pointer' : ''}`}
           onClick={() => hasDisciplines && handleToggleBlock(block.id)}
         >
           <Checkbox
             checked={blockCompleted}
             onCheckedChange={() => {
-              // Toggle all disciplines in this block
-              block.disciplines.forEach(discipline => {
+              block.disciplines.forEach((discipline) => {
                 handleToggleDiscipline(block.id, discipline.id);
               });
             }}
             className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
             onClick={(e) => e.stopPropagation()}
           />
-          <div className="flex-1">
-            <span className="font-semibold text-foreground text-sm">
-              {blockIndex + 1}. {block.name.toUpperCase()}
-            </span>
-            {showProgress && hasDisciplines && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                ({block.disciplines.filter(d => d.isCompleted).length}/{block.disciplines.length})
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-center min-w-0 gap-0 sm:gap-2">
+            <div className="min-w-0">
+              <span className="font-semibold text-foreground text-sm">
+                {blockIndex + 1}. {block.name.toUpperCase()}
               </span>
-            )}
+              {showProgress && hasDisciplines && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  ({blockCompletedCount}/{block.disciplines.length})
+                </span>
+              )}
+            </div>
+            {renderStatsChips(blockStats)}
           </div>
           <div className="ml-2 flex items-center gap-2">
             {allowEdit && onAddDiscipline && (
@@ -151,113 +222,122 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
             )}
           </div>
         </div>
-        
-        {/* Sub-tópicos (Disciplinas) */}
+
         {hasDisciplines && isExpanded && (
           <div className="bg-muted/20">
-            {block.disciplines.map((discipline, disciplineIndex) => (
-              <div 
-                key={discipline.id}
-                className={`py-2 px-2 sm:px-4 pl-6 sm:pl-8 ${
-                  disciplineIndex % 2 === 0 ? 'bg-muted/10' : 'bg-background'
-                } hover:bg-muted/30 transition-colors`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-                  <div className="flex items-center flex-1 min-w-0 pr-2">
-                    <Checkbox
-                      checked={discipline.isCompleted || false}
-                      onCheckedChange={() => handleToggleDiscipline(block.id, discipline.id)}
-                      className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
-                    />
-                    <span 
-                      className={`font-medium text-foreground text-xs truncate ${discipline.isCompleted ? 'line-through opacity-60' : ''} ${allowEdit && onEditDiscipline ? 'cursor-pointer hover:text-primary' : ''}`}
-                      onClick={allowEdit && onEditDiscipline ? (e) => {
-                        e.stopPropagation();
-                        onEditDiscipline(block.id, discipline.id);
-                      } : undefined}
-                      title={allowEdit && onEditDiscipline ? 'Clique para editar' : undefined}
-                    >
-                      {blockIndex + 1}.{disciplineIndex + 1}. {discipline.name}
-                    </span>
-                  </div>
-                  {/* Status checkboxes - na mesma linha em telas maiores, abaixo em telas menores */}
-                  <div className="flex items-center gap-1 sm:gap-3 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap sm:flex-nowrap pl-0 sm:pl-0">
-                    {allowEdit && onRemoveDiscipline && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm(`Tem certeza que deseja remover a disciplina "${discipline.name}"?`)) {
-                            onRemoveDiscipline(block.id, discipline.id);
+            {block.disciplines.map((discipline, disciplineIndex) => {
+              const completedForProgress = isDisciplineCompletedForProgress(discipline);
+              return (
+                <div
+                  key={discipline.id}
+                  className={`py-2 px-2 sm:px-4 pl-6 sm:pl-8 ${
+                    disciplineIndex % 2 === 0 ? 'bg-muted/10' : 'bg-background'
+                  } hover:bg-muted/30 transition-colors`}
+                >
+                  <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center flex-1 min-w-0">
+                      <div className="flex items-center min-w-0">
+                        <Checkbox
+                          checked={discipline.isCompleted || false}
+                          onCheckedChange={() =>
+                            handleToggleDiscipline(block.id, discipline.id)
                           }
-                        }}
-                        title="Remover disciplina"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
-                      <Checkbox
-                        checked={discipline.status === 'em_andamento'}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            handleStatusChange(block.id, discipline.id, 'em_andamento');
-                          } else if (discipline.status === 'em_andamento') {
-                            // Se desmarcar o status atual, remover o status
-                            handleStatusChange(block.id, discipline.id, undefined as any);
+                          className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
+                        />
+                        <span
+                          className={`font-medium text-foreground text-xs truncate ${
+                            completedForProgress ? 'line-through opacity-60' : ''
+                          } ${allowEdit && onEditDiscipline ? 'cursor-pointer hover:text-primary' : ''}`}
+                          onClick={
+                            allowEdit && onEditDiscipline
+                              ? (e) => {
+                                  e.stopPropagation();
+                                  onEditDiscipline(block.id, discipline.id);
+                                }
+                              : undefined
                           }
-                        }}
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
-                      />
-                      <span className="text-muted-foreground text-[10px] sm:text-xs">Em andamento</span>
-                    </label>
-                    <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
-                      <Checkbox
-                        checked={discipline.status === 'finalizada'}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            handleStatusChange(block.id, discipline.id, 'finalizada');
-                          } else if (discipline.status === 'finalizada') {
-                            handleStatusChange(block.id, discipline.id, undefined as any);
+                          title={allowEdit && onEditDiscipline ? 'Clique para editar' : undefined}
+                        >
+                          {blockIndex + 1}.{disciplineIndex + 1}. {discipline.name}
+                        </span>
+                      </div>
+                      {renderStatsChipsForDiscipline(discipline.name)}
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap">
+                      {allowEdit && onRemoveDiscipline && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (
+                              window.confirm(
+                                `Tem certeza que deseja remover a disciplina "${discipline.name}"?`
+                              )
+                            ) {
+                              onRemoveDiscipline(block.id, discipline.id);
+                            }
+                          }}
+                          title="Remover disciplina"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                      <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        <Checkbox
+                          checked={discipline.status === 'em_andamento'}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleStatusChange(block.id, discipline.id, 'em_andamento');
+                            } else if (discipline.status === 'em_andamento') {
+                              handleStatusChange(block.id, discipline.id, null);
+                            }
+                          }}
+                          className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
+                        />
+                        <span className="text-muted-foreground text-[10px] sm:text-xs">
+                          Em andamento
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        <Checkbox
+                          checked={
+                            discipline.status === 'em_revisao' ||
+                            discipline.status === 'em-revisao'
                           }
-                        }}
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
-                      />
-                      <span className="text-muted-foreground text-[10px] sm:text-xs">Finalizada</span>
-                    </label>
-                    <label className="flex items-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap">
-                      <Checkbox
-                        checked={discipline.status === 'em_revisao'}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            handleStatusChange(block.id, discipline.id, 'em_revisao');
-                          } else if (discipline.status === 'em_revisao') {
-                            handleStatusChange(block.id, discipline.id, undefined as any);
-                          }
-                        }}
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
-                      />
-                      <span className="text-muted-foreground text-[10px] sm:text-xs">Em revisão</span>
-                    </label>
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleStatusChange(block.id, discipline.id, 'em_revisao');
+                            } else if (
+                              discipline.status === 'em_revisao' ||
+                              discipline.status === 'em-revisao'
+                            ) {
+                              handleStatusChange(block.id, discipline.id, null);
+                            }
+                          }}
+                          className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
+                        />
+                        <span className="text-muted-foreground text-[10px] sm:text-xs">
+                          Em revisão
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
     );
   };
 
-  // Bloquear acesso para usuários Free - DEPOIS de todos os hooks
   if (!isLoadingSubscription && !isPro) {
     return (
       <div className={className}>
-        <ProFeatureGuard
-          featureName="Edital Verticalizado"
-        />
+        <ProFeatureGuard featureName="Ciclo de Estudos" />
       </div>
     );
   }
@@ -267,10 +347,11 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg font-bold text-center text-foreground">
           <BookOpen className="h-5 w-5" />
-          Edital Verticalizado
+          Ciclo de Estudos
         </CardTitle>
-        
-        {/* Estatísticas no Header */}
+
+        <StatsLegend />
+
         {showProgress && blocks.length > 0 && (
           <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
@@ -279,12 +360,20 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
                 <div className="text-sm text-primary/80 font-medium">Total de Disciplinas</div>
               </div>
               <div>
-                <div className="text-xl font-bold text-green-600 dark:text-green-400">{completedDisciplines}</div>
-                <div className="text-sm text-green-600/80 dark:text-green-400/80 font-medium">Concluídas</div>
+                <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {completedDisciplines}
+                </div>
+                <div className="text-sm text-green-600/80 dark:text-green-400/80 font-medium">
+                  Concluídas
+                </div>
               </div>
               <div>
-                <div className="text-xl font-bold text-orange-600 dark:text-orange-400">{progressPercentage}%</div>
-                <div className="text-sm text-orange-600/80 dark:text-orange-400/80 font-medium">Progresso</div>
+                <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                  {progressPercentage}%
+                </div>
+                <div className="text-sm text-orange-600/80 dark:text-orange-400/80 font-medium">
+                  Progresso
+                </div>
               </div>
             </div>
           </div>

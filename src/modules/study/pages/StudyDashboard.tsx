@@ -7,19 +7,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings, X, Edit } from 'lucide-react';
+import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { UserStudyService } from '@/services/userStudyService';
-import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 const StudyDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { generateSecureUrl } = useSecureStudyCycleUrls();
   const { statistics, isLoading } = useStudyStatistics();
   const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
   const [upcomingSchedule, setUpcomingSchedule] = useState<any[]>([]);
@@ -244,37 +242,6 @@ const StudyDashboard = () => {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <Button size="sm" variant="outline" onClick={async () => {
-                      try {
-                        const secureUrl = await generateSecureUrl(cycle.id, user?.id || '', 'view');
-                        navigate(secureUrl);
-                      } catch (error) {
-                        devLog.error('Erro ao gerar URL segura:', error);
-                        navigate('/estudos');
-                      }
-                    }} className="w-full sm:w-auto">
-                      Disciplinas
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={async () => {
-                        if (!user?.id) return;
-                        try {
-                          const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
-                          const secureUrl = await StudyCycleUrlObfuscationService.generateSecureStudyCycleUrl(cycle.id, user.id, 'edit');
-                          navigate(secureUrl);
-                        } catch (error) {
-                          devLog.error('Erro ao gerar URL segura:', error);
-                          // Fallback apenas em caso de erro crítico
-                          navigate(`/estudos/editar-ciclo/${cycle.id}`);
-                        }
-                      }}
-                      className="w-full sm:w-auto"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
                     <Button 
                       size="sm" 
                       className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"

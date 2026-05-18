@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
+import type { DisciplineStudyStats } from '@/utils/disciplineStudyStats';
+import { aggregateDisciplineStatsForCycle } from '@/utils/disciplineStudyStats';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface Discipline {
   name: string;
@@ -58,6 +60,7 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
     video_link: ''
   });
   const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
+  const [disciplineStats, setDisciplineStats] = useState<Record<string, DisciplineStudyStats>>({});
   useEffect(() => {
     if (user && id) {
       fetchCycle();
@@ -67,17 +70,18 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
     try {
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
       if (userStudyData) {
-        const cycle = userStudyData.study_cycles.find(c => c.id === id);
-        if (cycle) {
-          setCycle(cycle);
+        const cycleData = userStudyData.study_cycles.find(c => c.id === id);
+        if (cycleData) {
+          setCycle(cycleData);
+          setDisciplineStats(
+            aggregateDisciplineStatsForCycle(userStudyData.study_sessions, id)
+          );
+          setLinks({
+            edital_link: cycleData.edital_link || '',
+            curso_link: cycleData.curso_link || '',
+            video_link: cycleData.video_link || '',
+          });
         }
-      }
-      if (cycle) {
-        setLinks({
-          edital_link: cycle.edital_link || '',
-          curso_link: cycle.curso_link || '',
-          video_link: cycle.video_link || ''
-        });
       }
     } catch (error) {
       devLog.error('Error fetching cycle:', error);
@@ -532,6 +536,7 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
       <div className="mt-6">
         <EditalVerticalizado
           blocks={cycle.schedule_data?.available_blocks || []}
+          disciplineStats={disciplineStats}
           onToggleDiscipline={handleToggleDiscipline}
           onToggleBlock={handleToggleBlock}
           expandedBlocks={expandedBlocks}

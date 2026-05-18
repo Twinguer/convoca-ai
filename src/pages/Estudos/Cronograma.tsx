@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, generateId } from '@/lib/utils';
@@ -26,6 +27,7 @@ import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
 import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
+import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
 import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface StudySession {
@@ -49,6 +51,8 @@ interface CronogramaProps {
 
 // Usar StudyCycleV2 do types
 const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: CronogramaProps = {}) => {
+  const navigate = useNavigate();
+  const { generateSecureUrl } = useSecureStudyCycleUrls();
   const {
     user
   } = useAuth();
@@ -366,6 +370,24 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       id: discipline.name
     }));
   };
+
+  const getCycleOwnerUserId = () => (coachMode ? targetStudentId : user?.id);
+
+  const handleNavigateToDisciplinas = async () => {
+    const targetUserId = getCycleOwnerUserId();
+    if (!selectedCycle || !targetUserId) {
+      toast.error('Selecione um ciclo de estudos');
+      return;
+    }
+    try {
+      const secureUrl = await generateSecureUrl(selectedCycle, targetUserId, 'view');
+      navigate(secureUrl);
+    } catch (error) {
+      devLog.error('Erro ao gerar URL segura:', error);
+      navigate('/estudos');
+    }
+  };
+
   const addSession = async () => {
     // Usar valores customizados se selecionados
     const finalBlock = selectedBlock === '__custom__' ? customBlock : selectedBlock;
@@ -1939,7 +1961,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
               </CardTitle>
               
             </div>
-            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!selectedCycle}
+                onClick={handleNavigateToDisciplinas}
+              >
+                Ciclo de Estudos
+              </Button>
+              <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
               <DialogTrigger asChild>
                 <Button variant="default" size="sm" className="gap-2">
                   <Plus className="h-4 w-4" />
@@ -2088,6 +2119,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">

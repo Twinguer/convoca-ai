@@ -8,9 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Plus, X, Edit, Clock, BookOpen, Target, CheckCircle, Calendar } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, X, Edit, BookOpen, CheckCircle, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
@@ -20,7 +18,7 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 interface Discipline {
   id: string;
   name: string;
-  status: 'em-andamento' | 'finalizada' | 'em-revisao';
+  status: 'em-andamento' | 'em-revisao';
   studyTime: number;
   questionsResolved: number;
   correctAnswers: number;
@@ -429,7 +427,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Edital</CardTitle>
+                <CardTitle>Blocos e Disciplinas</CardTitle>
                 <CardDescription>
                   Organize suas disciplinas em blocos temáticos
                 </CardDescription>
@@ -533,17 +531,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
     setIsEditing(false);
   };
 
-  const calculateBlockProgress = () => {
-    if (block.disciplines.length === 0) return 0;
-    const completed = block.disciplines.filter(d => d.isCompleted).length;
-    return (completed / block.disciplines.length) * 100;
-  };
-
-  const totalStudyTime = block.disciplines.reduce((sum, d) => sum + d.studyTime, 0);
-  const totalQuestions = block.disciplines.reduce((sum, d) => sum + d.questionsResolved, 0);
-  const totalCorrect = block.disciplines.reduce((sum, d) => sum + d.correctAnswers, 0);
-  const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-
   return (
     <Card>
       <CardHeader>
@@ -582,30 +569,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
             </Button>
           </div>
         </div>
-        
-        {block.disciplines.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progresso do Bloco</span>
-              <span>{calculateBlockProgress().toFixed(1)}%</span>
-            </div>
-            <Progress value={calculateBlockProgress()} />
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {totalStudyTime}h estudadas
-              </span>
-              <span className="flex items-center gap-1">
-                <Target className="h-3 w-3" />
-                {totalQuestions} questões
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
-                {accuracy.toFixed(1)}% acertos
-              </span>
-            </div>
-          </div>
-        )}
       </CardHeader>
       
       {block.disciplines.length > 0 && (
@@ -632,95 +595,18 @@ interface DisciplineItemProps {
   onRemove: () => void;
 }
 
-const DisciplineItem: React.FC<DisciplineItemProps> = ({
-  discipline,
-  onEdit,
-  onRemove
-}) => {
-  const [localStatus, setLocalStatus] = useState(discipline.status);
-
-  const updateStatus = (newStatus: 'em-andamento' | 'finalizada' | 'em-revisao') => {
-    setLocalStatus(newStatus);
-    discipline.status = newStatus;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'finalizada': return 'bg-green-100 text-green-800 border-green-200';
-      case 'em-revisao': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default: return 'bg-blue-100 text-blue-800 border-blue-200';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'finalizada': return 'Finalizada';
-      case 'em-revisao': return 'Em Revisão';
-      default: return 'Em Andamento';
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-between p-3 border rounded-lg">
-      <div className="flex items-center gap-3 flex-1">
-        <span className="font-medium">{discipline.name}</span>
-        <Badge className={getStatusColor(localStatus)}>
-          {getStatusLabel(localStatus)}
-        </Badge>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        {/* Status Checkboxes */}
-        <div className="flex gap-3">
-          <div className="flex items-center space-x-1">
-            <Checkbox 
-              id={`${discipline.id}-em-andamento`}
-              checked={localStatus === 'em-andamento'} 
-              onCheckedChange={(checked) => {
-                if (checked) updateStatus('em-andamento');
-              }} 
-            />
-            <Label htmlFor={`${discipline.id}-em-andamento`} className="text-xs">
-              Em andamento
-            </Label>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Checkbox 
-              id={`${discipline.id}-finalizada`}
-              checked={localStatus === 'finalizada'} 
-              onCheckedChange={(checked) => {
-                if (checked) updateStatus('finalizada');
-              }} 
-            />
-            <Label htmlFor={`${discipline.id}-finalizada`} className="text-xs">
-              Finalizada
-            </Label>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Checkbox 
-              id={`${discipline.id}-em-revisao`}
-              checked={localStatus === 'em-revisao'} 
-              onCheckedChange={(checked) => {
-                if (checked) updateStatus('em-revisao');
-              }} 
-            />
-            <Label htmlFor={`${discipline.id}-em-revisao`} className="text-xs">
-              Em revisão
-            </Label>
-          </div>
-        </div>
-        
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={onEdit}>
-            <Edit className="h-3 w-3" />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onRemove}>
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
+const DisciplineItem: React.FC<DisciplineItemProps> = ({ discipline, onEdit, onRemove }) => (
+  <div className="flex items-center justify-between p-3 border rounded-lg">
+    <span className="font-medium">{discipline.name}</span>
+    <div className="flex gap-1">
+      <Button size="sm" variant="ghost" onClick={onEdit}>
+        <Edit className="h-3 w-3" />
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onRemove}>
+        <X className="h-3 w-3" />
+      </Button>
     </div>
-  );
-};
+  </div>
+);
 
 export default EditarCiclo;

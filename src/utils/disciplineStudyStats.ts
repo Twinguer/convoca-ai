@@ -1,0 +1,181 @@
+import type { StudySession } from '@/types/userStudy';
+
+export interface DisciplineStudyStats {
+  totalMinutes: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  sessionCount: number;
+  lastDate: string | null;
+  lastSummary: string | null;
+}
+
+export const EMPTY_DISCIPLINE_STATS: DisciplineStudyStats = {
+  totalMinutes: 0,
+  totalQuestions: 0,
+  correctAnswers: 0,
+  sessionCount: 0,
+  lastDate: null,
+  lastSummary: null,
+};
+
+export function resolveDisciplineStats(
+  stats: DisciplineStudyStats | null | undefined
+): DisciplineStudyStats {
+  return stats ?? EMPTY_DISCIPLINE_STATS;
+}
+
+/** Rótulo de tempo; `0` minutos → `0min`. */
+export function formatStudyDurationDisplay(totalMinutes: number): string {
+  if (totalMinutes <= 0) return '0min';
+  return formatStudyDuration(totalMinutes) ?? '0min';
+}
+
+/** Data formatada ou `-` quando ausente. */
+export function formatLastStudyDateDisplay(isoDate: string | null): string {
+  return formatLastStudyDate(isoDate) ?? '-';
+}
+
+export type DisciplineProgressStatus = 'em_andamento' | 'em_revisao' | null;
+
+export function normalizeDisciplineKey(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+export function isDisciplineCompletedForProgress(discipline: {
+  isCompleted?: boolean;
+  status?: string | null;
+}): boolean {
+  if (discipline.isCompleted) return true;
+  if (discipline.status === 'em_revisao' || discipline.status === 'em-revisao') return true;
+  // Legado: registros antigos com "finalizada"
+  if (discipline.status === 'finalizada') return true;
+  return false;
+}
+
+export function aggregateDisciplineStatsForCycle(
+  sessions: StudySession[] | undefined,
+  cycleId: string
+): Record<string, DisciplineStudyStats> {
+  const result: Record<string, DisciplineStudyStats> = {};
+  if (!sessions?.length) return result;
+
+  const relevant = sessions.filter((s) => !s.cycle_id || s.cycle_id === cycleId);
+
+  for (const session of relevant) {
+    const name = session.discipline_name?.trim();
+    if (!name) continue;
+
+    const key = normalizeDisciplineKey(name);
+    const duration =
+      session.total_duration_minutes ?? session.duration_minutes ?? 0;
+    const questions = session.total_questions ?? session.questions ?? 0;
+    const correct = session.total_correct_answers ?? session.correct_answers ?? 0;
+    const date =
+      session.date ?? session.session_date ?? session.last_session_date ?? null;
+
+    if (!result[key]) {
+      result[key] = {
+        totalMinutes: 0,
+        totalQuestions: 0,
+        correctAnswers: 0,
+        sessionCount: 0,
+        lastDate: null,
+        lastSummary: null,
+      };
+    }
+
+    const agg = result[key];
+    agg.totalMinutes += duration;
+    agg.totalQuestions += questions;
+    agg.correctAnswers += correct;
+    agg.sessionCount += 1;
+
+    if (date && (!agg.lastDate || date > agg.lastDate)) {
+      agg.lastDate = date;
+      const notes = session.notes?.trim();
+      const course = session.course_name?.trim();
+      agg.lastSummary = notes || course || null;
+    }
+  }
+
+  return result;
+}
+
+export function formatStudyDuration(totalMinutes: number): string | null {
+  if (totalMinutes <= 0) return null;
+  if (totalMinutes < 60) return `${totalMinutes}min`;
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  return mins > 0 ? `${hours}h${mins}` : `${hours}h`;
+}
+
+export function getAccuracyPercent(
+  totalQuestions: number,
+  correctAnswers: number
+): number | null {
+  if (totalQuestions <= 0) return null;
+  return Math.round((correctAnswers / totalQuestions) * 100);
+}
+
+/** &lt;70% vermelho · 70–80% dourado · &gt;80% verde */
+export function getAccuracyColorClass(pct: number): string {
+  if (pct < 70) return 'text-red-600 dark:text-red-400 font-semibold';
+  if (pct <= 80) return 'text-amber-600 dark:text-amber-400 font-semibold';
+  return 'text-green-600 dark:text-green-400 font-semibold';
+}
+
+export function mergeDisciplineStats(
+  items: DisciplineStudyStats[]
+): DisciplineStudyStats | null {
+  if (items.length === 0) return null;
+
+  const merged: DisciplineStudyStats = {
+    totalMinutes: 0,
+    totalQuestions: 0,
+    correctAnswers: 0,
+    sessionCount: 0,
+    lastDate: null,
+    lastSummary: null,
+  };
+
+  for (const item of items) {
+    merged.totalMinutes += item.totalMinutes;
+    merged.totalQuestions += item.totalQuestions;
+    merged.correctAnswers += item.correctAnswers;
+    merged.sessionCount += item.sessionCount;
+
+    if (item.lastDate && (!merged.lastDate || item.lastDate > merged.lastDate)) {
+      merged.lastDate = item.lastDate;
+      merged.lastSummary = item.lastSummary;
+    }
+  }
+
+  if (
+    merged.totalMinutes <= 0 &&
+    merged.totalQuestions <= 0 &&
+    !merged.lastDate
+  ) {
+    return null;
+  }
+
+  return merged;
+}
+
+export function aggregateBlockStats(
+  disciplineNames: string[],
+  disciplineStats: Record<string, DisciplineStudyStats>
+): DisciplineStudyStats | null {
+  const items = disciplineNames
+    .map((name) => disciplineStats[normalizeDisciplineKey(name)])
+    .filter((s): s is DisciplineStudyStats => Boolean(s));
+
+  return mergeDisciplineStats(items);
+}
+
+export function formatLastStudyDate(isoDate: string | null): string | null {
+  if (!isoDate) return null;
+  const parts = isoDate.split('T')[0].split('-');
+  if (parts.length !== 3) return null;
+  const [, month, day] = parts;
+  return `${day}/${month}`;
+}

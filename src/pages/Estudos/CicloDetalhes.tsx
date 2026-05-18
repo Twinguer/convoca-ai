@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Edit3, Save, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Edit3, Save, X, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
 import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
+import {
+  aggregateDisciplineStatsForCycle,
+  DisciplineProgressStatus,
+  type DisciplineStudyStats,
+} from '@/utils/disciplineStudyStats';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface CicloDetalhesProps {
@@ -24,6 +29,7 @@ interface CicloDetalhesProps {
 
 const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coachMode, targetStudentId }) => {
   const { id: urlId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast: toastHook } = useToast();
   const [cycle, setCycle] = useState<StudyCycleV2 | null>(null);
@@ -33,6 +39,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
   const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
   const [disciplineDialog, setDisciplineDialog] = useState<{ blockId: string; disciplineId?: string } | null>(null);
   const [newDisciplineName, setNewDisciplineName] = useState('');
+  const [disciplineStats, setDisciplineStats] = useState<Record<string, DisciplineStudyStats>>({});
 
   // Usar cycleId da prop ou do URL
   const id = cycleId || urlId;
@@ -54,6 +61,9 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
         const cycleData = userStudyData.study_cycles.find(cycle => cycle.id === id);
         if (cycleData) {
           setCycle(cycleData);
+          setDisciplineStats(
+            aggregateDisciplineStatsForCycle(userStudyData.study_sessions, id!)
+          );
         } else {
           toast.error('Ciclo não encontrado');
         }
@@ -103,7 +113,11 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
     }
   };
 
-  const handleStatusChange = (blockId: string, disciplineId: string, status: 'em_andamento' | 'finalizada' | 'em_revisao' | null) => {
+  const handleStatusChange = (
+    blockId: string,
+    disciplineId: string,
+    status: DisciplineProgressStatus
+  ) => {
     if (!cycle) return;
 
     const updatedCycle = { ...cycle };
@@ -176,7 +190,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
           id: `discipline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: newDisciplineName.trim(),
           isCompleted: false,
-          status: null as 'em_andamento' | 'finalizada' | 'em_revisao' | null
+          status: null as DisciplineProgressStatus
         };
         block.disciplines.push(newDiscipline);
       }
@@ -187,7 +201,17 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
     setNewDisciplineName('');
   };
 
-
+  const handleNavigateToEditCycle = async () => {
+    if (!id || !userId) return;
+    try {
+      const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
+      const secureUrl = await StudyCycleUrlObfuscationService.generateSecureStudyCycleUrl(id, userId, 'edit');
+      navigate(secureUrl);
+    } catch (error) {
+      devLog.error('Erro ao gerar URL segura:', error);
+      navigate(`/estudos/editar-ciclo/${id}`);
+    }
+  };
 
   if (loading) {
     return (
@@ -204,10 +228,10 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
     return (
       <div className="min-h-screen p-6 text-center">
         <h1 className="text-3xl font-bold text-foreground mb-4">Ciclo não encontrado</h1>
-        <Link to="/estudos">
+        <Link to="/estudos/cronograma">
           <Button>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar aos Estudos
+            Voltar ao Cronograma
           </Button>
         </Link>
       </div>
@@ -219,8 +243,9 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
     <div className="min-h-screen p-6">
       {/* Header - só mostrar se não estiver em modo coach (coach já tem header próprio) */}
       {!coachMode && (
-        <div className="flex items-center gap-4 mb-6">
-          <Link to="/estudos">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-4">
+          <Link to="/estudos/cronograma">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
@@ -228,8 +253,13 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-foreground">{cycle.cycle_name}</h1>
-            <p className="text-muted-foreground">{cycle.organ} - {cycle.position}</p>
+              <p className="text-muted-foreground">{cycle.organ} - {cycle.position}</p>
+            </div>
           </div>
+          <Button variant="outline" size="sm" onClick={handleNavigateToEditCycle}>
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
         </div>
       )}
 
@@ -237,6 +267,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
       <div className="space-y-6">
         <EditalVerticalizado
           blocks={cycle.schedule_data?.available_blocks || []}
+          disciplineStats={disciplineStats}
           onToggleDiscipline={handleToggleDiscipline}
           onToggleBlock={handleToggleBlock}
           onStatusChange={handleStatusChange}
