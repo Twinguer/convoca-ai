@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AlertCircle, Plus, Users, Clock, CheckCircle, TrendingUp, X, Trash2, BookOpen, Eye, MessageSquare } from 'lucide-react';
+import { AlertCircle, Plus, Users, Clock, CheckCircle, X, Trash2, BookOpen, Eye, MessageSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,11 +20,19 @@ import { coachSubscriptionService } from '@/integrations/supabase/coach/subscrip
 import { supabase } from '@/integrations/supabase/client';
 import { getAvatarUrl } from '@/utils/avatarUtils';
 import { UserStudyService } from '@/services/userStudyService';
-import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
+import {
+  calculateStudyStatistics,
+  getLastStudyActivityDate,
+  getStudySessionDateString,
+  getStudySessionDurationMinutes,
+} from '@/utils/userStudyHelpers';
+import { formatLocalDatePtBr, getStartOfLast7Days, isDateOnOrAfter } from '@/utils/dateFormat';
+import type { StudySession } from '@/types/userStudy';
 import type { StudentRelationship, CanInviteResponse } from '@/types/coach';
 import { logError, logWarn } from '@/utils/secureLogger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
+import { formatHoursDisplay } from '@/utils/formatHours';
 
 // Helper para obter iniciais
 const getInitials = (name: string) => {
@@ -75,81 +83,50 @@ const CoachDashboard = () => {
           tasks_completed: 0,
           tasks_pending: 0,
           completion_rate: 0,
-          engagement_score: 0
+          engagement_score: 0,
+          last_activity: null as string | null,
         };
       }
 
-      // Calcular período desta semana
-      const now = new Date();
-      const startOfThisWeek = new Date(now);
-      startOfThisWeek.setDate(now.getDate() - now.getDay()); // Domingo desta semana
-      startOfThisWeek.setHours(0, 0, 0, 0);
+      const last_activity = getLastStudyActivityDate(studyData);
+      const startOfLast7Days = getStartOfLast7Days();
 
-      // Tentar usar study_schedule primeiro (mais preciso)
-      const scheduleSessions = studyData.study_schedule || [];
-      if (scheduleSessions.length > 0) {
-        let totalHours = 0;
-        let totalSessions = 0;
-        let totalQuestions = 0;
-        
-        scheduleSessions.forEach((s: any) => {
-          const stats = s.total_stats || {};
-          if (stats.session_count > 0) {
-            totalHours += (stats.total_duration_minutes || 0) / 60;
-            totalSessions += stats.session_count || 0;
-            totalQuestions += stats.total_questions || 0;
-          }
-        });
-        
-        return {
-          hours_this_week: totalHours,
-          hours_last_week: totalHours * 0.8,
-          sessions_this_week: totalSessions,
-          tasks_completed: totalSessions, // Número de tarefas/sessões realizadas, não questões
-          tasks_pending: 0,
-          completion_rate: totalSessions > 0 ? 75 : 0,
-          engagement_score: Math.min(10, totalHours / 2)
-        };
-      }
+      const sessions: StudySession[] = studyData.study_sessions || [];
+      const last7DaysSessions = sessions.filter(s => {
+        const dateStr = getStudySessionDateString(s);
+        return dateStr ? isDateOnOrAfter(dateStr, startOfLast7Days) : false;
+      });
 
-      // Fallback: usar study_sessions
-      const sessions = studyData.study_sessions || [];
+      const hoursLast7Days =
+        last7DaysSessions.reduce((sum, s) => sum + getStudySessionDurationMinutes(s) / 60, 0);
+
+      const tasksLast7Days = last7DaysSessions.length;
+
       if (sessions.length === 0) {
         return {
-          hours_this_week: 0,
+          hours_this_week: hoursLast7Days,
           hours_last_week: 0,
-          sessions_this_week: 0,
-          tasks_completed: 0,
+          sessions_this_week: tasksLast7Days,
+          tasks_completed: tasksLast7Days,
           tasks_pending: 0,
           completion_rate: 0,
-          engagement_score: 0
+          engagement_score: Math.min(10, hoursLast7Days / 2),
+          last_activity,
         };
       }
 
-      // Calcular estatísticas usando o helper
       const stats = calculateStudyStatistics(sessions);
-      
-      // Filtrar sessões desta semana
-      const getSessionDate = (s: any) => {
-        return s.sessionDate || s.session_date || s.date || new Date().toISOString().split('T')[0];
-      };
-      
-      const thisWeekSessions = sessions.filter(s => {
-        const sessionDate = new Date(getSessionDate(s));
-        return sessionDate >= startOfThisWeek;
-      });
-      
-      const getDuration = (s: any) => s.duration ?? s.total_duration_minutes ?? 0;
-      const hoursThisWeek = thisWeekSessions.reduce((sum, s) => sum + (getDuration(s) / 60), 0);
-      
+
       return {
-        hours_this_week: hoursThisWeek,
-        hours_last_week: (stats.totalHours - hoursThisWeek) * 0.8,
-        sessions_this_week: thisWeekSessions.length,
-        tasks_completed: stats.totalSessions, // Número total de tarefas/sessões realizadas, não questões
+        hours_this_week: hoursLast7Days,
+        hours_last_week: Math.max(0, (stats.totalHours - hoursLast7Days) * 0.8),
+        sessions_this_week: tasksLast7Days,
+        tasks_completed: tasksLast7Days,
         tasks_pending: 0,
-        completion_rate: sessions.length > 0 ? (thisWeekSessions.length / sessions.length) * 100 : 0,
-        engagement_score: Math.min(10, (hoursThisWeek / 20) * 10)
+        completion_rate:
+          sessions.length > 0 ? (last7DaysSessions.length / sessions.length) * 100 : 0,
+        engagement_score: Math.min(10, (hoursLast7Days / 20) * 10),
+        last_activity,
       };
     } catch (error) {
       devLog.error('Erro ao calcular performance do aluno:', error);
@@ -160,7 +137,8 @@ const CoachDashboard = () => {
         tasks_completed: 0,
         tasks_pending: 0,
         completion_rate: 0,
-        engagement_score: 0
+        engagement_score: 0,
+        last_activity: null,
       };
     }
   };
@@ -189,6 +167,7 @@ const CoachDashboard = () => {
             student_name: userData?.name || userData?.email?.split('@')[0] || 'Aluno #' + student.student_id.slice(0, 8),
             student_email: student.student_email || userData?.email,
             avatar_url: userData?.avatar_url,
+            last_activity: realPerformance.last_activity ?? student.last_activity,
             performance: {
               ...student.performance,
               ...realPerformance
@@ -329,13 +308,12 @@ const CoachDashboard = () => {
     }
   }, [subscription, isLoadingSubscription, user, navigate]);
 
-  // Calcular estatísticas
-  const totalHours = students.reduce((sum, s) => sum + (s.performance.hours_this_week || 0), 0);
-  const totalTasks = students.reduce((sum, s) => sum + (s.performance.tasks_completed || 0), 0);
+  const hasLast7DaysActivity = (s: (typeof students)[number]) =>
+    (s.performance.sessions_this_week ?? 0) > 0 || (s.performance.hours_this_week ?? 0) > 0;
+
+  const studentsWithoutLast7DaysActivity = students.filter(s => !hasLast7DaysActivity(s));
+
   const activeStudents = students.filter(s => s.status === 'active').length;
-  const completionRate = students.length > 0 
-    ? students.reduce((sum, s) => sum + (s.performance.completion_rate || 0), 0) / students.length 
-    : 0;
 
   const handleInviteStudent = () => {
     navigate('/coach/invite');
@@ -503,7 +481,7 @@ const CoachDashboard = () => {
         {/* Tab: Alunos */}
         <TabsContent value="alunos" className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
             <CardDescription>Total de Alunos</CardDescription>
@@ -516,35 +494,18 @@ const CoachDashboard = () => {
           </CardHeader>
         </Card>
 
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardDescription>Horas Semanais</CardDescription>
-            <CardTitle className="text-4xl font-bold">{totalHours}h</CardTitle>
-            <TrendingUp className="text-green-600" size={16} />
-          </CardHeader>
-        </Card>
-
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardDescription>Ciclos Ativos</CardDescription>
-            <CardTitle className="text-4xl font-bold">
-              {students.reduce((sum, s) => sum + (s.performance.cycles_active || 0), 0)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card className={students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 ? "border-red-500/20 bg-red-500/5" : ""}>
+        <Card className={studentsWithoutLast7DaysActivity.length > 0 ? "border-red-500/20 bg-red-500/5" : ""}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardDescription>Avisos</CardDescription>
               <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <CardTitle className="text-4xl font-bold">
-              {students.filter(s => (s.performance.hours_this_week || 0) === 0).length}
+              {studentsWithoutLast7DaysActivity.length}
             </CardTitle>
             <CardDescription className="text-xs mt-2">
-              {students.filter(s => (s.performance.hours_this_week || 0) === 0).length > 0 
-                ? `aluno(s) sem atividade esta semana`
+              {studentsWithoutLast7DaysActivity.length > 0
+                ? `aluno(s) sem atividade nos últimos 7 dias`
                 : 'Nenhum aviso'}
             </CardDescription>
           </CardHeader>
@@ -702,10 +663,10 @@ const CoachDashboard = () => {
                             <Clock className="h-4 w-4" />
                           </div>
                           <span className="text-lg font-bold text-primary">
-                            {(student.performance.hours_this_week || 0)}h
+                            {formatHoursDisplay(student.performance.hours_this_week || 0)}
                           </span>
                           <span className="text-xs text-muted-foreground text-center">
-                            Esta semana
+                            Últimos 7 dias
                           </span>
                         </div>
                         <div className="flex flex-col items-center">
@@ -716,7 +677,7 @@ const CoachDashboard = () => {
                             {(student.performance.tasks_completed || 0)}
                           </span>
                           <span className="text-xs text-muted-foreground text-center">
-                            Tarefas
+                            Tarefas (7 dias)
                           </span>
                         </div>
                       </div>
@@ -728,11 +689,7 @@ const CoachDashboard = () => {
                             Última atividade:
                           </p>
                           <p className="text-xs font-medium">
-                            {new Date(student.last_activity).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
+                            {formatLocalDatePtBr(student.last_activity)}
                           </p>
                         </div>
                       )}

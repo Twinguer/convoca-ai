@@ -37,6 +37,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { studyGroupService } from '@/integrations/supabase/studyGroups/groups';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useToast } from '@/hooks/use-toast';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import {
@@ -56,40 +57,21 @@ export const GroupDetailsPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // ✅ SEGURANÇA: Validação no backend via RPC
-  const { data: accessCheck, isLoading: isLoadingAccess } = useQuery({
-    queryKey: ['check-study-groups-access', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
 
-      const { data, error } = await supabase.rpc('check_can_access_study_groups', {
-        p_user_id: user.id,
-      });
+  const { canAccessStudyGroups, isLoading: isLoadingPlanLimits } = usePlanLimits();
 
-      if (error) {
-        devLog.error('[GroupDetailsPage] Erro ao verificar acesso:', error);
-        throw error;
-      }
-
-      return data as { allowed: boolean; reason?: string; message?: string };
-    },
-    enabled: !!user?.id,
-    retry: 1,
-  });
-
-  // Redirecionar se não tiver acesso
   React.useEffect(() => {
-    if (!isLoadingAccess && accessCheck && !accessCheck.allowed) {
+    if (!user?.id || isLoadingPlanLimits) return;
+    if (!canAccessStudyGroups) {
       toast({
         title: 'Grupos disponíveis apenas para assinantes',
-        description: accessCheck.message || 'Faça upgrade para acessar grupos de estudos.',
+        description: 'Assine o plano Pro ou o Modo Coach para acessar grupos de estudos.',
         variant: 'destructive',
       });
       navigate('/planos');
     }
-  }, [accessCheck, isLoadingAccess, navigate, toast]);
-  
+  }, [canAccessStudyGroups, isLoadingPlanLimits, user?.id, navigate, toast]);
+
   const { group, isLoading: isLoadingGroup, isError: isErrorGroup, refetch: refetchGroup } = useStudyGroup(groupId);
   const { posts, isLoading: isLoadingPosts, refetch: refetchPosts, isError: isErrorPosts } = useGroupFeed(groupId);
   const { members, isLoading: isLoadingMembers, refetch: refetchMembers } = useGroupMembers(groupId);

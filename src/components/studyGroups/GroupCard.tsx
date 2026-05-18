@@ -8,7 +8,7 @@ import type { StudyGroup } from '@/types/studyGroups';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useNavigate } from 'react-router-dom';
 
 interface GroupCardProps {
@@ -38,7 +38,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onJoin,
 }) => {
   const { user } = useAuth();
-  const { isPro } = useSubscription();
+  const { canAccessStudyGroups } = usePlanLimits();
   const navigate = useNavigate();
   const isAuthenticated = !!user;
 
@@ -49,8 +49,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       return;
     }
     
-    // ✅ Se for usuário free, redirecionar para planos
-    if (!isPro) {
+    if (!canAccessStudyGroups) {
       navigate('/planos');
       return;
     }

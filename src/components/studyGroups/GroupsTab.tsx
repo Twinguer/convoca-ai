@@ -7,13 +7,13 @@ import { CreateGroupModal } from './CreateGroupModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserGroups } from '@/hooks/useGroupMembers';
 import { useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
 
 export const GroupsTab: React.FC = () => {
   const { user } = useAuth();
-  const { isPro } = useSubscription();
+  const { canAccessStudyGroups } = usePlanLimits();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -24,7 +24,7 @@ export const GroupsTab: React.FC = () => {
 
   const handleGroupClick = (groupId: string) => {
     // ✅ Se for usuário free, redirecionar para planos
-    if (!isPro) {
+    if (!canAccessStudyGroups) {
       navigate('/planos');
       return;
     }
@@ -32,8 +32,7 @@ export const GroupsTab: React.FC = () => {
   };
 
   const handleJoinGroup = (groupId: string) => {
-    // ✅ Se for usuário free, redirecionar para planos
-    if (!isPro) {
+    if (!canAccessStudyGroups) {
       navigate('/planos');
       return;
     }

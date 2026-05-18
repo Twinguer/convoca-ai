@@ -326,6 +326,87 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
   };
 }
 
+/** Fontes para derivar a data da última tarefa/sessão concluída */
+export type LastStudyActivitySource = {
+  last_activity_date?: string;
+  study_sessions?: StudySession[];
+  study_schedule?: StudySchedule[];
+  study_statistics?: StudyStatistics | Record<string, unknown>;
+};
+
+/**
+ * Data da última tarefa/sessão de estudo concluída (YYYY-MM-DD).
+ * Considera study_sessions, study_schedule (total_stats) e study_statistics.
+ */
+export function getLastStudyActivityDate(
+  data: LastStudyActivitySource | null | undefined
+): string | null {
+  if (!data) return null;
+
+  let maxTime = 0;
+  let maxDate: string | null = null;
+
+  const consider = (raw: string | undefined | null) => {
+    if (!raw || typeof raw !== 'string') return;
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    const datePart = trimmed.includes('T') ? trimmed.split('T')[0] : trimmed.substring(0, 10);
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
+    const t = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime()
+      : new Date(trimmed).getTime();
+    if (Number.isNaN(t)) return;
+    if (t > maxTime) {
+      maxTime = t;
+      maxDate = datePart;
+    }
+  };
+
+  consider(data.last_activity_date);
+
+  for (const session of data.study_sessions ?? []) {
+    consider(session.last_session_date ?? session.session_date ?? session.date);
+  }
+
+  for (const item of data.study_schedule ?? []) {
+    const stats = item.total_stats;
+    if (stats && (stats.session_count ?? 0) > 0) {
+      consider(stats.last_session_date);
+    }
+  }
+
+  const statistics = data.study_statistics;
+  if (statistics && typeof statistics === 'object') {
+    const typed = statistics as StudyStatistics;
+    consider(typed.lastStudyDate ?? null);
+    for (const entry of typed.sessionHistory ?? []) {
+      consider(entry?.date);
+    }
+  }
+
+  return maxDate;
+}
+
+/** Data da sessão (YYYY-MM-DD) em qualquer formato salvo no banco. */
+export function getStudySessionDateString(session: StudySession): string {
+  return (
+    session.last_session_date ??
+    session.session_date ??
+    session.date ??
+    ''
+  );
+}
+
+/** Duração da sessão em minutos (formatos antigo e novo). */
+export function getStudySessionDurationMinutes(session: StudySession): number {
+  return (
+    session.total_duration_minutes ??
+    session.duration_minutes ??
+    session.duration ??
+    0
+  );
+}
+
 /**
  * Get week string for a date (YYYY-WW format)
  */

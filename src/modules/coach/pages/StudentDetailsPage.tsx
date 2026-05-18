@@ -15,7 +15,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { StudentRelationship } from '@/types/coach';
-import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
+import { calculateStudyStatistics, getLastStudyActivityDate } from '@/utils/userStudyHelpers';
+import { formatLocalDatePtBr } from '@/utils/dateFormat';
 import { UserStudyService } from '@/services/userStudyService';
 import type { StudyStatistics } from '@/types/userStudy';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
@@ -125,12 +126,22 @@ const StudentDetailsPage = () => {
         .eq('id', validatedStudentId)
         .single();
 
+      const lastActivityFromStudy = studyData
+        ? getLastStudyActivityDate({
+            last_activity_date: studyData.last_activity_date,
+            study_sessions: studyData.study_sessions,
+            study_schedule: studyData.study_schedule,
+            study_statistics: studyData.study_statistics,
+          })
+        : null;
+
       return {
         ...studentData,
         // ✅ SEGURANÇA: Em modo coach, email pode ser usado internamente mas não deve ser exibido diretamente
         // Usar apenas nome ou fallback genérico
         student_name: profileData?.name || studentData.student_email?.split('@')[0] || 'Aluno',
         student_email: profileData?.email || studentData.student_email, // Usado internamente apenas
+        last_activity: lastActivityFromStudy ?? studentData.last_activity,
         studyData
       };
     },
@@ -687,7 +698,7 @@ const StudentDetailsPage = () => {
               {student.last_activity && (
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Última atividade: {new Date(student.last_activity).toLocaleDateString('pt-BR')}
+                    Última atividade: {formatLocalDatePtBr(student.last_activity)}
                   </p>
                 </div>
               )}
