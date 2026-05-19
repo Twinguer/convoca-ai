@@ -14,6 +14,7 @@ import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { SortableBlocksList } from '@/components/study/SortableBlocksList';
 
 interface Discipline {
   id: string;
@@ -452,17 +453,15 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
                 </Button>
               </div>
             ) : (
-              blocks.map(block => (
-                <BlockCard
-                  key={block.id}
-                  block={block}
-                  onRemove={() => removeBlock(block.id)}
-                  onUpdateName={name => updateBlockName(block.id, name)}
-                  onAddDiscipline={() => openDisciplineDialog(block.id)}
-                  onEditDiscipline={discipline => openDisciplineDialog(block.id, discipline)}
-                  onRemoveDiscipline={disciplineId => removeDiscipline(block.id, disciplineId)}
-                />
-              ))
+              <SortableBlocksList
+                blocks={blocks}
+                onChange={setBlocks}
+                onAddDiscipline={openDisciplineDialog}
+                onEditDiscipline={(blockId, discipline) => openDisciplineDialog(blockId, discipline)}
+                onRemoveDiscipline={removeDiscipline}
+                onRemoveBlock={removeBlock}
+                onUpdateBlockName={updateBlockName}
+              />
             )}
           </CardContent>
         </Card>
@@ -504,109 +503,5 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
     </div>
   );
 };
-
-// Reutilizando o BlockCard do arquivo CriarCiclo.tsx
-interface BlockCardProps {
-  block: Block;
-  onRemove: () => void;
-  onUpdateName: (name: string) => void;
-  onAddDiscipline: () => void;
-  onEditDiscipline: (discipline: Discipline) => void;
-  onRemoveDiscipline: (disciplineId: string) => void;
-}
-
-const BlockCard: React.FC<BlockCardProps> = ({
-  block,
-  onRemove,
-  onUpdateName,
-  onAddDiscipline,
-  onEditDiscipline,
-  onRemoveDiscipline
-}) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [nameValue, setNameValue] = useState(block.name);
-
-  const handleSaveName = () => {
-    onUpdateName(nameValue);
-    setIsEditing(false);
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={nameValue}
-                  onChange={e => setNameValue(e.target.value)}
-                  className="w-48"
-                />
-                <Button size="sm" onClick={handleSaveName}>
-                  <CheckCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">{block.name}</h3>
-                <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {block.disciplines.length} disciplina(s)
-            </Badge>
-            <Button size="sm" variant="outline" onClick={onAddDiscipline}>
-              <Plus className="h-4 w-4 mr-1" />
-              Disciplina
-            </Button>
-            <Button size="sm" variant="destructive" onClick={onRemove}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      
-      {block.disciplines.length > 0 && (
-        <CardContent>
-          <div className="space-y-2">
-            {block.disciplines.map(discipline => (
-              <DisciplineItem
-                key={discipline.id}
-                discipline={discipline}
-                onEdit={() => onEditDiscipline(discipline)}
-                onRemove={() => onRemoveDiscipline(discipline.id)}
-              />
-            ))}
-          </div>
-        </CardContent>
-      )}
-    </Card>
-  );
-};
-
-interface DisciplineItemProps {
-  discipline: Discipline;
-  onEdit: () => void;
-  onRemove: () => void;
-}
-
-const DisciplineItem: React.FC<DisciplineItemProps> = ({ discipline, onEdit, onRemove }) => (
-  <div className="flex items-center justify-between p-3 border rounded-lg">
-    <span className="font-medium">{discipline.name}</span>
-    <div className="flex gap-1">
-      <Button size="sm" variant="ghost" onClick={onEdit}>
-        <Edit className="h-3 w-3" />
-      </Button>
-      <Button size="sm" variant="ghost" onClick={onRemove}>
-        <X className="h-3 w-3" />
-      </Button>
-    </div>
-  </div>
-);
 
 export default EditarCiclo;

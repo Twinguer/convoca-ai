@@ -19,7 +19,11 @@
     "setup:production-key": "bash scripts/setup-production-key.sh"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.9.0",
+    "@marsidev/react-turnstile": "^1.0.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -47,7 +51,6 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@marsidev/react-turnstile": "^1.0.0",
     "@supabase/supabase-js": "^2.76.1",
     "@tanstack/react-query": "^5.90.2",
     "@types/dompurify": "^3.0.5",

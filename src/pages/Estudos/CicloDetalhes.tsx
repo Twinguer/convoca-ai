@@ -13,6 +13,8 @@ import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
 import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
+import type { EditalBlock } from '@/components/study/editalTypes';
+import { buildAvailableDisciplinesFromBlocks } from '@/utils/studyCycleSchedule';
 import {
   aggregateDisciplineStatsForCycle,
   DisciplineProgressStatus,
@@ -78,7 +80,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
     }
   };
 
-  const updateCycle = async (updatedCycle: StudyCycleV2) => {
+  const updateCycle = async (updatedCycle: StudyCycleV2, options?: { silent?: boolean }) => {
     if (!userId) return;
     
     try {
@@ -88,7 +90,9 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
 
       if (success) {
         setCycle(updatedCycle);
-        toast.success('Ciclo atualizado com sucesso!');
+        if (!options?.silent) {
+          toast.success('Ciclo atualizado com sucesso!');
+        }
       } else {
         toast.error('Erro ao atualizar ciclo');
       }
@@ -170,6 +174,20 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
       block.disciplines = block.disciplines.filter(d => d.id !== disciplineId);
       updateCycle(updatedCycle);
     }
+  };
+
+  const handleBlocksChange = (blocks: EditalBlock[]) => {
+    if (!cycle) return;
+
+    const updatedCycle = {
+      ...cycle,
+      schedule_data: {
+        ...cycle.schedule_data,
+        available_blocks: blocks,
+        available_disciplines: buildAvailableDisciplinesFromBlocks(blocks),
+      },
+    };
+    updateCycle(updatedCycle, { silent: true });
   };
 
   const handleSaveDiscipline = () => {
@@ -274,9 +292,11 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
           onAddDiscipline={coachMode ? handleAddDiscipline : undefined}
           onEditDiscipline={coachMode ? handleEditDiscipline : undefined}
           onRemoveDiscipline={coachMode ? handleRemoveDiscipline : undefined}
+          onBlocksChange={handleBlocksChange}
           expandedBlocks={expandedBlocks}
           showProgress={true}
           allowEdit={coachMode || false}
+          allowReorder={true}
         />
       </div>
 

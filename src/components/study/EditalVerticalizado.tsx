@@ -1,38 +1,29 @@
 import React, { useState } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown, BookOpen, Plus, Trash2 } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
+import { applyBlocksDragEnd, blockSortId } from '@/components/study/editalDnd';
+import { EditalBlockRow } from '@/components/study/EditalBlockRow';
+import type { EditalBlock } from '@/components/study/editalTypes';
+
+export type { EditalBlock, EditalDiscipline } from '@/components/study/editalTypes';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { useSubscription } from '@/hooks/useSubscription';
 import type { DisciplineStudyStats } from '@/utils/disciplineStudyStats';
-import {
-  aggregateBlockStats,
-  DisciplineProgressStatus,
-  formatLastStudyDateDisplay,
-  formatStudyDurationDisplay,
-  getAccuracyColorClass,
-  getAccuracyPercent,
-  isDisciplineCompletedForProgress,
-  normalizeDisciplineKey,
-  resolveDisciplineStats,
-} from '@/utils/disciplineStudyStats';
-
-interface Discipline {
-  id: string;
-  name: string;
-  isCompleted?: boolean;
-  status?: DisciplineProgressStatus | 'finalizada' | string | null;
-}
-
-interface Block {
-  id: string;
-  name: string;
-  disciplines: Discipline[];
-}
+import { DisciplineProgressStatus, isDisciplineCompletedForProgress } from '@/utils/disciplineStudyStats';
 
 interface EditalVerticalizadoProps {
-  blocks: Block[];
+  blocks: EditalBlock[];
   disciplineStats?: Record<string, DisciplineStudyStats>;
   onToggleDiscipline?: (blockId: string, disciplineId: string) => void;
   onToggleBlock?: (blockId: string) => void;
@@ -40,18 +31,12 @@ interface EditalVerticalizadoProps {
   onAddDiscipline?: (blockId: string) => void;
   onEditDiscipline?: (blockId: string, disciplineId: string) => void;
   onRemoveDiscipline?: (blockId: string, disciplineId: string) => void;
+  onBlocksChange?: (blocks: EditalBlock[]) => void;
   expandedBlocks?: Set<string>;
   showProgress?: boolean;
   className?: string;
   allowEdit?: boolean;
-}
-
-function StatChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
-      {children}
-    </span>
-  );
+  allowReorder?: boolean;
 }
 
 function StatsLegend() {
@@ -83,13 +68,23 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   onAddDiscipline,
   onEditDiscipline,
   onRemoveDiscipline,
+  onBlocksChange,
   expandedBlocks: externalExpandedBlocks,
   showProgress = true,
   className = '',
   allowEdit = false,
+  allowReorder = false,
 }) => {
   const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const [internalExpandedBlocks, setInternalExpandedBlocks] = useState<Set<string>>(new Set());
+
+  const canReorder = allowReorder && !!onBlocksChange;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const expandedBlocks = externalExpandedBlocks || internalExpandedBlocks;
   const setExpandedBlocks = externalExpandedBlocks ? () => {} : setInternalExpandedBlocks;
@@ -129,210 +124,39 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   const progressPercentage =
     totalDisciplines > 0 ? Math.round((completedDisciplines / totalDisciplines) * 100) : 0;
 
-  const renderStatsChips = (stats: DisciplineStudyStats | null | undefined) => {
-    const s = resolveDisciplineStats(stats);
-    const durationLabel = formatStudyDurationDisplay(s.totalMinutes);
-    const accuracyPct = getAccuracyPercent(s.totalQuestions, s.correctAnswers) ?? 0;
-    const dateLabel = formatLastStudyDateDisplay(s.lastDate);
+  const blockIds = blocks.map((b) => blockSortId(b.id));
 
-    return (
-      <div className="flex flex-wrap items-center gap-1 mt-1 sm:mt-0 sm:ml-2">
-        <StatChip>⏱ {durationLabel}</StatChip>
-        <StatChip>
-          📝 {s.totalQuestions}Q (
-          <span className={getAccuracyColorClass(accuracyPct)}>{accuracyPct}%</span>)
-        </StatChip>
-        <StatChip>
-          <span title={s.lastSummary ?? undefined}>📅 {dateLabel}</span>
-        </StatChip>
-      </div>
-    );
+  const handleDragEnd = (event: DragEndEvent) => {
+    const next = applyBlocksDragEnd(event, blocks);
+    if (next) onBlocksChange?.(next);
   };
 
-  const renderStatsChipsForDiscipline = (disciplineName: string) =>
-    renderStatsChips(disciplineStats[normalizeDisciplineKey(disciplineName)]);
-
-  const renderBlock = (block: Block, blockIndex: number) => {
-    const isExpanded = expandedBlocks.has(block.id);
-    const hasDisciplines = block.disciplines && block.disciplines.length > 0;
-    const blockCompleted =
-      hasDisciplines && block.disciplines.every((d) => isDisciplineCompletedForProgress(d));
-    const blockCompletedCount = block.disciplines.filter((d) =>
-      isDisciplineCompletedForProgress(d)
-    ).length;
-    const blockStats = aggregateBlockStats(
-      block.disciplines.map((d) => d.name),
-      disciplineStats
-    );
-
-    return (
-      <div key={block.id}>
-        <div
-          className={`flex items-center py-2 px-2 sm:px-4 ${
-            blockIndex % 2 === 0 ? 'bg-muted/20' : 'bg-background'
-          } hover:bg-muted/40 transition-colors ${hasDisciplines ? 'cursor-pointer' : ''}`}
-          onClick={() => hasDisciplines && handleToggleBlock(block.id)}
-        >
-          <Checkbox
-            checked={blockCompleted}
-            onCheckedChange={() => {
-              block.disciplines.forEach((discipline) => {
-                handleToggleDiscipline(block.id, discipline.id);
-              });
-            }}
-            className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <div className="flex-1 flex flex-col sm:flex-row sm:items-center min-w-0 gap-0 sm:gap-2">
-            <div className="min-w-0">
-              <span className="font-semibold text-foreground text-sm">
-                {blockIndex + 1}. {block.name.toUpperCase()}
-              </span>
-              {showProgress && hasDisciplines && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  ({blockCompletedCount}/{block.disciplines.length})
-                </span>
-              )}
-            </div>
-            {renderStatsChips(blockStats)}
-          </div>
-          <div className="ml-2 flex items-center gap-2">
-            {allowEdit && onAddDiscipline && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddDiscipline(block.id);
-                }}
-                title="Adicionar disciplina"
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            )}
-            {hasDisciplines && (
-              <div>
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {hasDisciplines && isExpanded && (
-          <div className="bg-muted/20">
-            {block.disciplines.map((discipline, disciplineIndex) => {
-              const completedForProgress = isDisciplineCompletedForProgress(discipline);
-              return (
-                <div
-                  key={discipline.id}
-                  className={`py-2 px-2 sm:px-4 pl-6 sm:pl-8 ${
-                    disciplineIndex % 2 === 0 ? 'bg-muted/10' : 'bg-background'
-                  } hover:bg-muted/30 transition-colors`}
-                >
-                  <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center flex-1 min-w-0">
-                      <div className="flex items-center min-w-0">
-                        <Checkbox
-                          checked={discipline.isCompleted || false}
-                          onCheckedChange={() =>
-                            handleToggleDiscipline(block.id, discipline.id)
-                          }
-                          className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
-                        />
-                        <span
-                          className={`font-medium text-foreground text-xs truncate ${
-                            completedForProgress ? 'line-through opacity-60' : ''
-                          } ${allowEdit && onEditDiscipline ? 'cursor-pointer hover:text-primary' : ''}`}
-                          onClick={
-                            allowEdit && onEditDiscipline
-                              ? (e) => {
-                                  e.stopPropagation();
-                                  onEditDiscipline(block.id, discipline.id);
-                                }
-                              : undefined
-                          }
-                          title={allowEdit && onEditDiscipline ? 'Clique para editar' : undefined}
-                        >
-                          {blockIndex + 1}.{disciplineIndex + 1}. {discipline.name}
-                        </span>
-                      </div>
-                      {renderStatsChipsForDiscipline(discipline.name)}
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap">
-                      {allowEdit && onRemoveDiscipline && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              window.confirm(
-                                `Tem certeza que deseja remover a disciplina "${discipline.name}"?`
-                              )
-                            ) {
-                              onRemoveDiscipline(block.id, discipline.id);
-                            }
-                          }}
-                          title="Remover disciplina"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                      <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                        <Checkbox
-                          checked={discipline.status === 'em_andamento'}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleStatusChange(block.id, discipline.id, 'em_andamento');
-                            } else if (discipline.status === 'em_andamento') {
-                              handleStatusChange(block.id, discipline.id, null);
-                            }
-                          }}
-                          className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
-                        />
-                        <span className="text-muted-foreground text-[10px] sm:text-xs">
-                          Em andamento
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                        <Checkbox
-                          checked={
-                            discipline.status === 'em_revisao' ||
-                            discipline.status === 'em-revisao'
-                          }
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleStatusChange(block.id, discipline.id, 'em_revisao');
-                            } else if (
-                              discipline.status === 'em_revisao' ||
-                              discipline.status === 'em-revisao'
-                            ) {
-                              handleStatusChange(block.id, discipline.id, null);
-                            }
-                          }}
-                          className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
-                        />
-                        <span className="text-muted-foreground text-[10px] sm:text-xs">
-                          Em revisão
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+  const listContent =
+    blocks.length === 0 ? (
+      <div className="text-center p-8 text-muted-foreground">
+        <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+        <p className="text-sm">Nenhum bloco de estudo encontrado</p>
       </div>
+    ) : (
+      blocks.map((block, blockIndex) => (
+        <EditalBlockRow
+          key={block.id}
+          block={block}
+          blockIndex={blockIndex}
+          isExpanded={expandedBlocks.has(block.id)}
+          showProgress={showProgress}
+          allowEdit={allowEdit}
+          canReorder={canReorder}
+          disciplineStats={disciplineStats}
+          onToggleBlock={handleToggleBlock}
+          onToggleDiscipline={handleToggleDiscipline}
+          onStatusChange={handleStatusChange}
+          onAddDiscipline={onAddDiscipline}
+          onEditDiscipline={onEditDiscipline}
+          onRemoveDiscipline={onRemoveDiscipline}
+        />
+      ))
     );
-  };
 
   if (!isLoadingSubscription && !isPro) {
     return (
@@ -351,6 +175,12 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
         </CardTitle>
 
         <StatsLegend />
+
+        {canReorder && blocks.length > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Arraste pelo ícone para reordenar blocos ou disciplinas (cada um no seu nível).
+          </p>
+        )}
 
         {showProgress && blocks.length > 0 && (
           <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
@@ -381,13 +211,14 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="bg-muted/30 rounded-lg overflow-hidden">
-          {blocks.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-sm">Nenhum bloco de estudo encontrado</p>
-            </div>
+          {canReorder ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
+                {listContent}
+              </SortableContext>
+            </DndContext>
           ) : (
-            blocks.map((block, blockIndex) => renderBlock(block, blockIndex))
+            listContent
           )}
         </div>
       </CardContent>
