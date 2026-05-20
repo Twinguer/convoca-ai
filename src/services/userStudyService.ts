@@ -375,6 +375,39 @@ export class UserStudyService {
   }
 
   /**
+   * Atualiza várias tarefas do cronograma em uma única gravação (reordenação / mudança de dia).
+   */
+  static async patchScheduleSessions(
+    userId: string,
+    patches: Array<{ id: string; day_of_week?: number; display_order?: number }>
+  ): Promise<boolean> {
+    if (patches.length === 0) return true;
+    try {
+      const data = await this.getUserStudyData(userId);
+      if (!data) return false;
+
+      const patchMap = new Map(patches.map((p) => [p.id, p]));
+      const updatedSchedule = data.study_schedule.map((session) => {
+        const patch = patchMap.get(session.id);
+        if (!patch) return session;
+        return {
+          ...session,
+          ...(patch.day_of_week !== undefined ? { day_of_week: patch.day_of_week } : {}),
+          ...(patch.display_order !== undefined ? { display_order: patch.display_order } : {}),
+          updated_at: new Date().toISOString(),
+        };
+      });
+
+      return await this.upsertUserStudyData(userId, {
+        study_schedule: updatedSchedule,
+      });
+    } catch (error) {
+      devLog.error('Error patching schedule sessions: Database operation failed');
+      return false;
+    }
+  }
+
+  /**
    * Remove schedule session (from study_schedule or legacy structure)
    */
   static async removeScheduleSession(userId: string, sessionId: string): Promise<boolean> {

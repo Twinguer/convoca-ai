@@ -45,6 +45,7 @@ export interface StudySchedule {
   start_time?: string; // Opcional para tarefas de duração livre
   end_time?: string; // Opcional para tarefas de duração livre
   duration_minutes?: number; // Para tarefas de duração livre (sem horário fixo)
+  display_order?: number; // Ordem manual (modo tempo de estudos)
   is_active?: boolean;
   discipline_name?: string;
   block_name?: string;
@@ -121,6 +122,8 @@ export interface StudyCycleV2 {
     metadata: {
       total_sessions: number;
       total_hours: number;
+      /** 'duration' = tempo de estudos (padrão, permite drag); 'time' = horário fixo */
+      schedule_mode?: 'duration' | 'time';
     };
     weekly_schedule?: Array<{ // ⚠️ DEPRECATED: Usar study_schedule table
       day: number;

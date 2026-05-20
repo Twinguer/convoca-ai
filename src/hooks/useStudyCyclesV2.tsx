@@ -186,6 +186,14 @@ export const useStudyCyclesV2 = () => {
       const userStudyData = await UserStudyService.getUserStudyData(userId);
       if (!userStudyData) return false;
 
+      const sameDaySessions = (userStudyData.study_schedule || []).filter(
+        (s) => s.cycle_id === cycleId && s.day_of_week === dayOfWeek
+      );
+      const nextDisplayOrder =
+        sessionData.duration_minutes != null
+          ? Math.max(-1, ...sameDaySessions.map((s) => s.display_order ?? 0)) + 1
+          : undefined;
+
       // ✅ Criar nova sessão com cycle_id
       const newSession = {
         id: generateId(),
@@ -194,6 +202,7 @@ export const useStudyCyclesV2 = () => {
         start_time: sessionData.start_time,
         end_time: sessionData.end_time,
         duration_minutes: sessionData.duration_minutes, // Para tarefas de duração livre
+        display_order: nextDisplayOrder,
         discipline_name: sessionData.discipline_name,
         block_name: sessionData.block_name,
         session_link: sessionData.session_link,
@@ -210,18 +219,27 @@ export const useStudyCyclesV2 = () => {
       // ✅ Adicionar a study_schedule
       const updatedSchedule = [...(userStudyData.study_schedule || []), newSession];
 
+      const scheduleModeForCycle =
+        sessionData.duration_minutes != null
+          ? ('duration' as const)
+          : sessionData.start_time && sessionData.end_time
+            ? ('time' as const)
+            : undefined;
+
       // Atualizar metadata do ciclo
       const updatedCycles = userStudyData.study_cycles.map(cycle => {
         if (cycle.id === cycleId) {
+          const existingMode = cycle.schedule_data?.metadata?.schedule_mode;
           return {
             ...cycle,
             schedule_data: {
               ...cycle.schedule_data,
               metadata: {
                 ...cycle.schedule_data.metadata,
-                total_sessions: (cycle.schedule_data.metadata.total_sessions || 0) + 1
-              }
-            }
+                total_sessions: (cycle.schedule_data.metadata.total_sessions || 0) + 1,
+                schedule_mode: existingMode ?? scheduleModeForCycle ?? 'duration',
+              },
+            },
           };
         }
         return cycle;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,12 +30,24 @@ import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
 import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
 import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { WeeklyScheduleBoard } from '@/components/study/WeeklyScheduleBoard';
+import { WeeklyScheduleTaskCard } from '@/components/study/WeeklyScheduleTaskCard';
+import { ScheduleModePicker } from '@/components/study/ScheduleModePicker';
+import {
+  getCycleScheduleMode,
+  toStorageDayOfWeek,
+  toUiDayOfWeek,
+  type ScheduleMode,
+} from '@/utils/scheduleMode';
+import type { StudySchedule } from '@/types/userStudy';
+
 interface StudySession {
   id: string;
   day: number; // 0-6 (Sunday to Saturday)
   startTime?: string; // Opcional para tarefas de duração
   endTime?: string; // Opcional para tarefas de duração
   durationMinutes?: number; // Para tarefas de duração livre
+  displayOrder?: number;
   disciplineName: string;
   blockName: string;
   cycleId: string;
@@ -93,7 +105,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const [customDiscipline, setCustomDiscipline] = useState<string>('');
   const [startTime, setStartTime] = useState<string>('08:00');
   const [endTime, setEndTime] = useState<string>('09:00');
-  const [sessionTimeMode, setSessionTimeMode] = useState<'time' | 'duration'>('time');
+  const [sessionTimeMode, setSessionTimeMode] = useState<ScheduleMode>('duration');
   const [durationMinutes, setDurationMinutes] = useState<number>(90);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -183,6 +195,31 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
   };
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+  const scheduleByCycleId = useMemo(() => {
+    const map: Record<string, StudySchedule[]> = {};
+    (userStudy?.study_schedule || []).forEach((session: StudySchedule) => {
+      if (!session.cycle_id) return;
+      if (!map[session.cycle_id]) map[session.cycle_id] = [];
+      map[session.cycle_id].push(session);
+    });
+    return map;
+  }, [userStudy]);
+
+  const getLockedModeForCycle = useCallback(
+    (cycleId: string): ScheduleMode | null => {
+      const cycle = cycles.find((c) => c.id === cycleId);
+      return getCycleScheduleMode(cycle, scheduleByCycleId[cycleId] || []);
+    },
+    [cycles, scheduleByCycleId]
+  );
+
+  useEffect(() => {
+    if (!selectedCycle) return;
+    const locked = getLockedModeForCycle(selectedCycle);
+    if (locked) setSessionTimeMode(locked);
+  }, [selectedCycle, getLockedModeForCycle]);
+
   useEffect(() => {
     const targetUserId = coachMode ? targetStudentId : user?.id;
     if (targetUserId) {
@@ -250,21 +287,15 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
           // Verificar se o ciclo está ativo
           const cycle = userStudyData.study_cycles.find(c => c.id === session.cycle_id);
           if (cycle && cycle.is_active) {
-            // IMPORTANTE: day_of_week está no formato ISO (1=segunda, 7=domingo)
-            // Precisamos converter para formato JavaScript (0=domingo, 6=sábado)
-            let dayOfWeek = session.day_of_week;
-            
-            // Se for formato ISO (1-7), converter para JavaScript (0-6)
-            if (dayOfWeek >= 1 && dayOfWeek <= 7) {
-              dayOfWeek = dayOfWeek === 7 ? 0 : dayOfWeek; // Domingo: 7 -> 0
-            }
-            
+            const dayOfWeek = toUiDayOfWeek(session.day_of_week);
+
             allSessions.push({
               id: session.id,
               day: dayOfWeek,
               startTime: session.start_time,
               endTime: session.end_time,
               durationMinutes: session.duration_minutes,
+              displayOrder: session.display_order ?? 0,
               disciplineName: session.discipline_name || 'Disciplina',
               blockName: session.block_name || 'Bloco',
               cycleId: session.cycle_id!,
@@ -388,6 +419,35 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
   };
 
+  const handleScheduleReorder = async (
+    updates: Map<string, { day: number; displayOrder: number }>,
+    _cycleId: string
+  ) => {
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+    if (!targetUserId || updates.size === 0) return;
+
+    const prevSessions = sessions;
+    setSessions((current) =>
+      current.map((s) => {
+        const u = updates.get(s.id);
+        if (!u) return s;
+        return { ...s, day: u.day, displayOrder: u.displayOrder };
+      })
+    );
+
+    const patches = [...updates.entries()].map(([id, u]) => ({
+      id,
+      day_of_week: toStorageDayOfWeek(u.day),
+      display_order: u.displayOrder,
+    }));
+
+    const ok = await UserStudyService.patchScheduleSessions(targetUserId, patches);
+    if (!ok) {
+      setSessions(prevSessions);
+      toast.error('Erro ao salvar a nova ordem das tarefas');
+    }
+  };
+
   const addSession = async () => {
     // Usar valores customizados se selecionados
     const finalBlock = selectedBlock === '__custom__' ? customBlock : selectedBlock;
@@ -398,9 +458,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
+
+    const lockedMode = getLockedModeForCycle(selectedCycle);
+    const effectiveMode = lockedMode ?? sessionTimeMode;
+    if (lockedMode && lockedMode !== sessionTimeMode) {
+      toast.error('Este ciclo não permite misturar tempo de estudos com horário fixo');
+      return;
+    }
     
     // Se modo duração, não precisa de horários
-    if (sessionTimeMode === 'duration') {
+    if (effectiveMode === 'duration') {
       // Validar duração mínima
       if (durationMinutes < 5) {
         toast.error('A duração mínima é de 5 minutos');
@@ -420,10 +487,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     
     try {
       // Adicionar sessão ao cronograma usando o hook useStudyCyclesV2
-      const success = await addScheduleSession(selectedCycle, selectedDay, {
-        start_time: sessionTimeMode === 'time' ? startTime : undefined,
-        end_time: sessionTimeMode === 'time' ? endTime : undefined,
-        duration_minutes: sessionTimeMode === 'duration' ? durationMinutes : undefined,
+      const success = await addScheduleSession(selectedCycle, toStorageDayOfWeek(selectedDay), {
+        start_time: effectiveMode === 'time' ? startTime : undefined,
+        end_time: effectiveMode === 'time' ? endTime : undefined,
+        duration_minutes: effectiveMode === 'duration' ? durationMinutes : undefined,
         discipline_name: finalDiscipline,
         block_name: finalBlock,
         session_link: sessionLink
@@ -1672,6 +1739,14 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   </Select>
                 </div>
 
+                {selectedCycle && (
+                  <ScheduleModePicker
+                    value={sessionTimeMode}
+                    onChange={setSessionTimeMode}
+                    lockedMode={getLockedModeForCycle(selectedCycle)}
+                  />
+                )}
+
                 <div>
                   <label className="text-sm font-medium">Bloco</label>
                   <Select value={selectedBlock} onValueChange={setSelectedBlock}>
@@ -1716,33 +1791,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                         </SelectItem>)}
                     </SelectContent>
                   </Select>
-                </div>
-
-                {/* Seletor de Modo de Agendamento */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Tipo de Agendamento</label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={sessionTimeMode === 'time' ? 'default' : 'outline'}
-                      onClick={() => setSessionTimeMode('time')}
-                      className="flex-1"
-                      size="sm"
-                    >
-                      <Clock className="h-4 w-4 mr-2" />
-                      Horário de Estudos
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={sessionTimeMode === 'duration' ? 'default' : 'outline'}
-                      onClick={() => setSessionTimeMode('duration')}
-                      className="flex-1"
-                      size="sm"
-                    >
-                      <Timer className="h-4 w-4 mr-2" />
-                      Tempo de Estudos
-                    </Button>
-                  </div>
                 </div>
 
                 {/* Renderização Condicional */}
@@ -1999,6 +2047,14 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                     </Select>
                   </div>
 
+                  {selectedCycle && (
+                    <ScheduleModePicker
+                      value={sessionTimeMode}
+                      onChange={setSessionTimeMode}
+                      lockedMode={getLockedModeForCycle(selectedCycle)}
+                    />
+                  )}
+
                   <div>
                     <label className="text-sm font-medium">Bloco</label>
                     <Select value={selectedBlock} onValueChange={setSelectedBlock}>
@@ -2039,33 +2095,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                           </SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  {/* Seletor de Modo de Agendamento */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Tipo de Agendamento</label>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant={sessionTimeMode === 'time' ? 'default' : 'outline'}
-                        onClick={() => setSessionTimeMode('time')}
-                        className="flex-1"
-                        size="sm"
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Horário de Estudos
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={sessionTimeMode === 'duration' ? 'default' : 'outline'}
-                        onClick={() => setSessionTimeMode('duration')}
-                        className="flex-1"
-                        size="sm"
-                      >
-                        <Timer className="h-4 w-4 mr-2" />
-                        Tempo de Estudos
-                      </Button>
-                    </div>
                   </div>
 
                   {/* Renderização Condicional */}
@@ -2122,102 +2151,29 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
-              {weekDays.map((day, index) => <div key={index} className="space-y-2">
-                  <h3 className="font-medium text-center p-2 bg-muted rounded-md text-sm">
-                    {day}
-                  </h3>
-                  <div className="space-y-2 min-h-[250px]">
-                      {sessionDataLoading ? <div className="flex items-center justify-center h-32">
-                          <div className="text-sm text-muted-foreground">Carregando dados...</div>
-                        </div> : sessionDataError ? <div className="flex flex-col items-center justify-center h-32 space-y-2">
-                          <div className="text-sm text-destructive">Erro ao carregar dados</div>
-                          <Button variant="outline" size="sm" onClick={refreshData} className="text-xs">
-                            Tentar novamente
-                          </Button>
-                        </div> : getSessionsForDay(index).map(session => {
-                const cumulativeSession = sessionData[session.id];
-                const hasData = cumulativeSession && (cumulativeSession.duration_minutes > 0 || cumulativeSession.questions > 0);
-                const accuracy = cumulativeSession && cumulativeSession.questions > 0 ? Math.round(cumulativeSession.correct_answers / cumulativeSession.questions * 100) : 0;
-                const sessionCount = cumulativeSession?.session_count || 1;
-                return <div key={session.id} className={`p-3 rounded-lg border relative cursor-pointer transition-all duration-300 min-h-[180px] ${hasData ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-muted bg-muted/30 hover:bg-muted/50'} rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden`} style={{
-                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
-                }} onClick={e => {
-                  openEditModal(session);
-                }}>
-                            <div className="space-y-3 h-full flex flex-col">
-                              {/* Header com horário/duração e botão de deletar */}
-                              <div className="flex justify-between items-center">
-                                <div className="text-sm font-medium text-muted-foreground">
-                                  {session.durationMinutes ? (
-                                    <span className="flex items-center gap-1">
-                                      <Timer className="h-3 w-3" />
-                                      {session.durationMinutes}min
-                                    </span>
-                                  ) : (
-                                    session.startTime && session.endTime ? (
-                                      `${session.startTime.substring(0, 5)} - ${session.endTime.substring(0, 5)}`
-                                    ) : (
-                                      'Horário livre'
-                                    )
-                                  )}
-                                </div>
-                                <div className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10" onClick={e => {
-                        e.stopPropagation();
-                        handleDeleteClick(session.id);
-                      }} title="Remover tarefa">
-                                  <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive transition-colors" />
-                                </div>
-                              </div>
-                              
-                              {/* Disciplina principal */}
-                              <div className="space-y-1 flex-1">
-                                <h4 className="font-medium text-sm text-foreground leading-tight">{session.disciplineName}</h4>
-                                <p className="text-xs text-muted-foreground">{session.blockName}</p>
-                                {cumulativeSession?.cycle_name && cumulativeSession.cycle_name !== 'Ciclo desconhecido' && (
-                                  <p className="text-xs text-primary font-medium">Ciclo: {cumulativeSession.cycle_name}</p>
-                                )}
-                              </div>
-                              
-                              {/* Estatísticas detalhadas */}
-                              {hasData && <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                                    <span className="text-muted-foreground">Tempo total:</span>
-                                    <span className="font-medium text-foreground">{cumulativeSession.duration_minutes}min</span>
-                                  </div>
-                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                                    <span className="text-muted-foreground">Tarefas:</span>
-                                    <span className="font-medium text-foreground">{sessionCount}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                                    <span className="text-muted-foreground">Questões:</span>
-                                    <span className="font-medium text-foreground">{cumulativeSession.questions}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                                    <span className="text-muted-foreground">Acertos:</span>
-                                    <span className="font-medium text-foreground">{accuracy}%</span>
-                                  </div>
-                                </div>
-                              </div>}
-                              
-                              {/* Botão para ir à aula */}
-                              {(session.sessionLink || cumulativeSession?.session_link) && <div className="pt-2">
-                                <Button variant="outline" size="sm" onClick={e => {
-                        e.stopPropagation();
-                        const linkToOpen = cumulativeSession?.session_link || session.sessionLink;
-                        window.open(linkToOpen, '_blank');
-                      }} className="w-full text-xs">
-                                  <ExternalLink className="h-3 w-3 mr-1" />
-                                  Ir à aula
-                                </Button>
-                              </div>}
-                            </div>
-                          </div>;
-              })}
-                  </div>
-                </div>)}
-            </div>
+            <WeeklyScheduleBoard
+              weekDays={weekDays}
+              sessions={sessions}
+              cycles={cycles}
+              scheduleByCycleId={scheduleByCycleId}
+              onReorder={handleScheduleReorder}
+              onCardClick={openEditModal}
+              loading={sessionDataLoading}
+              error={!!sessionDataError}
+              onRetry={refreshData}
+              renderCard={(session, { dragHandle, onCardClick }) => (
+                <WeeklyScheduleTaskCard
+                  session={session}
+                  sessionData={sessionData[session.id]}
+                  dragHandle={dragHandle}
+                  onEdit={onCardClick}
+                  onDelete={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(session.id);
+                  }}
+                />
+              )}
+            />
           </CardContent>
         </Card>}
 
