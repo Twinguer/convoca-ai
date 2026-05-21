@@ -22,6 +22,8 @@ import type { StudyStatistics } from '@/types/userStudy';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import { devLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
+import { coachAccessService } from '@/integrations/supabase/coach/access';
+import { coachRelationshipService } from '@/integrations/supabase/coach/relationships';
 
 // ✅ REMOVIDO: isValidUUID - não aceitar UUIDs diretamente por segurança
 
@@ -83,47 +85,39 @@ const StudentDetailsPage = () => {
     validateId();
   }, [studentIdParam, navigate, toast]);
 
-  // Buscar dados do aluno específico
-  const { data: student, isLoading } = useQuery({
+  const { data: accessCheck, isLoading: isLoadingAccess } = useQuery({
+    queryKey: ['coach-has-access', 'v3', user?.id, validatedStudentId],
+    queryFn: async () => {
+      if (!user?.id || !validatedStudentId) return null;
+      return coachAccessService.checkHasStudentAccess(user.id, validatedStudentId);
+    },
+    enabled: !!user && !!validatedStudentId,
+    retry: false,
+  });
+
+  const hasAccess = accessCheck?.allowed === true;
+
+  // Buscar dados do aluno específico (após RPC de acesso)
+  const { data: student, isLoading: isLoadingStudent } = useQuery({
     queryKey: ['coach-student', user?.id, validatedStudentId],
     queryFn: async () => {
       if (!user?.id || !validatedStudentId) return null;
 
-      // Buscar perfil do coach
-      const { data: coachProfile, error: profileError } = await supabase
-        .from('coach_profiles')
-        .select('student_relationships')
-        .eq('coach_id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Encontrar o aluno específico
-      const students = coachProfile?.student_relationships || [];
-      const studentData = students.find((s: any) => s.student_id === validatedStudentId);
+      const studentData = await coachRelationshipService.getStudentData(
+        user.id,
+        validatedStudentId
+      );
 
       if (!studentData) {
-        toast({
-          title: 'Acesso negado',
-          description: 'Você não tem acesso a este aluno ou o aluno não faz parte da sua equipe.',
-          variant: 'destructive'
-        });
-        navigate('/coach/dashboard');
         return null;
       }
 
-      // Buscar dados de estudos do aluno
+      const display = await coachAccessService.getStudentDisplay(validatedStudentId);
+
       const { data: studyData } = await supabase
         .from('user_study_v2')
         .select('*')
         .eq('user_id', validatedStudentId)
-        .single();
-
-      // Buscar nome do aluno do perfil
-      const { data: profileData } = await supabase
-        .from('users_profiles')
-        .select('name, email')
-        .eq('id', validatedStudentId)
         .single();
 
       const lastActivityFromStudy = studyData
@@ -137,16 +131,16 @@ const StudentDetailsPage = () => {
 
       return {
         ...studentData,
-        // ✅ SEGURANÇA: Em modo coach, email pode ser usado internamente mas não deve ser exibido diretamente
-        // Usar apenas nome ou fallback genérico
-        student_name: profileData?.name || studentData.student_email?.split('@')[0] || 'Aluno',
-        student_email: profileData?.email || studentData.student_email, // Usado internamente apenas
+        student_name:
+          display.success && display.display_name ? display.display_name : 'Aluno',
         last_activity: lastActivityFromStudy ?? studentData.last_activity,
-        studyData
+        studyData,
       };
     },
-    enabled: !!user && !!validatedStudentId,
+    enabled: !!user && !!validatedStudentId && hasAccess,
   });
+
+  const isLoading = isLoadingAccess || (hasAccess && isLoadingStudent);
 
   // Buscar estatísticas completas do aluno
   const { data: fullStatistics, isLoading: loadingStats } = useQuery({
@@ -281,17 +275,35 @@ const StudentDetailsPage = () => {
     },
   });
 
-  // Verificar se tem acesso
   useEffect(() => {
-    if (student === null && !isLoading && !isValidatingToken && validatedStudentId) {
+    if (
+      !isValidatingToken &&
+      validatedStudentId &&
+      !isLoadingAccess &&
+      accessCheck &&
+      !accessCheck.allowed
+    ) {
       toast({
         title: 'Acesso negado',
-        description: 'Você não tem acesso a este aluno ou o aluno não faz parte da sua equipe',
-        variant: 'destructive'
+        description:
+          accessCheck.message ??
+          'Você não tem acesso a este aluno ou o aluno não faz parte da sua equipe',
+        variant: 'destructive',
       });
       navigate('/coach/dashboard');
     }
-  }, [student, isLoading, isValidatingToken, validatedStudentId, navigate, toast]);
+  }, [accessCheck, isLoadingAccess, isValidatingToken, validatedStudentId, navigate, toast]);
+
+  useEffect(() => {
+    if (hasAccess && student === null && !isLoadingStudent && !isLoadingAccess && validatedStudentId) {
+      toast({
+        title: 'Aluno não encontrado',
+        description: 'Não foi possível carregar os dados deste aluno.',
+        variant: 'destructive',
+      });
+      navigate('/coach/dashboard');
+    }
+  }, [student, hasAccess, isLoadingStudent, isLoadingAccess, validatedStudentId, navigate, toast]);
 
   // Se estiver validando token, mostrar loading
   if (isValidatingToken || !validatedStudentId) {
@@ -306,12 +318,12 @@ const StudentDetailsPage = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || !hasAccess) {
     return (
       <div className="container mx-auto p-6">
         <Card>
           <CardContent className="p-8 text-center">
-            <p>Carregando dados do aluno...</p>
+            <p>{!hasAccess && !isLoadingAccess ? 'Acesso negado.' : 'Carregando dados do aluno...'}</p>
           </CardContent>
         </Card>
       </div>
@@ -578,23 +590,26 @@ const StudentDetailsPage = () => {
                                 variant="outline" 
                                 size="sm"
                                 onClick={async () => {
-                                  // Usar URL ofuscada para segurança
                                   try {
                                     const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
-                                    const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
-                                    
-                                    if (!validatedStudentId) return;
-                                    
-                                    const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
-                                    // ✅ CORREÇÃO: Passar validatedStudentId (dono do ciclo) em vez de user.id (coach)
-                                    const cycleToken = await StudyCycleUrlObfuscationService.generateStudyCycleToken(cycle.id, validatedStudentId);
-                                    navigate(`/coach/student/${studentToken}/cycle/${cycleToken}/disciplinas`);
+                                    if (!validatedStudentId || !user?.id) return;
+                                    const [studentToken, cycleToken] = await Promise.all([
+                                      UserUrlObfuscationService.generateUserToken(validatedStudentId),
+                                      coachAccessService.generateStudyCycleToken(
+                                        user.id,
+                                        validatedStudentId,
+                                        cycle.id
+                                      ),
+                                    ]);
+                                    navigate(
+                                      `/coach/student/${studentToken}/cycle/${cycleToken}/disciplinas`
+                                    );
                                   } catch (error) {
                                     devLog.error('Erro ao gerar URL segura:', error);
                                     toast({
                                       title: 'Erro',
                                       description: 'Não foi possível gerar URL segura. Tente novamente.',
-                                      variant: 'destructive'
+                                      variant: 'destructive',
                                     });
                                   }
                                 }}
@@ -607,23 +622,26 @@ const StudentDetailsPage = () => {
                                 variant="outline" 
                                 size="sm"
                                 onClick={async () => {
-                                  // Usar URL ofuscada para segurança
                                   try {
                                     const { UserUrlObfuscationService } = await import('@/services/userUrlObfuscation');
-                                    const { StudyCycleUrlObfuscationService } = await import('@/services/studyCycleUrlObfuscation');
-                                    
-                                    if (!validatedStudentId) return;
-                                    
-                                    const studentToken = await UserUrlObfuscationService.generateUserToken(validatedStudentId);
-                                    // ✅ CORREÇÃO: Passar validatedStudentId (dono do ciclo) em vez de user.id (coach)
-                                    const cycleToken = await StudyCycleUrlObfuscationService.generateStudyCycleToken(cycle.id, validatedStudentId);
-                                    navigate(`/coach/student/${studentToken}/cycle/${cycleToken}/schedule`);
+                                    if (!validatedStudentId || !user?.id) return;
+                                    const [studentToken, cycleToken] = await Promise.all([
+                                      UserUrlObfuscationService.generateUserToken(validatedStudentId),
+                                      coachAccessService.generateStudyCycleToken(
+                                        user.id,
+                                        validatedStudentId,
+                                        cycle.id
+                                      ),
+                                    ]);
+                                    navigate(
+                                      `/coach/student/${studentToken}/cycle/${cycleToken}/schedule`
+                                    );
                                   } catch (error) {
                                     devLog.error('Erro ao gerar URL segura:', error);
                                     toast({
                                       title: 'Erro',
                                       description: 'Não foi possível gerar URL segura. Tente novamente.',
-                                      variant: 'destructive'
+                                      variant: 'destructive',
                                     });
                                   }
                                 }}

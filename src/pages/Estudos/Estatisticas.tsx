@@ -14,12 +14,12 @@ import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useStudyProAccess } from '@/hooks/useStudyProAccess';
 
 const Estatisticas = () => {
   const { statistics, isLoading, resetStatistics, getFilteredStats, refreshStatistics } = useStudyStatistics();
   const { toast } = useToast();
-  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
+  const { canAccessStudyPro, isLoading: isLoadingStudyAccess } = useStudyProAccess();
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'custom'>('week');
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
@@ -152,7 +152,7 @@ const Estatisticas = () => {
   }
 
   // Bloquear acesso para usuários Free - DEPOIS de todos os hooks
-  if (!isLoadingSubscription && !isPro) {
+  if (!isLoadingStudyAccess && !canAccessStudyPro) {
     return (
       <div className="container mx-auto p-6">
         <ProFeatureGuard

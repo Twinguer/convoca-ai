@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useStudyProAccess } from '@/hooks/useStudyProAccess';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showProRequiredToast } from '@/utils/planRestrictions';
@@ -13,15 +13,14 @@ export const ProFeatureGuard = ({
   children, 
   featureName
 }: ProFeatureGuardProps) => {
-  const { isPro, isLoading } = useSubscription();
+  const { canAccessStudyPro, isLoading } = useStudyProAccess();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirecionar imediatamente se não for Pro
-    if (!isLoading && !isPro) {
+    if (!isLoading && !canAccessStudyPro) {
       showProRequiredToast(navigate, featureName);
     }
-  }, [isPro, isLoading, navigate, featureName]);
+  }, [canAccessStudyPro, isLoading, navigate, featureName]);
 
   if (isLoading) {
     return (
@@ -31,7 +30,7 @@ export const ProFeatureGuard = ({
     );
   }
 
-  if (!isPro) {
+  if (!canAccessStudyPro) {
     // Retornar null pois o toast já redireciona
     return null;
   }

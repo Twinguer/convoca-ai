@@ -1319,6 +1319,18 @@ export type Database = {
         Args: { p_coach_id: string }
         Returns: Json
       }
+      check_coach_has_student_access: {
+        Args: { p_coach_id: string; p_student_id: string }
+        Returns: Json
+      }
+      get_coach_student_display: {
+        Args: { p_student_id: string }
+        Returns: Json
+      }
+      generate_coach_study_cycle_token: {
+        Args: { p_student_id: string; p_cycle_id: string }
+        Returns: string
+      }
       check_rate_limit: {
         Args: {
           p_action: string

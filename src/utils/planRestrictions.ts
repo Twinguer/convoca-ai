@@ -26,9 +26,9 @@ export const PLAN_LIMITS = {
  * e redirecionar para a página de planos
  */
 export const showProRequiredToast = (navigate: NavigateFunction, featureName?: string) => {
-  const message = featureName 
-    ? `O recurso "${featureName}" está disponível apenas no plano Pro.`
-    : 'Este recurso está disponível apenas no plano Pro.';
+  const message = featureName
+    ? `O recurso "${featureName}" exige plano Pro ou assinatura Modo Coach ativa.`
+    : 'Este recurso exige plano Pro ou assinatura Modo Coach ativa.';
   
   toast.error(message, {
     duration: 6000

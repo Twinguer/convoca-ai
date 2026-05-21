@@ -7,6 +7,7 @@ import { StudyCycleV2, StudySchedule } from '@/types/userStudy';
 import { createStudyCycleV2 } from '@/utils/userStudyHelpers';
 import { generateId } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { logger } from '@/utils/logger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
@@ -99,21 +100,31 @@ export const useStudyCyclesV2 = () => {
     
     if (!targetUserId || !user) return null;
 
-    // VALIDAÇÃO: Verificar se usuário é Free (apenas se for o próprio usuário, não coach)
+    // VALIDAÇÃO: Pro do aluno ou Modo Coach ativo (não aplicar ao criar ciclo para outro userId)
     if (!cycleData.userId) {
-      // Verificar subscription diretamente para evitar problemas com estado do hook
       const { data: subscription } = await supabase
         .from('user_subscriptions')
-        .select('plan, is_active')
+        .select('plan, is_active, expires_at')
         .eq('user_id', user.id)
         .maybeSingle();
-      
-      const userIsPro = subscription?.plan === 'pro' && subscription?.is_active === true;
-      
-      // Se não é Pro, bloquear e redirecionar imediatamente
-      if (!userIsPro) {
-        toast.error('Ciclos de estudos estão disponíveis apenas no plano Pro.');
-        // Redirecionar imediatamente
+
+      const hasValidExpiry =
+        !subscription?.expires_at || new Date(subscription.expires_at) > new Date();
+      const userIsPro =
+        subscription?.plan === 'pro' &&
+        subscription?.is_active === true &&
+        hasValidExpiry;
+
+      let coachActive = false;
+      try {
+        const coachSub = await coachSubscriptionService.getCoachSubscription(user.id);
+        coachActive = coachSub?.status === 'active';
+      } catch {
+        coachActive = false;
+      }
+
+      if (!userIsPro && !coachActive) {
+        toast.error('Ciclos de estudo exigem plano Pro ou assinatura Modo Coach ativa.');
         navigate('/planos');
         return null;
       }

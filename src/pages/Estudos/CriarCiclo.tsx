@@ -14,9 +14,9 @@ import { Plus, X, Edit, BookOpen, Calendar, CheckCircle, Loader2 } from 'lucide-
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { toast } from 'sonner';
-import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useStudyProAccess } from '@/hooks/useStudyProAccess';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { SortableBlocksList } from '@/components/study/SortableBlocksList';
 interface Discipline {
   id: string;
@@ -54,7 +54,7 @@ interface CriarCicloProps {
 const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps = {}) => {
   const { user } = useAuth();
   const { createCycle } = useStudyCyclesV2();
-  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
+  const { canAccessStudyPro, isLoading: isLoadingStudyAccess } = useStudyProAccess();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -174,8 +174,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
       return;
     }
 
-    // Nota: Verificação de plano Pro já é feita pelo ProFeatureGuard no render
-    // Se chegou aqui, o usuário já é Pro
+    // Em modo aluno, plano Pro é validado no render; em modo coach, o gate coach já validou acesso
     
     // Debug: Verificar blocos antes de enviar
     
@@ -212,7 +211,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
         if (onSuccess) {
           onSuccess();
         } else if (coachMode) {
-          navigate(`/coach/student/${targetStudentId}`);
+          await navigateBackFromCoach();
         } else {
           navigate('/estudos');
         }
@@ -224,25 +223,42 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
       setLoading(false);
     }
   };
+  const navigateBackFromCoach = async () => {
+    if (!targetStudentId) {
+      navigate('/coach/dashboard');
+      return;
+    }
+    try {
+      const studentToken = await UserUrlObfuscationService.generateUserToken(targetStudentId);
+      navigate(`/coach/student/${studentToken}`);
+    } catch {
+      navigate('/coach/dashboard');
+    }
+  };
+
   const daysUntilExam = calculateDaysUntilExam();
 
-  // Redirecionar usuários Free imediatamente
+  // Plano Pro do aluno — não aplicar ao coach criando ciclo para o aluno
+  const requiresStudentPro = !coachMode;
+
   React.useEffect(() => {
-    if (!isLoadingSubscription && !isPro) {
-      toast.error('O recurso "Criar Ciclo de Estudos" está disponível apenas no plano Pro.');
+    if (!requiresStudentPro) return;
+    if (!isLoadingStudyAccess && !canAccessStudyPro) {
+      toast.error(
+        'Ciclos de estudo exigem plano Pro ou assinatura Modo Coach ativa.'
+      );
       navigate('/planos');
     }
-  }, [isPro, isLoadingSubscription, navigate]);
+  }, [requiresStudentPro, canAccessStudyPro, isLoadingStudyAccess, navigate]);
 
-  // Mostrar loading enquanto carrega ou redireciona
-  if (isLoadingSubscription || !isPro) {
+  if (requiresStudentPro && (isLoadingStudyAccess || !canAccessStudyPro)) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex justify-center items-center py-8">
           <div className="text-center">
             <Loader2 className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-spin" />
             <p className="text-muted-foreground">
-              {isLoadingSubscription ? 'Carregando...' : 'Redirecionando...'}
+              {isLoadingStudyAccess ? 'Carregando...' : 'Redirecionando...'}
             </p>
           </div>
         </div>
@@ -263,7 +279,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
             variant="outline" 
             onClick={() => {
               if (coachMode && targetStudentId) {
-                navigate(`/coach/student/${targetStudentId}`);
+                void navigateBackFromCoach();
               } else {
                 navigate('/estudos');
               }

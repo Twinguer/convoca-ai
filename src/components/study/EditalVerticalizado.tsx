@@ -18,7 +18,7 @@ import type { EditalBlock } from '@/components/study/editalTypes';
 
 export type { EditalBlock, EditalDiscipline } from '@/components/study/editalTypes';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useStudyProAccess } from '@/hooks/useStudyProAccess';
 import type { DisciplineStudyStats } from '@/utils/disciplineStudyStats';
 import { DisciplineProgressStatus, isDisciplineCompletedForProgress } from '@/utils/disciplineStudyStats';
 
@@ -37,6 +37,8 @@ interface EditalVerticalizadoProps {
   className?: string;
   allowEdit?: boolean;
   allowReorder?: boolean;
+  /** Coach no modo aluno: não exige plano Pro do usuário logado */
+  bypassProGuard?: boolean;
 }
 
 function StatsLegend() {
@@ -74,8 +76,9 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   className = '',
   allowEdit = false,
   allowReorder = false,
+  bypassProGuard = false,
 }) => {
-  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
+  const { canAccessStudyPro, isLoading: isLoadingStudyAccess } = useStudyProAccess();
   const [internalExpandedBlocks, setInternalExpandedBlocks] = useState<Set<string>>(new Set());
 
   const canReorder = allowReorder && !!onBlocksChange;
@@ -158,10 +161,18 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
       ))
     );
 
-  if (!isLoadingSubscription && !isPro) {
+  if (!bypassProGuard && !isLoadingStudyAccess && !canAccessStudyPro) {
     return (
       <div className={className}>
         <ProFeatureGuard featureName="Ciclo de Estudos" />
+      </div>
+    );
+  }
+
+  if (!bypassProGuard && isLoadingStudyAccess) {
+    return (
+      <div className={`flex items-center justify-center p-8 ${className}`}>
+        <div className="text-muted-foreground text-sm">Carregando...</div>
       </div>
     );
   }

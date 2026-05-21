@@ -81,8 +81,7 @@ export class StudyCycleUrlObfuscationService {
         });
       }
       
-      if (!resolveError && tokenData && tokenData.entity_type === 'study_cycle' && tokenData.entity_id) {
-        // Validar que o token pertence ao usuário correto
+      if (!resolveError && tokenData && tokenData.entity_type === 'study_cycle') {
         const tokenUserId = tokenData.metadata?.user_id;
         if (tokenUserId && tokenUserId !== userId) {
           if (import.meta.env.DEV) {
@@ -93,11 +92,21 @@ export class StudyCycleUrlObfuscationService {
           }
           return null;
         }
-        
-        if (import.meta.env.DEV) {
-          devLog.log('[validateStudyCycleToken] ✅ Token válido via resolve_secure_token, cycle_id:', tokenData.entity_id);
+
+        const cycleIdFromMeta = tokenData.metadata?.cycle_id;
+        if (typeof cycleIdFromMeta === 'string' && cycleIdFromMeta.trim() !== '') {
+          if (import.meta.env.DEV) {
+            devLog.log('[validateStudyCycleToken] ✅ Token válido (metadata.cycle_id)');
+          }
+          return cycleIdFromMeta.trim();
         }
-        return tokenData.entity_id;
+
+        if (tokenData.entity_id) {
+          if (import.meta.env.DEV) {
+            devLog.log('[validateStudyCycleToken] ✅ Token válido via resolve_secure_token, cycle_id:', tokenData.entity_id);
+          }
+          return String(tokenData.entity_id);
+        }
       }
       
       // Fallback: tentar sistema antigo (compatibilidade com tokens antigos)

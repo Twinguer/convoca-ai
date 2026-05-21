@@ -297,6 +297,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
           showProgress={true}
           allowEdit={coachMode || false}
           allowReorder={true}
+          bypassProGuard={!!coachMode}
         />
       </div>
 

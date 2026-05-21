@@ -91,6 +91,7 @@ export const usePlanLimits = () => {
             planLimits = {
               ...planLimits,
               is_coach: true,
+              can_create_cycle: true,
               can_access_study_groups: true,
               can_create_study_group: planLimits.can_create_study_group || true,
             };
@@ -98,6 +99,7 @@ export const usePlanLimits = () => {
             planLimits = {
               ...DEFAULT_PLAN_LIMITS,
               is_coach: true,
+              can_create_cycle: true,
               can_access_study_groups: true,
               can_create_study_group: true,
             };
@@ -129,8 +131,8 @@ export const usePlanLimits = () => {
     participatingInOthersCount: planData.current_usage.participation_data.others,
     maxParticipationInOthers: planData.limits.max_rankings_participation || 2,
     
-    // Ciclos
-    canCreateCycle: planData.can_create_cycle,
+    // Ciclos (Pro ou Modo Coach ativo)
+    canCreateCycle: planData.can_create_cycle || planData.is_coach,
     currentCycleCount: planData.current_usage.cycle_count,
     
     // Grupos de estudo
