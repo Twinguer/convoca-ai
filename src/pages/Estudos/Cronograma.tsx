@@ -18,7 +18,6 @@ import { cn, generateId } from '@/lib/utils';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useQuestionTracking } from '@/hooks/useQuestionTracking';
 import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { StudyCycleV2 } from '@/types/userStudy';
@@ -40,6 +39,7 @@ import {
   type ScheduleMode,
 } from '@/utils/scheduleMode';
 import type { StudySchedule } from '@/types/userStudy';
+import { setPendingTimerTask } from '@/utils/timerTaskContext';
 
 interface StudySession {
   id: string;
@@ -138,9 +138,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     setQuestionsError('');
     return true;
   };
-  const {
-    addStudySession
-  } = useStudyStatistics();
   const {
     trackAnswer
   } = useQuestionTracking();
@@ -1200,9 +1197,38 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     setCurrentVideo('');
     setShowEditModal(true);
   };
+
+  const startTimerForTask = () => {
+    if (!editingSession) return;
+
+    const ownerUserId = coachMode ? targetStudentId : user?.id;
+    if (!ownerUserId) {
+      toast.error('Não foi possível identificar o aluno para o timer.');
+      return;
+    }
+
+    setPendingTimerTask({
+      scheduleSessionId: editingSession.id,
+      disciplineName: editingSession.disciplineName,
+      blockName: editingSession.blockName,
+      cycleId: editingSession.cycleId,
+      dayOfWeek: editingSession.day,
+      returnPath: `${window.location.pathname}${window.location.search}`,
+      plannedDurationMinutes: editingSession.durationMinutes,
+      ownerUserId,
+    });
+
+    if (editingSession.durationMinutes && editingSession.durationMinutes >= 5) {
+      setInitialTime(Math.min(editingSession.durationMinutes, 360));
+    }
+
+    setShowEditModal(false);
+    navigate('/estudos/timer');
+    toast.message('Use o timer para registrar o tempo nas estatísticas.');
+  };
+
   const saveStudySession = async () => {
-    if (!editingSession || studyDuration < 1) {
-      toast.error('Preencha pelo menos a duração do estudo');
+    if (!editingSession) {
       return;
     }
 
@@ -1223,10 +1249,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         studyType: studyType
       });
 
-      // Registrar no sistema de estatísticas globais se >= 20 minutos
-      if (studyDuration >= 20) {
-        await addStudySession(studyDuration, 'manual', editingSession.disciplineName);
-      }
+      // Horas nas estatísticas globais: apenas via Timer (tempo verificado)
 
       // Registrar questões no sistema de tracking se houver
       if (questionsTotal > 0) {
@@ -1891,17 +1914,30 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                 <p className="text-xs text-muted-foreground mt-1">{courseName.length}/50 caracteres</p>
               </div>
 
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  O tempo nas <strong className="text-foreground">estatísticas gerais</strong> só entra pelo{' '}
+                  <strong className="text-foreground">Timer de Estudo</strong> (mín. 20 min). Aqui você registra
+                  anotações, questões e progresso da tarefa no cronograma.
+                </p>
+                <Button type="button" variant="default" className="w-full" onClick={startTimerForTask}>
+                  <Timer className="h-4 w-4 mr-2" />
+                  Estudar com timer (tempo verificado)
+                </Button>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="duration">Tempo estudado (minutos) *</Label>
-                  <Input id="duration" type="number" min="1" max={999} value={studyDuration} onChange={e => {
+                  <Label htmlFor="duration">Tempo na tarefa (cronograma, opcional)</Label>
+                  <Input id="duration" type="number" min="0" max={999} value={studyDuration} onChange={e => {
                     const value = e.target.value;
-                    // Limitar a 3 dígitos (máximo 999)
-                    if (value === '' || (Number(value) >= 1 && Number(value) <= 999 && value.length <= 3)) {
+                    if (value === '' || (Number(value) >= 0 && Number(value) <= 999 && value.length <= 3)) {
                       setStudyDuration(value === '' ? 0 : Number(value));
                     }
                   }} placeholder="Ex: 60" maxLength={3} />
-                  {studyDuration >= 20 && <p className="text-xs text-green-600 mt-1">✓ Tarefa contará para as estatísticas</p>}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Não substitui o timer nas estatísticas globais.
+                  </p>
                 </div>
 
                 <div>

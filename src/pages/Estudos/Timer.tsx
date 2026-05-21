@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus } from 'lucide-react';
+import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus, ArrowLeft, BookOpen } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
+import { getPendingTimerTask } from '@/utils/timerTaskContext';
+
 const Timer = () => {
+  const navigate = useNavigate();
+  const pendingTask = useMemo(() => getPendingTimerTask(), []);
   const {
     minutes,
     seconds,
@@ -51,8 +56,42 @@ const Timer = () => {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
-            <p className="text-muted-foreground">Mantenha o foco com sessões cronometradas</p>
+            <p className="text-muted-foreground">
+              {pendingTask
+                ? 'Tempo verificado: contará nas estatísticas ao parar o timer (mín. 20 min).'
+                : 'Mantenha o foco com sessões cronometradas'}
+            </p>
           </div>
+
+          {pendingTask && (
+            <Card className="mb-4 border-primary/40 bg-primary/5">
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex items-start gap-2">
+                  <BookOpen className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div className="text-left">
+                    <p className="font-medium">{pendingTask.disciplineName}</p>
+                    {pendingTask.blockName && (
+                      <p className="text-sm text-muted-foreground">{pendingTask.blockName}</p>
+                    )}
+                    {pendingTask.plannedDurationMinutes != null && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Meta sugerida: {pendingTask.plannedDurationMinutes} min
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate(pendingTask.returnPath)}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar ao cronograma
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
           <CardHeader>

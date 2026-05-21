@@ -3,6 +3,38 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import {
+  clearPendingTimerTask,
+  getPendingTimerTask,
+} from '@/utils/timerTaskContext';
+import { completeScheduleTaskFromTimer } from '@/services/studyTimerCompletion';
+
+async function registerTimerStudyTime(
+  userId: string | undefined,
+  sessionStartTime: Date | null,
+  addStudySession:
+    | ((duration: number, type?: 'timer' | 'manual', subject?: string) => Promise<void>)
+    | undefined
+): Promise<void> {
+  if (!userId || !sessionStartTime || !addStudySession) return;
+
+  const sessionDuration = Math.floor(
+    (Date.now() - sessionStartTime.getTime()) / (1000 * 60)
+  );
+  if (sessionDuration < 1) return;
+
+  const pending = getPendingTimerTask();
+  if (pending) {
+    const ownerId = pending.ownerUserId ?? userId;
+    await completeScheduleTaskFromTimer(ownerId, pending, sessionDuration);
+    clearPendingTimerTask();
+    return;
+  }
+
+  if (sessionDuration >= 20) {
+    await addStudySession(sessionDuration, 'timer');
+  }
+}
 
 interface TimerContextType {
   minutes: number;
@@ -262,13 +294,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
             intervalRef.current = null;
           }
 
-          // Register study session
-          if (sessionStartTime && addStudySession) {
-            const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / (1000 * 60));
-            if (sessionDuration >= 20) {
-              addStudySession(sessionDuration);
-            }
-          }
+          void registerTimerStudyTime(user?.id, sessionStartTime, addStudySession);
 
           // Reset state
           setIsRunning(false);
@@ -445,13 +471,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   };
 
   const stopTimer = () => {
-    // Calcular duração da sessão
-    if (sessionStartTime && addStudySession) {
-      const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / (1000 * 60));
-      if (sessionDuration >= 20) {
-        addStudySession(sessionDuration);
-      }
-    }
+    void registerTimerStudyTime(user?.id, sessionStartTime, addStudySession);
 
     // Clear ticking
     if (intervalRef.current) {
