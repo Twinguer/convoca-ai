@@ -17,6 +17,8 @@ interface User {
   avatar_url: string;
   isCoach?: boolean;
   isPro?: boolean;
+  hasActiveCoach?: boolean;
+  activeStudentCount?: number;
   is_studying?: boolean;
 }
 
@@ -43,10 +45,10 @@ export const UserGrid: React.FC<UserGridProps> = ({ children, users, className =
           concursos_aprovados: user.concursos_aprovados,
           followerCount: user.followerCount,
           postCount: user.postCount,
-          approvalCount: user.approvalCount,
-          status_concurseiro: user.status_concurseiro,
           isCoach: user.isCoach || false,
-          is_studying: user.is_studying || false,
+          isPro: user.isPro || false,
+          hasActiveCoach: user.hasActiveCoach || false,
+          activeStudentCount: user.activeStudentCount ?? 0,
         };
         
         return (

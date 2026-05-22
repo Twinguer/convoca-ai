@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
 import { devLog } from '@/utils/productionLogger';
+import { mapCommunityProfileFlags } from '@/utils/communityProfileRules';
+import { formatPublicNicknameHandle, stripNicknamePrefix } from '@/utils/nicknameUtils';
 
 // Hook to fetch community users
 export const useCommunityUsers = (searchQuery: string = '') => {
@@ -30,6 +32,9 @@ export const useCommunityUsers = (searchQuery: string = '') => {
         }
 
         const sanitizedProfiles = (profiles || []).map((profile) => {
+          const { isCoach, hasActiveCoach, activeStudentCount, isPro } =
+            mapCommunityProfileFlags(profile ?? {});
+
           const displayName = profile?.name ?? 'Concurseiro';
           const usernameFromName = displayName
             ? displayName.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -39,8 +44,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           return {
             id: profile?.id,
             name: displayName,
-            nickname: profile?.nickname || null,
-            publicHandle: profile?.nickname ? `@${profile.nickname}` : null,
+            nickname: stripNicknamePrefix(profile?.nickname) || null,
+            publicHandle: formatPublicNicknameHandle(profile?.nickname),
             avatar_url: profile?.avatar_url || '',
             username: usernameFromName,
             followerCount: 0,
@@ -59,8 +64,10 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             curso_preparatorio: '',
             rotina_estudos: '',
             is_studying: profile?.is_studying || false,
-            isCoach: profile?.is_coach ?? false,
-            isPro: profile?.is_pro ?? false
+            isCoach,
+            isPro,
+            hasActiveCoach,
+            activeStudentCount,
           };
         });
 

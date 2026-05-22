@@ -162,6 +162,40 @@ async function updateCoachSubscription(
   console.log(`[verify-stripe-subscription] Assinatura Coach atualizada: coachId=${coachId}, plan=${coachPlan.plan_type}, isActive=${isActive}`);
 }
 
+/**
+ * Desativa assinaturas locais expiradas (expires_at no passado).
+ */
+async function deactivateExpiredSubscriptionsForUser(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  userId: string
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  const { error: userError } = await supabase
+    .from("user_subscriptions")
+    .update({ is_active: false, updated_at: now })
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .not("expires_at", "is", null)
+    .lte("expires_at", now);
+
+  if (userError) {
+    console.error(`[verify-stripe-subscription] Erro ao desativar Pro expirado para ${userId}:`, userError);
+  }
+
+  const { error: coachError } = await supabase
+    .from("coach_subscriptions")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("coach_id", userId)
+    .eq("status", "active")
+    .not("expires_at", "is", null)
+    .lte("expires_at", now);
+
+  if (coachError) {
+    console.error(`[verify-stripe-subscription] Erro ao cancelar Coach expirado para ${userId}:`, coachError);
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
@@ -258,10 +292,13 @@ serve(async (req: Request): Promise<Response> => {
 
     if (subscriptions.data.length === 0) {
       console.log(`[verify-stripe-subscription] Nenhuma assinatura ativa encontrada para customer ${customer.id}`);
+      const serviceRoleSupabase = createServiceRoleClient();
+      await deactivateExpiredSubscriptionsForUser(serviceRoleSupabase, user.id);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Nenhuma assinatura ativa encontrada" 
+          message: "Nenhuma assinatura ativa encontrada",
+          deactivated_expired: true
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

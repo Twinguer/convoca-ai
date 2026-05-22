@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import { formatPublicNicknameHandle } from '@/utils/nicknameUtils';
 
 const InviteStudentPage = () => {
   const navigate = useNavigate();
@@ -303,7 +304,9 @@ const InviteStudentPage = () => {
                     </Avatar>
                     <div className="flex-1 min-w-0 pointer-events-none">
                       <p className="font-medium truncate text-sm">{user.name || 'Sem nome'}</p>
-                      <p className="text-xs text-muted-foreground">@{user.nickname || 'sem-nickname'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatPublicNicknameHandle(user.nickname) ?? '@sem-nickname'}
+                      </p>
                     </div>
                     <div className="text-xs text-primary font-medium pointer-events-none">Selecionar →</div>
                   </div>
@@ -325,7 +328,9 @@ const InviteStudentPage = () => {
                     <p className="font-medium text-foreground">
                       ✓ {selectedUser.name || 'Usuário selecionado'}
                     </p>
-                    <p className="text-sm text-muted-foreground">@{selectedUser.nickname}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatPublicNicknameHandle(selectedUser.nickname)}
+                    </p>
                   </div>
                   <Button
                     variant="ghost"

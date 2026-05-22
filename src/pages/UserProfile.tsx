@@ -26,6 +26,7 @@ import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
 import { fetchUserRankings } from '@/services/rankingService';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { formatPublicNicknameHandle, stripNicknamePrefix } from '@/utils/nicknameUtils';
 
 interface UserRanking {
   concursoId: string;
@@ -264,8 +265,9 @@ const UserProfile = () => {
       setEspecialidade(profile.especialidade || '');
       setCursoPreparatorio(profile.curso_preparatorio || '');
       setRotinaEstudos(profile.rotina_estudos || '');
-      setNickname(profile.nickname || '');
-      setNicknameInput(profile.nickname || '');
+      const cleanNickname = stripNicknamePrefix(profile.nickname);
+      setNickname(cleanNickname);
+      setNicknameInput(cleanNickname);
       setNicknameStatus('idle');
       setNicknameMessage('');
     }
@@ -273,7 +275,10 @@ const UserProfile = () => {
 
   const sanitizeNicknameInput = useCallback((value: string) => {
     if (!value) return '';
-    return value.toLowerCase().replace(/[^a-z0-9_.]/g, '').slice(0, 20);
+    return stripNicknamePrefix(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9_.]/g, '')
+      .slice(0, 20);
   }, []);
 
   const handleNicknameInputChange = (value: string) => {
@@ -353,7 +358,7 @@ const UserProfile = () => {
       if (!silent) {
         toast({
           title: 'Nickname atualizado',
-          description: `Seu novo nickname é @${data.nickname}`
+          description: `Seu novo nickname é ${formatPublicNicknameHandle(data.nickname) ?? ''}`
         });
       }
 
@@ -558,12 +563,12 @@ const UserProfile = () => {
               <CardDescription>Identificador único exibido no perfil público e usado para convites.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">@</span>
+              <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <span className="text-muted-foreground shrink-0 select-none">@</span>
                 <Input
                   value={nicknameInput}
                   onChange={(e) => handleNicknameInputChange(e.target.value)}
-                  className="pl-8"
+                  className="border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
                   maxLength={20}
                   disabled={nicknameStatus === 'saving'}
                 />

@@ -60,6 +60,7 @@ const CoachSubscriptionPage = () => {
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['community-users'] });
             
             // Redirecionar para dashboard do Coach
             navigate('/coach/dashboard', { replace: true });
@@ -71,6 +72,7 @@ const CoachSubscriptionPage = () => {
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
             await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
+            await queryClient.invalidateQueries({ queryKey: ['community-users'] });
             
             // Redirecionar para dashboard do Coach
             navigate('/coach/dashboard', { replace: true });
@@ -83,6 +85,7 @@ const CoachSubscriptionPage = () => {
           await queryClient.invalidateQueries({ queryKey: ['coach-subscription-menu', user?.id] });
           await queryClient.invalidateQueries({ queryKey: ['coach-subscription-landing', user?.id] });
           await queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
+          await queryClient.invalidateQueries({ queryKey: ['community-users'] });
           
           // Redirecionar para dashboard do Coach mesmo com erro
           navigate('/coach/dashboard', { replace: true });

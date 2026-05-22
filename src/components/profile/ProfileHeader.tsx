@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { User, Upload, Loader2, Pen, Clock } from 'lucide-react';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import { formatPublicNicknameHandle } from '@/utils/nicknameUtils';
 
 interface ProfileHeaderProps {
   name: string;
@@ -43,6 +44,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     return hours.toFixed(1) + 'h';
   };
 
+  const publicNicknameHandle = formatPublicNicknameHandle(nickname);
+
   return (
     <div className="flex flex-col items-center space-y-4">
       <Avatar className="h-32 w-32" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
@@ -54,8 +57,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       
       <div className="text-center">
         <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
-        {nickname && (
-          <p className="text-sm text-muted-foreground">@{nickname}</p>
+        {publicNicknameHandle && (
+          <p className="text-sm text-muted-foreground">{publicNicknameHandle}</p>
         )}
         <p className="text-sm text-muted-foreground">{email}</p>
         

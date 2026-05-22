@@ -17,6 +17,7 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import { formatPublicNicknameHandle } from '@/utils/nicknameUtils';
 
 interface UserProfile {
   id: string;
@@ -350,6 +351,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
 
   // Verificar se há informações de "Sobre mim"
   const hasAboutInfo = profile.estado || profile.formacao || profile.cargo_atual || profile.area_estudos || profile.especialidade || profile.curso_preparatorio;
+  const publicNicknameHandle = formatPublicNicknameHandle(profile.nickname);
   return <div className="container mx-auto p-6 max-w-7xl">
       
       
@@ -373,8 +375,8 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                   <h2 className="text-xl font-bold mb-1">
                     {profile?.name || 'Usuário'}
                   </h2>
-                  {profile?.nickname && (
-                    <p className="text-sm text-muted-foreground mb-1">@{profile.nickname}</p>
+                  {publicNicknameHandle && (
+                    <p className="text-sm text-muted-foreground mb-1">{publicNicknameHandle}</p>
                   )}
                   {profile?.isCoach && (
                     <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200 mb-2">
