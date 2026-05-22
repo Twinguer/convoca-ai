@@ -19,12 +19,19 @@ import {
   type PciConcursoFeedItem,
   type PciNivelFilter,
 } from '@/types/pciConcursoFeed';
-import { filterPciItems, getGridColumnCount } from '@/utils/pciConcursoFeedUtils';
+import {
+  collectUfsFromItems,
+  filterPciItems,
+  getGridColumnCount,
+  parseUfFilter,
+} from '@/utils/pciConcursoFeedUtils';
+import { Badge } from '@/components/ui/badge';
 
 const ROWS_PER_PAGE = 3;
 
 export function PciConcursosFeed() {
   const [search, setSearch] = useState('');
+  const [ufFilter, setUfFilter] = useState<string | null>(null);
   const [nivel, setNivel] = useState<PciNivelFilter>('');
   const [activeTab, setActiveTab] = useState<string>('NACIONAL');
   const [visibleByTab, setVisibleByTab] = useState<Record<string, number>>({});
@@ -53,10 +60,20 @@ export function PciConcursosFeed() {
     return () => ro.disconnect();
   }, [updatePageSize]);
 
+  const availableUfs = useMemo(() => collectUfsFromItems(items), [items]);
+
+  const activeUf = ufFilter || parseUfFilter(search);
+
   const filtered = useMemo(
-    () => filterPciItems(items, search, nivel),
-    [items, search, nivel],
+    () => filterPciItems(items, search, nivel, ufFilter),
+    [items, search, nivel, ufFilter],
   );
+
+  const toggleUfFilter = (uf: string) => {
+    const code = uf.toUpperCase();
+    setUfFilter((prev) => (prev === code ? null : code));
+    setSearch('');
+  };
 
   const byRegiao = useMemo(() => {
     const map: Record<string, PciConcursoFeedItem[]> = {};
@@ -77,12 +94,12 @@ export function PciConcursosFeed() {
   }, [byRegiao]);
 
   useEffect(() => {
-    const key = `${search}|${nivel}`;
+    const key = `${search}|${nivel}|${ufFilter ?? ''}`;
     if (key !== filterKey) {
       setFilterKey(key);
       setVisibleByTab({});
     }
-  }, [search, nivel, filterKey]);
+  }, [search, nivel, ufFilter, filterKey]);
 
   useEffect(() => {
     const firstWithData = PCI_REGION_TAB_ORDER.find((r) => (counts[r] ?? 0) > 0);
@@ -146,7 +163,7 @@ export function PciConcursosFeed() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Órgão, cargo, UF…"
+            placeholder="Órgão, cargo… ou UF (ex.: AL)"
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -164,6 +181,43 @@ export function PciConcursosFeed() {
           </SelectContent>
         </Select>
       </div>
+
+      {availableUfs.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground shrink-0">Estado:</span>
+          {availableUfs.map((uf) => (
+            <Badge
+              key={uf}
+              variant={activeUf === uf ? 'default' : 'outline'}
+              className="cursor-pointer text-xs hover:bg-primary/10"
+              role="button"
+              tabIndex={0}
+              onClick={() => toggleUfFilter(uf)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleUfFilter(uf);
+                }
+              }}
+            >
+              {uf}
+            </Badge>
+          ))}
+          {activeUf ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                setUfFilter(null);
+                if (parseUfFilter(search)) setSearch('');
+              }}
+            >
+              Limpar estado
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {lastScrapedLabel ? (
         <p className="text-sm text-muted-foreground">
@@ -221,7 +275,12 @@ export function PciConcursosFeed() {
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {visible.map((item) => (
-                        <PciConcursoCard key={item.id} item={item} />
+                        <PciConcursoCard
+                          key={item.id}
+                          item={item}
+                          onUfClick={toggleUfFilter}
+                          ufFilterActive={activeUf}
+                        />
                       ))}
                     </div>
                     {remaining > 0 ? (

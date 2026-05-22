@@ -6,9 +6,12 @@ import { daysUntilInscricao, formatBRL } from '@/utils/pciConcursoFeedUtils';
 
 interface PciConcursoCardProps {
   item: PciConcursoFeedItem;
+  /** Clique no badge de UF — filtra concursos do mesmo estado */
+  onUfClick?: (uf: string) => void;
+  ufFilterActive?: string | null;
 }
 
-export function PciConcursoCard({ item }: PciConcursoCardProps) {
+export function PciConcursoCard({ item, onUfClick, ufFilterActive }: PciConcursoCardProps) {
   const prazoFinal = item.inscricao_ate;
   const dias = daysUntilInscricao(prazoFinal);
   const urgente = dias != null && dias <= 7;
@@ -33,7 +36,33 @@ export function PciConcursoCard({ item }: PciConcursoCardProps) {
         <CardTitle className="text-base font-semibold leading-snug">{item.titulo}</CardTitle>
         <div className="flex flex-wrap gap-1.5 pt-1">
           {item.uf ? (
-            <Badge variant="secondary" className="text-xs">
+            <Badge
+              variant={ufFilterActive === item.uf.toUpperCase() ? 'default' : 'secondary'}
+              className={cn(
+                'text-xs',
+                onUfClick && 'cursor-pointer hover:bg-primary/15',
+              )}
+              role={onUfClick ? 'button' : undefined}
+              tabIndex={onUfClick ? 0 : undefined}
+              onClick={
+                onUfClick
+                  ? (e) => {
+                      e.stopPropagation();
+                      onUfClick(item.uf!);
+                    }
+                  : undefined
+              }
+              onKeyDown={
+                onUfClick
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onUfClick(item.uf!);
+                      }
+                    }
+                  : undefined
+              }
+            >
               {item.uf}
             </Badge>
           ) : null}

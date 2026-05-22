@@ -141,6 +141,11 @@ export function parsePciConcursosHtml(html: string): PciParsedItem[] {
 
     if (node.classList.contains("ua")) {
       ufEstado = node.id && node.id.length <= 3 ? node.id : null;
+      const ufDiv = node.querySelector(".uf");
+      if (!ufEstado && ufDiv) {
+        const nome = normalizeText(ufDiv.textContent || "");
+        if (nome === "NACIONAL") ufEstado = null;
+      }
       continue;
     }
 

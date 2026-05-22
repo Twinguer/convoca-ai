@@ -1,5 +1,22 @@
 import type { PciConcursoFeedItem, PciNivelFilter } from '@/types/pciConcursoFeed';
 
+/** Siglas de UF usadas no badge e no filtro por estado */
+export const BRAZILIAN_UFS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+] as const;
+
+export type BrazilianUf = (typeof BRAZILIAN_UFS)[number];
+
+const UF_SET = new Set<string>(BRAZILIAN_UFS);
+
+/** Retorna sigla se o texto for exatamente uma UF (ex.: "AL", " al "). */
+export function parseUfFilter(input: string): BrazilianUf | null {
+  const t = input.trim().toUpperCase();
+  if (t.length !== 2 || !UF_SET.has(t)) return null;
+  return t as BrazilianUf;
+}
+
 export function inferNiveis(escolaridade: string): PciNivelFilter[] {
   const t = (escolaridade || '')
     .toLowerCase()
@@ -21,14 +38,31 @@ export function filterPciItems(
   items: PciConcursoFeedItem[],
   query: string,
   nivel: PciNivelFilter,
+  selectedUf?: string | null,
 ): PciConcursoFeedItem[] {
-  const q = query.trim().toLowerCase();
+  const ufFromSearch = parseUfFilter(query);
+  const activeUf = (selectedUf ? selectedUf.toUpperCase() : null) || ufFromSearch;
+  const textQ =
+    ufFromSearch && !selectedUf ? '' : query.trim().toLowerCase();
+
   return items.filter((item) => {
     if (!matchesNivel(item, nivel)) return false;
-    if (!q) return true;
-    const hay = `${item.titulo} ${item.cargos || ''} ${item.uf || ''} ${item.escolaridade}`.toLowerCase();
-    return hay.includes(q);
+    if (activeUf && (item.uf || '').toUpperCase() !== activeUf) return false;
+    if (!textQ) return true;
+    const hay = `${item.titulo} ${item.cargos || ''} ${item.resumo || ''} ${item.escolaridade}`
+      .toLowerCase();
+    return hay.includes(textQ);
   });
+}
+
+/** UFs presentes no feed, para chips de filtro (mesmo valor do badge). */
+export function collectUfsFromItems(items: PciConcursoFeedItem[]): BrazilianUf[] {
+  const set = new Set<BrazilianUf>();
+  for (const item of items) {
+    const uf = parseUfFilter(item.uf || '');
+    if (uf) set.add(uf);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 
 export function daysUntilInscricao(dateStr: string | null | undefined): number | null {
