@@ -272,6 +272,99 @@ export type Database = {
         }
         Relationships: []
       }
+      pci_concurso_feed: {
+        Row: {
+          id: string
+          titulo: string
+          regiao: string
+          uf: string | null
+          vagas: number | null
+          vagas_texto: string | null
+          salario_min: number | null
+          salario_max: number | null
+          salario_texto: string | null
+          cargos: string | null
+          escolaridade: string
+          resumo: string | null
+          inscricao_ate: string | null
+          inscricao_texto: string | null
+          status: string
+          is_active: boolean
+          scraped_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          titulo: string
+          regiao: string
+          uf?: string | null
+          vagas?: number | null
+          vagas_texto?: string | null
+          salario_min?: number | null
+          salario_max?: number | null
+          salario_texto?: string | null
+          cargos?: string | null
+          escolaridade?: string
+          resumo?: string | null
+          inscricao_ate?: string | null
+          inscricao_texto?: string | null
+          status?: string
+          is_active?: boolean
+          scraped_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          titulo?: string
+          regiao?: string
+          uf?: string | null
+          vagas?: number | null
+          vagas_texto?: string | null
+          salario_min?: number | null
+          salario_max?: number | null
+          salario_texto?: string | null
+          cargos?: string | null
+          escolaridade?: string
+          resumo?: string | null
+          inscricao_ate?: string | null
+          inscricao_texto?: string | null
+          status?: string
+          is_active?: boolean
+          scraped_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pci_concurso_feed_sync_runs: {
+        Row: {
+          id: string
+          started_at: string
+          finished_at: string | null
+          status: string
+          items_upserted: number | null
+          items_deactivated: number | null
+          error_message: string | null
+        }
+        Insert: {
+          id?: string
+          started_at?: string
+          finished_at?: string | null
+          status?: string
+          items_upserted?: number | null
+          items_deactivated?: number | null
+          error_message?: string | null
+        }
+        Update: {
+          id?: string
+          started_at?: string
+          finished_at?: string | null
+          status?: string
+          items_upserted?: number | null
+          items_deactivated?: number | null
+          error_message?: string | null
+        }
+        Relationships: []
+      }
       concursos: {
         Row: {
           alternatives_count: number | null

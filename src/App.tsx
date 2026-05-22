@@ -48,6 +48,7 @@ import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
 import CommunityPage from "./modules/community/pages/CommunityPage";
+import ConcursosPage from "./pages/ConcursosPage";
 import { GroupDetailsPage } from "./pages/GroupDetailsPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
 import RankingParticipationWrapper from "./components/resultados/RankingParticipationWrapper";
@@ -153,6 +154,10 @@ const AppContent = () => {
                           <Menu />
                           <CommunityPage />
                         </>} />
+                    <Route path="/concursos" element={<>
+                        <Menu />
+                        <ConcursosPage />
+                      </>} />
                     <Route path="/grupos/:groupId" element={<>
                         <Menu />
                         <GroupDetailsPage />

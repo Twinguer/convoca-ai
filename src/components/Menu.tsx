@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
@@ -122,6 +122,16 @@ const Menu = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink 
                   className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/concursos')}
+                >
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Concursos
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
                   onClick={() => navigate('/comunidade')}
                 >
                   <Users className="mr-2 h-4 w-4" />
@@ -212,6 +222,10 @@ const Menu = () => {
                 <Link to="/estatisticas" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/estatisticas') ? "text-primary" : "text-foreground/70")}>
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Estatistica
+                </Link>
+                <Link to="/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/concursos') ? "text-primary" : "text-foreground/70")}>
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Concursos
                 </Link>
                 <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />

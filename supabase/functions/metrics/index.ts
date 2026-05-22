@@ -81,6 +81,7 @@ interface MetricsResponse {
         total: number;
         free: number;
         pro: number;
+        pro_active: number;
         active: number;
         expiring_7d: number;
         new_24h: number;
@@ -179,6 +180,18 @@ interface MetricsResponse {
         created_30d: number;
       };
       avg_participation_rate: number;
+    };
+    pci_feed: {
+      active_count: number;
+      last_scraped_at: string | null;
+      last_sync: {
+        status: string;
+        started_at: string;
+        finished_at: string | null;
+        items_upserted: number | null;
+        items_deactivated: number | null;
+        error_message: string | null;
+      } | null;
     };
   };
   error?: string;
@@ -620,6 +633,7 @@ serve(async (req) => {
     let userSubsTotal = 0;
     let userSubsFree = 0;
     let userSubsPro = 0;
+    let userSubsProActive = 0;
     let userSubsActive = 0;
     let userSubsExpiring7d = 0;
     let userSubsNew24h = 0;
@@ -643,6 +657,13 @@ serve(async (req) => {
         .select('*', { count: 'exact', head: true })
         .eq('plan', 'pro');
       userSubsPro = proSubs || 0;
+
+      const { count: proActiveSubs } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('plan', 'pro')
+        .eq('is_active', true);
+      userSubsProActive = proActiveSubs || 0;
 
       const { count: activeUserSubs } = await supabase
         .from('user_subscriptions')
@@ -700,16 +721,17 @@ serve(async (req) => {
 
       const { data: coachSubsData } = await supabase
         .from('coach_subscriptions')
-        .select('plan_id, status, expires_at');
+        .select('plan_type, status, expires_at');
 
       if (coachSubsData) {
         coachSubsData.forEach(sub => {
           if (sub.status === 'active') {
-            if (sub.plan_id === 'coach_starter' || sub.plan_id === 'starter') {
+            const plan = sub.plan_type;
+            if (plan === 'starter') {
               coachSubsStarter++;
-            } else if (sub.plan_id === 'coach_professional' || sub.plan_id === 'professional') {
+            } else if (plan === 'professional') {
               coachSubsProfessional++;
-            } else if (sub.plan_id === 'coach_enterprise' || sub.plan_id === 'enterprise') {
+            } else if (plan === 'enterprise') {
               coachSubsEnterprise++;
             }
             if (sub.expires_at) {
@@ -1172,6 +1194,50 @@ serve(async (req) => {
     }
 
     // ============================================
+    // 14b. FEED PCI (página /concursos)
+    // ============================================
+    let pciActiveCount = 0;
+    let pciLastScrapedAt: string | null = null;
+    let pciLastSync: MetricsResponse['metrics']['pci_feed']['last_sync'] = null;
+
+    try {
+      const { count: pciCount } = await supabase
+        .from('pci_concurso_feed')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      pciActiveCount = pciCount || 0;
+
+      const { data: pciScrapedRow } = await supabase
+        .from('pci_concurso_feed')
+        .select('scraped_at')
+        .eq('is_active', true)
+        .order('scraped_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      pciLastScrapedAt = pciScrapedRow?.scraped_at ?? null;
+
+      const { data: pciRunRow } = await supabase
+        .from('pci_concurso_feed_sync_runs')
+        .select('status, started_at, finished_at, items_upserted, items_deactivated, error_message')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (pciRunRow) {
+        pciLastSync = {
+          status: pciRunRow.status,
+          started_at: pciRunRow.started_at,
+          finished_at: pciRunRow.finished_at,
+          items_upserted: pciRunRow.items_upserted,
+          items_deactivated: pciRunRow.items_deactivated,
+          error_message: pciRunRow.error_message,
+        };
+      }
+    } catch (error) {
+      console.warn('[metrics] Error fetching pci_feed metrics:', error);
+    }
+
+    // ============================================
     // 15. MONTAR RESPOSTA
     // ============================================
     const response: MetricsResponse = {
@@ -1238,6 +1304,7 @@ serve(async (req) => {
             total: userSubsTotal,
             free: userSubsFree,
             pro: userSubsPro,
+            pro_active: userSubsProActive,
             active: userSubsActive,
             expiring_7d: userSubsExpiring7d,
             new_24h: userSubsNew24h,
@@ -1333,6 +1400,11 @@ serve(async (req) => {
           },
           avg_participation_rate: avgParticipationRate,
         },
+        pci_feed: {
+          active_count: pciActiveCount,
+          last_scraped_at: pciLastScrapedAt,
+          last_sync: pciLastSync,
+        },
       },
     };
 
@@ -1364,7 +1436,7 @@ serve(async (req) => {
         performance: { avg_query_time_ms: 0, slow_queries_count: 0, active_alerts: 0, critical_alerts: 0 },
         system: { health: 'critical', engagement_rate: 0, uptime_percentage: 0 },
         subscriptions: {
-          user_subscriptions: { total: 0, free: 0, pro: 0, active: 0, expiring_7d: 0, new_24h: 0, new_7d: 0, new_30d: 0 },
+          user_subscriptions: { total: 0, free: 0, pro: 0, pro_active: 0, active: 0, expiring_7d: 0, new_24h: 0, new_7d: 0, new_30d: 0 },
           coach_subscriptions: { total: 0, active: 0, starter: 0, professional: 0, enterprise: 0, expiring_7d: 0 },
           vouchers: { total: 0, active: 0, used: 0, expiring_7d: 0 },
           payments: { pending: 0, approved_24h: 0, approved_7d: 0, rejected: 0, success_rate: 0 },
@@ -1393,6 +1465,11 @@ serve(async (req) => {
           by_status: { em_andamento: 0, finalizado: 0, inativo: 0 },
           created: { created_24h: 0, created_7d: 0, created_30d: 0 },
           avg_participation_rate: 0,
+        },
+        pci_feed: {
+          active_count: 0,
+          last_scraped_at: null,
+          last_sync: null,
         },
       },
       error: error instanceof Error ? error.message : 'Unknown error',
