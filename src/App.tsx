@@ -63,6 +63,7 @@ import StudentSchedulePage from "./modules/coach/pages/StudentSchedulePage";
 import StudentCycleDisciplinesPage from "./modules/coach/pages/StudentCycleDisciplinesPage";
 import { useParams } from 'react-router-dom';
 import { useTokenCleanup } from './hooks/useTokenCleanup';
+import { GoogleAdsRouteTracker } from '@/components/analytics/GoogleAdsRouteTracker';
 // Páginas de teste removidas após migração completa
 // import TestRankingsV2 from "./pages/TestRankingsV2";
 // import DebugRanking from "./pages/DebugRanking";
@@ -94,6 +95,7 @@ const AppContent = () => {
           v7_relativeSplatPath: true,
         }}
       >
+                  <GoogleAdsRouteTracker />
                   <Routes>
                     <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />
                     <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />

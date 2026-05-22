@@ -4,10 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Sparkles, Users, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { trackConversion } from '@/lib/analytics';
 
 const ConfirmacaoSucesso: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  useEffect(() => {
+    trackConversion('signup_confirm');
+  }, []);
 
   useEffect(() => {
     if (user) {

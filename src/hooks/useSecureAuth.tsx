@@ -6,6 +6,7 @@ import { PasswordValidator } from '@/utils/passwordValidator';
 import { RateLimiters } from '@/utils/rateLimiter';
 import { logError, logSecurity } from '@/utils/secureLogger';
 import DOMPurify from 'dompurify';
+import { trackConversion } from '@/lib/analytics';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
@@ -227,7 +228,8 @@ export const useSecureAuth = () => {
 
       if (data.user) {
         // Perfil criado automaticamente via trigger no banco
-        
+        trackConversion('signup');
+
         if (data.user.email_confirmed_at) {
           showSuccessToast('Cadastro realizado com sucesso!', 'Sua conta foi criada e confirmada automaticamente.');
         } else {

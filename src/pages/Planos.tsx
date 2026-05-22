@@ -17,6 +17,7 @@ import { paymentService } from "@/services/paymentService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { logError, logWarn } from "@/utils/secureLogger";
+import { trackConversion } from "@/lib/analytics";
 
 const Planos = () => {
   const [searchParams] = useSearchParams();
@@ -61,6 +62,7 @@ const Planos = () => {
           const result = await paymentService.verifySubscription();
           
           if (result.success) {
+            trackConversion('purchase', { value: 1.0, currency: 'BRL' });
             toast({
               title: "Pagamento realizado com sucesso!",
               description: `Seu plano foi ativado. Bem-vindo ao premium!`
