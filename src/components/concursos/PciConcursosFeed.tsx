@@ -126,9 +126,14 @@ export function PciConcursosFeed() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-24">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
+      <>
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Concursos abertos</h1>
+        </header>
+        <div className="flex justify-center items-center py-24">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      </>
     );
   }
 
@@ -158,6 +163,16 @@ export function PciConcursosFeed() {
 
   return (
     <div className="space-y-6" ref={gridWrapRef}>
+      <header className="mb-2">
+        <h1 className="text-3xl font-bold text-foreground">Concursos abertos</h1>
+        {lastScrapedLabel ? (
+          <p className="text-muted-foreground mt-1 text-sm">
+            Atualizado em {lastScrapedLabel} · {filtered.length} concurso
+            {filtered.length === 1 ? '' : 's'} com os filtros atuais
+          </p>
+        ) : null}
+      </header>
+
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -182,84 +197,64 @@ export function PciConcursosFeed() {
         </Select>
       </div>
 
-      {availableUfs.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground shrink-0">Estado:</span>
-          {availableUfs.map((uf) => (
-            <Badge
-              key={uf}
-              variant={activeUf === uf ? 'default' : 'outline'}
-              className="cursor-pointer text-xs hover:bg-primary/10"
-              role="button"
-              tabIndex={0}
-              onClick={() => toggleUfFilter(uf)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  toggleUfFilter(uf);
-                }
-              }}
-            >
-              {uf}
-            </Badge>
-          ))}
-          {activeUf ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => {
-                setUfFilter(null);
-                if (parseUfFilter(search)) setSearch('');
-              }}
-            >
-              Limpar estado
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {lastScrapedLabel ? (
-        <p className="text-sm text-muted-foreground">
-          Atualizado em {lastScrapedLabel} · {filtered.length} concurso
-          {filtered.length === 1 ? '' : 's'} com os filtros atuais
-        </p>
-      ) : null}
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
-        <StatBox label="Concursos" value={String(filtered.length)} />
-        <StatBox
-          label="Vagas (soma)"
-          value={filtered.reduce((s, i) => s + (i.vagas || 0), 0).toLocaleString('pt-BR')}
-        />
-        <StatBox
-          label="Prorrogados"
-          value={String(filtered.filter((i) => i.status === 'prorrogado').length)}
-        />
-      </div>
-
-      {!filtered.length ? (
-        <p className="text-center text-muted-foreground py-8">Nenhum concurso com esses filtros.</p>
-      ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex flex-wrap h-auto gap-1 bg-card p-1 w-full justify-start">
-            {PCI_REGION_TAB_ORDER.map((regiao) => {
-              const count = counts[regiao] ?? 0;
-              const label = PCI_REGION_LABELS[regiao] ?? regiao;
-              return (
-                <TabsTrigger
-                  key={regiao}
-                  value={regiao}
-                  disabled={count === 0}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  {label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="flex flex-wrap h-auto gap-1 bg-card p-1 w-full justify-start">
           {PCI_REGION_TAB_ORDER.map((regiao) => {
+            const count = counts[regiao] ?? 0;
+            const label = PCI_REGION_LABELS[regiao] ?? regiao;
+            return (
+              <TabsTrigger
+                key={regiao}
+                value={regiao}
+                disabled={count === 0}
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        {availableUfs.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            {availableUfs.map((uf) => (
+              <Badge
+                key={uf}
+                variant={activeUf === uf ? 'default' : 'outline'}
+                className="cursor-pointer text-xs hover:bg-primary/10"
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleUfFilter(uf)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleUfFilter(uf);
+                  }
+                }}
+              >
+                {uf}
+              </Badge>
+            ))}
+            {activeUf ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setUfFilter(null);
+                  if (parseUfFilter(search)) setSearch('');
+                }}
+              >
+                Limpar estado
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!filtered.length ? (
+          <p className="text-center text-muted-foreground py-8">Nenhum concurso com esses filtros.</p>
+        ) : (
+          PCI_REGION_TAB_ORDER.map((regiao) => {
             const panelItems = byRegiao[regiao] ?? [];
             const limit = getLimit(regiao);
             const visible = panelItems.slice(0, limit);
@@ -294,23 +289,14 @@ export function PciConcursosFeed() {
                 )}
               </TabsContent>
             );
-          })}
-        </Tabs>
-      )}
+          })
+        )}
+      </Tabs>
 
       <p className="text-xs text-muted-foreground border-t pt-4">
         Dados informativos agregados de fontes públicas. Confira sempre o edital oficial do órgão antes de se
         inscrever.
       </p>
-    </div>
-  );
-}
-
-function StatBox({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
-      <div className="text-2xl font-bold text-primary tabular-nums">{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }

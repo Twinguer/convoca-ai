@@ -35,9 +35,15 @@ export async function syncPciConcursoFeedFromAdmin(): Promise<PciConcursoFeedSyn
     body: {},
   });
 
-  if (error) throw error;
+  const payload = data as (PciConcursoFeedSyncResult & { error?: string }) | null;
 
-  const payload = data as PciConcursoFeedSyncResult & { error?: string };
+  if (error) {
+    const detail =
+      payload?.error ||
+      (typeof data === 'object' && data && 'error' in data ? String((data as { error: string }).error) : null);
+    throw new Error(detail || error.message || 'Erro ao sincronizar concursos PCI');
+  }
+
   if (payload?.error) {
     throw new Error(payload.error);
   }

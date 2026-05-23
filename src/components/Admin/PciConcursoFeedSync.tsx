@@ -26,6 +26,7 @@ const PciConcursoFeedSync: React.FC<PciConcursoFeedSyncProps> = ({ pciFeed, isMe
     try {
       const result = await syncPciConcursoFeedFromAdmin();
       await queryClient.invalidateQueries({ queryKey: ADMIN_METRICS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: ['pci-concurso-feed'] });
       toast.success(
         `Feed atualizado: ${result.total} concursos (${result.deactivated} removidos da lista ativa).`,
       );

@@ -1,3 +1,5 @@
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts";
+
 export const PCI_URL = "https://www.pciconcursos.com.br/concursos/";
 
 const H2_TO_REGIAO: [RegExp, string][] = [
@@ -77,10 +79,17 @@ function parseSalario(text: string) {
   return { min: null, max: null, texto: "" };
 }
 
+function firstDirectChild(el: Element, tagName: string): Element | null {
+  for (const child of Array.from(el.children)) {
+    if (child.tagName === tagName) return child;
+  }
+  return null;
+}
+
 function parseCd(cdEl: Element | null) {
   const full = normalizeText(cdEl?.textContent || "");
-  const outerSpan = cdEl?.querySelector(":scope > span") ?? null;
-  const innerSpan = outerSpan?.querySelector(":scope > span") ?? null;
+  const outerSpan = cdEl ? firstDirectChild(cdEl, "SPAN") : null;
+  const innerSpan = outerSpan ? firstDirectChild(outerSpan, "SPAN") : null;
   const escolaridade = normalizeText(innerSpan?.textContent || "");
   let cargos = "";
   if (outerSpan) {
