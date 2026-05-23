@@ -92,6 +92,16 @@ const Menu = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink 
                   className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/concursos')}
+                >
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Concursos
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
                   onClick={() => navigate('/pre-classificacao')}
                 >
                   <Trophy className="mr-2 h-4 w-4 text-primary" />
@@ -116,16 +126,6 @@ const Menu = () => {
                 >
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Estatistica
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <NavigationMenuLink 
-                  className={navigationMenuTriggerStyle()}
-                  onClick={() => navigate('/concursos')}
-                >
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  Concursos
                 </NavigationMenuLink>
               </NavigationMenuItem>
               
@@ -211,6 +211,10 @@ const Menu = () => {
                   <Home className="mr-2 h-4 w-4" />
                   Home
                 </Link>
+                <Link to="/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/concursos') ? "text-primary" : "text-foreground/70")}>
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Concursos
+                </Link>
                 <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-primary" />
                   Ranking
@@ -222,10 +226,6 @@ const Menu = () => {
                 <Link to="/estatisticas" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/estatisticas') ? "text-primary" : "text-foreground/70")}>
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Estatistica
-                </Link>
-                <Link to="/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/concursos') ? "text-primary" : "text-foreground/70")}>
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  Concursos
                 </Link>
                 <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />

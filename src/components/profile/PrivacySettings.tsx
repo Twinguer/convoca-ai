@@ -1,64 +1,71 @@
 import React from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EyeOff } from 'lucide-react';
+import type { ProfilePrivacySettings } from '@/utils/profilePrivacySettings';
 
 interface PrivacySettingsProps {
-  settings: {
-    showEmail: boolean;
-    showBio: boolean;
-    showState: boolean;
-    showEducation: boolean;
-    showCurrentJob: boolean;
-    showStudyArea: boolean;
-    showSpecialty: boolean;
-    showPreparatoryCourse: boolean;
-    showStudyRoutine: boolean;
-    showApprovals: boolean;
-  };
-  onSettingChange: (setting: string, value: boolean) => void;
+  settings: ProfilePrivacySettings;
+  onSettingChange: (key: keyof ProfilePrivacySettings, value: boolean) => void;
 }
 
 export const PrivacySettings: React.FC<PrivacySettingsProps> = ({
   settings,
-  onSettingChange
+  onSettingChange,
 }) => {
-  const privacyItems = [
-    { key: 'showEmail', label: 'Email', description: 'Mostrar meu email no perfil público' },
-    { key: 'showBio', label: 'Biografia', description: 'Mostrar minha biografia' },
-    { key: 'showState', label: 'Estado', description: 'Mostrar meu estado' },
-    { key: 'showEducation', label: 'Formação', description: 'Mostrar minha formação acadêmica' },
-    { key: 'showCurrentJob', label: 'Cargo atual', description: 'Mostrar meu cargo atual' },
-    { key: 'showStudyArea', label: 'Área de estudos', description: 'Mostrar minha área de estudos' },
-    { key: 'showSpecialty', label: 'Especialidade', description: 'Mostrar minha especialidade' },
-    { key: 'showPreparatoryCode', label: 'Curso preparatório', description: 'Mostrar meu curso preparatório' },
-    { key: 'showStudyRoutine', label: 'Rotina de estudos', description: 'Mostrar minha rotina de estudos' },
-    { key: 'showApprovals', label: 'Aprovações', description: 'Mostrar minhas aprovações em concursos' },
+  const items: {
+    key: keyof ProfilePrivacySettings;
+    label: string;
+    description: string;
+    disabled?: boolean;
+  }[] = [
+    {
+      key: 'showPublicRankings',
+      label: 'Rankings no perfil público',
+      description: 'Outros usuários podem ver em quais rankings você participa.',
+    },
+    {
+      key: 'showPublicRankingPosition',
+      label: 'Colocação e pontuação',
+      description: 'Exibe posição, pontos e status (classificado/eliminado) nos rankings.',
+      disabled: !settings.showPublicRankings,
+    },
+    {
+      key: 'showPublicStudyStats',
+      label: 'Estatísticas de estudo',
+      description: 'Horas, questões respondidas e taxa de acerto no perfil público.',
+    },
   ];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Eye className="h-5 w-5" />
-          Configurações de Privacidade
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <EyeOff className="h-5 w-5" />
+          Privacidade do perfil público
         </CardTitle>
+        <CardDescription>
+          Por padrão, rankings e estatísticas ficam ocultos para quem visita seu perfil. Ative apenas
+          o que quiser compartilhar.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {privacyItems.map((item) => (
-          <div key={item.key} className="flex items-center justify-between space-x-2">
+        {items.map((item) => (
+          <div
+            key={item.key}
+            className={`flex items-center justify-between space-x-2 ${item.disabled ? 'opacity-50' : ''}`}
+          >
             <div className="flex flex-col flex-1">
               <Label htmlFor={item.key} className="text-sm font-medium">
                 {item.label}
               </Label>
-              <p className="text-xs text-muted-foreground">
-                {item.description}
-              </p>
+              <p className="text-xs text-muted-foreground">{item.description}</p>
             </div>
             <Switch
               id={item.key}
-              checked={settings[item.key as keyof typeof settings]}
+              checked={settings[item.key]}
+              disabled={item.disabled}
               onCheckedChange={(checked) => onSettingChange(item.key, checked)}
             />
           </div>

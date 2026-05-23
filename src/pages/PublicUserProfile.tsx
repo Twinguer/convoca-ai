@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getAvatarUrl } from '@/utils/avatarUtils';
 import { formatPublicNicknameHandle } from '@/utils/nicknameUtils';
+import { parseProfilePrivacySettings } from '@/utils/profilePrivacySettings';
 
 interface UserProfile {
   id: string;
@@ -104,7 +105,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         // ✅ SEGURANÇA: Buscar apenas campos públicos necessários (não usar select('*'))
         const {
           data: extendedData
-        } = await supabase.from('users_profiles').select('bio, estado, formacao, cargo_atual, area_estudos, especialidade, curso_preparatorio, rotina_estudos, concursos_aprovados, concursos_participando, status_concurseiro, profile_text').eq('id', id).maybeSingle();
+        } = await supabase.from('users_profiles').select('bio, estado, formacao, cargo_atual, area_estudos, especialidade, curso_preparatorio, rotina_estudos, concursos_aprovados, concursos_participando, status_concurseiro, profile_text, privacy_settings').eq('id', id).maybeSingle();
         
         // Check if user is a coach using RPC function (has active coach subscription)
         let isCoach = false;
@@ -148,8 +149,9 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           area_estudos: extendedData?.area_estudos || null,
           especialidade: extendedData?.especialidade || null,
           curso_preparatorio: extendedData?.curso_preparatorio || null,
-          rotina_estudos: extendedData?.rotina_estudos || null
-        } as UserProfile & { isCoach?: boolean };
+          rotina_estudos: extendedData?.rotina_estudos || null,
+          privacy_settings: extendedData?.privacy_settings ?? null,
+        } as UserProfile & { isCoach?: boolean; privacy_settings?: unknown };
       } catch (error) {
         devLog.error('Error fetching profile:', error);
         toast({
@@ -162,6 +164,17 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     },
     enabled: !!id
   });
+
+  const publicPrivacy = useMemo(
+    () =>
+      parseProfilePrivacySettings(
+        profile && 'privacy_settings' in profile
+          ? (profile as { privacy_settings?: unknown }).privacy_settings
+          : null,
+      ),
+    [profile],
+  );
+
   const {
     data: rankings
   } = useQuery({
@@ -312,7 +325,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         return [];
       }
     },
-    enabled: !!id
+    enabled: !!id && publicPrivacy.showPublicRankings,
   });
 
   const getInitials = (name: string) => {
@@ -472,7 +485,8 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               </CardContent>
             </Card>
             
-            {/* Rankings */}
+            {/* Rankings — só se o usuário optou por exibir no perfil público */}
+            {publicPrivacy.showPublicRankings ? (
             <Card className="mb-6 rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
               <CardHeader className="pb-3">
                 <CardTitle>Rankings</CardTitle>
@@ -496,20 +510,26 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                             <h4 className="font-medium text-sm mb-1">
                               {ranking.concursoTitle}
                             </h4>
+                            {publicPrivacy.showPublicRankingPosition ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  Participando - {ranking.score} pts
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Participando</span>
+                            )}
+                          </div>
+                          {publicPrivacy.showPublicRankingPosition ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">
-                                Participando - {ranking.score} pts
-                              </span>
+                              <span className="text-sm font-medium">Classificação:</span>
+                              {ranking.position ? <span className="font-bold text-primary">
+                                  {ranking.position}º
+                                </span> : <Badge variant="destructive" className="font-bold">
+                                  E
+                                </Badge>}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">Classificação:</span>
-                            {ranking.position ? <span className="font-bold text-primary">
-                                {ranking.position}º
-                              </span> : <Badge variant="destructive" className="font-bold">
-                                E
-                              </Badge>}
-                          </div>
+                          ) : null}
                         </div>
                       </Card>)}
                   </div> : <div className="text-center py-6">
@@ -520,12 +540,19 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                   </div>}
               </CardContent>
             </Card>
+            ) : null}
           </div>
         </div>
         
         {/* Coluna Direita - Estatísticas e Grupos */}
         <div className="lg:col-span-3 space-y-4">
-          {id && <ProfileStatsColumn userId={id} rankings={rankings} />}
+          {id && (
+            <ProfileStatsColumn
+              userId={id}
+              rankings={rankings}
+              showStudyStats={publicPrivacy.showPublicStudyStats}
+            />
+          )}
         </div>
       </div>
     </div>;

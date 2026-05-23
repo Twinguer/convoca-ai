@@ -19,9 +19,15 @@ import {
 interface ProfileStatsColumnProps {
   userId: string;
   rankings?: any[];
+  /** Perfil público: default false. Perfil próprio: omitir (true). */
+  showStudyStats?: boolean;
 }
 
-export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, rankings = [] }) => {
+export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({
+  userId,
+  rankings = [],
+  showStudyStats = true,
+}) => {
   const navigate = useNavigate();
   const { isPro } = useSubscription();
 
@@ -88,7 +94,7 @@ export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, 
         accuracy,
       };
     },
-    enabled: !!userId,
+    enabled: !!userId && showStudyStats,
   });
 
   const groupsCount = userGroups?.length || 0;
@@ -111,7 +117,7 @@ export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, 
 
   return (
     <div className="space-y-4">
-      {/* Estatísticas de Estudos */}
+      {showStudyStats ? (
       <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -178,6 +184,7 @@ export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({ userId, 
           )}
         </CardContent>
       </Card>
+      ) : null}
 
       {/* Grupos de Estudo */}
       <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300">

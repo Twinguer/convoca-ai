@@ -27,6 +27,12 @@ import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
 import { fetchUserRankings } from '@/services/rankingService';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { formatPublicNicknameHandle, stripNicknamePrefix } from '@/utils/nicknameUtils';
+import { PrivacySettings } from '@/components/profile/PrivacySettings';
+import {
+  DEFAULT_PROFILE_PRIVACY,
+  parseProfilePrivacySettings,
+  type ProfilePrivacySettings,
+} from '@/utils/profilePrivacySettings';
 
 interface UserRanking {
   concursoId: string;
@@ -59,6 +65,7 @@ const UserProfile = () => {
   const [especialidade, setEspecialidade] = useState('');
   const [cursoPreparatorio, setCursoPreparatorio] = useState('');
   const [rotinaEstudos, setRotinaEstudos] = useState('');
+  const [privacySettings, setPrivacySettings] = useState<ProfilePrivacySettings>(DEFAULT_PROFILE_PRIVACY);
   const [nickname, setNickname] = useState('');
   const [nicknameInput, setNicknameInput] = useState('');
   const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable' | 'saving' | 'success' | 'error'>('idle');
@@ -265,6 +272,7 @@ const UserProfile = () => {
       setEspecialidade(profile.especialidade || '');
       setCursoPreparatorio(profile.curso_preparatorio || '');
       setRotinaEstudos(profile.rotina_estudos || '');
+      setPrivacySettings(parseProfilePrivacySettings(profile.privacy_settings));
       const cleanNickname = stripNicknamePrefix(profile.nickname);
       setNickname(cleanNickname);
       setNicknameInput(cleanNickname);
@@ -471,6 +479,16 @@ const UserProfile = () => {
     }
   };
 
+  const handlePrivacyChange = (key: keyof ProfilePrivacySettings, value: boolean) => {
+    setPrivacySettings((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === 'showPublicRankings' && !value) {
+        next.showPublicRankingPosition = false;
+      }
+      return next;
+    });
+  };
+
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -494,6 +512,7 @@ const UserProfile = () => {
         especialidade: especialidade,
         curso_preparatorio: cursoPreparatorio,
         rotina_estudos: rotinaEstudos,
+        privacy_settings: privacySettings,
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
       if (error) {
@@ -724,9 +743,10 @@ const UserProfile = () => {
             
             <Tabs defaultValue="profile">
               <div className="px-6">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="profile">Perfil</TabsTrigger>
                   <TabsTrigger value="rankings">Rankings</TabsTrigger>
+                  <TabsTrigger value="privacidade">Privacidade</TabsTrigger>
                 </TabsList>
               </div>
               
@@ -761,6 +781,12 @@ const UserProfile = () => {
                     rotinaEstudos={rotinaEstudos}
                     setRotinaEstudos={setRotinaEstudos}
                   />
+                </CardContent>
+              </TabsContent>
+
+              <TabsContent value="privacidade">
+                <CardContent className="pt-6">
+                  <PrivacySettings settings={privacySettings} onSettingChange={handlePrivacyChange} />
                 </CardContent>
               </TabsContent>
               
