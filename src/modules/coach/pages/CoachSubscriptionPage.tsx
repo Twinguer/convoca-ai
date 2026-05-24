@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { logError, logWarn } from '@/utils/secureLogger';
+import { isLaunchProPromoActive, LAUNCH_PROMO_COPY } from '@/config/launchPromo';
 
 const CoachSubscriptionPage = () => {
   const navigate = useNavigate();
@@ -283,6 +284,16 @@ const CoachSubscriptionPage = () => {
           <p className="text-muted-foreground mt-2">
             Selecione o plano ideal para sua equipe de alunos
           </p>
+          {isLaunchProPromoActive() && (
+            <p className="text-sm text-muted-foreground mt-3 max-w-xl">
+              {LAUNCH_PROMO_COPY.coachNote}{' '}
+              Preparadores podem solicitar acesso beta via{' '}
+              <a href="mailto:contato@nomeiai.com.br" className="text-primary underline-offset-4 hover:underline">
+                contato@nomeiai.com.br
+              </a>
+              .
+            </p>
+          )}
         </div>
       </div>
 

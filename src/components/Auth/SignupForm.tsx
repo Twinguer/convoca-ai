@@ -8,6 +8,7 @@ import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 import { TurnstileCaptcha } from '@/components/Security/TurnstileCaptcha';
+import { LaunchPromoBanner } from '@/components/Subscription/LaunchPromoBanner';
 
 interface SignupFormProps {
   onSubmit: (email: string, password: string, name: string, nickname?: string, captchaToken?: string) => Promise<void>;
@@ -312,7 +313,9 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
           <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200">{errors.captcha}</p>
         )}
       </div>
-      
+
+      <LaunchPromoBanner compact className="text-center" />
+
       <Button 
         type="submit" 
         className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]" 

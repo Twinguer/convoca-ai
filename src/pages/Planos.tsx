@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { logError, logWarn } from "@/utils/secureLogger";
 import { trackConversion } from "@/lib/analytics";
+import { LaunchPromoBanner } from "@/components/Subscription/LaunchPromoBanner";
+import { LAUNCH_PROMO_COPY } from "@/config/launchPromo";
 
 const Planos = () => {
   const [searchParams] = useSearchParams();
@@ -26,6 +28,8 @@ const Planos = () => {
   const {
     isPro,
     isFree,
+    isLaunchPromo,
+    launchPromoActive,
     refetch,
     validateDiscountVoucher,
     applyVoucher
@@ -142,6 +146,24 @@ const Planos = () => {
       toast({
         title: "Você já está no plano gratuito",
         description: "Escolha o plano Pro para desbloquear todos os recursos"
+      });
+      return;
+    }
+
+    if (planoId === "pro" && launchPromoActive && !isPro) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: LAUNCH_PROMO_COPY.toastSignupTitle,
+          description: LAUNCH_PROMO_COPY.toastSignupDescription,
+        });
+        navigate("/auth");
+        return;
+      }
+      await refetch();
+      toast({
+        title: "Pro de lançamento",
+        description: "Seu acesso Pro já deve estar ativo. Recarregue a página se necessário.",
       });
       return;
     }
@@ -292,10 +314,15 @@ const Planos = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Potencialize seus estudos e alcance a aprovação com o plano Pro
           </p>
-          {isPro && <Badge className="mt-4" variant="default">
+          {launchPromoActive && (
+            <LaunchPromoBanner className="max-w-2xl mx-auto mt-6 text-left sm:text-center" />
+          )}
+          {isPro && (
+            <Badge className="mt-4" variant="default">
               <Crown className="w-4 h-4 mr-1" />
-              Você tem o plano Pro
-            </Badge>}
+              {isLaunchPromo ? LAUNCH_PROMO_COPY.badgeActive : 'Você tem o plano Pro'}
+            </Badge>
+          )}
         </div>
 
         {/* Plans Section */}
@@ -311,7 +338,14 @@ const Planos = () => {
                 <CardDescription>{plano.descricao}</CardDescription>
 
                 <div className="mt-4">
-                  {appliedDiscountVoucher && plano.id === "pro" ? (() => {
+                  {launchPromoActive && plano.id === 'pro' ? (
+                    <>
+                      <div className="text-3xl font-bold text-emerald-600">Grátis</div>
+                      <div className="text-sm text-muted-foreground">
+                        {LAUNCH_PROMO_COPY.durationLabel}
+                      </div>
+                    </>
+                  ) : appliedDiscountVoucher && plano.id === "pro" ? (() => {
                     const discountAmount = appliedDiscountVoucher.discountType === 'percentage'
                       ? (plano.preco * appliedDiscountVoucher.discountValue) / 100
                       : appliedDiscountVoucher.discountValue;
@@ -387,8 +421,12 @@ const Planos = () => {
                                        (plano.id === 'coach_professional' && coachSubscription?.plan_type === 'professional' && maxActiveLevel === 3) ||
                                        (plano.id === 'coach_enterprise' && coachSubscription?.plan_type === 'enterprise' && maxActiveLevel === 4);
                   
-                  const shouldDisable = currentPlanLevel <= maxActiveLevel;
+                  const shouldDisable =
+                    currentPlanLevel <= maxActiveLevel ||
+                    (launchPromoActive && plano.id === 'pro' && isPro);
                   const isLoading = loadingPlan === plano.id;
+                  const isLaunchProSignup =
+                    launchPromoActive && plano.id === 'pro' && !isPro;
 
                   return (
                     <Button 
@@ -403,9 +441,13 @@ const Planos = () => {
                           Processando...
                         </>
                       ) : isCurrentPlan ? (
-                        "Plano Atual"
+                        isLaunchPromo && plano.id === 'pro'
+                          ? LAUNCH_PROMO_COPY.badgeIncluded
+                          : 'Plano Atual'
                       ) : shouldDisable ? (
                         "Plano Atual"
+                      ) : isLaunchProSignup ? (
+                        user ? "Ativar Pro grátis" : "Cadastrar grátis"
                       ) : (
                         "Assinar"
                       )}
