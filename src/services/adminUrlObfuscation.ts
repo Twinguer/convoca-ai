@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { adminResourcePath, type AdminResource } from '@/config/adminRoutes';
-import { logError, logWarn } from '@/utils/secureLogger';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { logError } from '@/utils/secureLogger';
 
 // Serviço para ofuscar URLs de administração e controlar acesso
 export class AdminUrlObfuscationService {
@@ -11,18 +10,15 @@ export class AdminUrlObfuscationService {
   // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves no frontend)
   static async generateAdminToken(adminId: string, resource: AdminResource): Promise<string> {
     try {
-      // Verificar se o usuário é admin
-      const { data: userProfile, error } = await supabase
-        .from('users_profiles')
-        .select('id, is_admin')
-        .eq('id', adminId)
-        .single();
-      
-      if (error || !userProfile) {
-        throw new Error('Perfil de administrador não encontrado');
-      }
-      
-      if (!userProfile.is_admin) {
+      // Mesma checagem do login admin: role em user_roles
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', adminId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (roleError || !roleData) {
         throw new Error('Usuário não tem permissões de administrador');
       }
       
@@ -49,28 +45,22 @@ export class AdminUrlObfuscationService {
   // ✅ SEGURANÇA: Validar token via RPC no backend (sem expor chaves no frontend)
   static async validateAdminToken(token: string): Promise<{adminId: string, resource: string} | null> {
     try {
-      // ✅ Usar função segura de resolução de token
-      const { data, error } = await supabase.rpc('resolve_secure_token', {
-        p_token: token,
-        p_entity_type: 'admin',
-        p_consume: false
+      const { data: tokenData, error } = await supabase.rpc('resolve_secure_token', {
+        p_token_hash: token,
       });
-      
+
       if (error) {
         logError('Failed to resolve secure token via RPC', { error: error.message, token: token?.substring(0, 10) }, 'ADMIN_URL_OBFUSCATION');
         return null;
       }
-      
-      // A função retorna uma tabela, então data é um array
-      const resolved = Array.isArray(data) ? data[0] : data;
-      
-      if (resolved && resolved.entity_id) {
+
+      if (tokenData?.entity_type === 'admin' && tokenData.entity_id) {
         return {
-          adminId: resolved.entity_id,
-          resource: resolved.metadata?.resource || 'dashboard'
+          adminId: tokenData.entity_id,
+          resource: tokenData.metadata?.resource || 'dashboard',
         };
       }
-      
+
       return null;
     } catch (error) {
       logError('Failed to validate admin token', { token: token?.substring(0, 10) + '...' }, 'ADMIN_URL_OBFUSCATION');
