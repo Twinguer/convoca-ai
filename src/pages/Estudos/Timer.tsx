@@ -58,7 +58,7 @@ const Timer = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
             <p className="text-muted-foreground">
               {pendingTask
-                ? 'Tempo verificado: contará nas estatísticas ao parar o timer (mín. 20 min).'
+                ? 'Ferramenta de foco: salve tempo e questões no cronograma ao terminar.'
                 : 'Mantenha o foco com sessões cronometradas'}
             </p>
           </div>

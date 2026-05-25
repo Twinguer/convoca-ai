@@ -18,7 +18,7 @@ import { cn, generateId } from '@/lib/utils';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { useQuestionTracking } from '@/hooks/useQuestionTracking';
+import { setPendingTimerTask, consumeTimerSuggestedMinutes } from '@/utils/timerTaskContext';
 import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { useStudySessions } from '@/hooks/useStudySessions';
@@ -39,7 +39,6 @@ import {
   type ScheduleMode,
 } from '@/utils/scheduleMode';
 import type { StudySchedule } from '@/types/userStudy';
-import { setPendingTimerTask } from '@/utils/timerTaskContext';
 
 interface StudySession {
   id: string;
@@ -138,9 +137,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     setQuestionsError('');
     return true;
   };
-  const {
-    trackAnswer
-  } = useQuestionTracking();
   const {
     createOrUpdateSession,
     updateSessionLink
@@ -1186,7 +1182,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
 
     // Limpar campos do modal para nova entrada
-    setStudyDuration(0);
+    const suggestedMinutes = consumeTimerSuggestedMinutes(session.id);
+    setStudyDuration(suggestedMinutes ?? 0);
     setStudyNotes('');
     setQuestionsTotal(0);
     setQuestionsCorrect(0);
@@ -1224,7 +1221,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
     setShowEditModal(false);
     navigate('/estudos/timer');
-    toast.message('Use o timer para registrar o tempo nas estatísticas.');
+    toast.message('Use o timer para focar; confirme o registro no cronograma ao terminar.');
   };
 
   const saveStudySession = async () => {
@@ -1249,22 +1246,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         studyType: studyType
       });
 
-      // Horas nas estatísticas globais: apenas via Timer (tempo verificado)
-
-      // Registrar questões no sistema de tracking se houver
-      if (questionsTotal > 0) {
-        const questionsWrong = questionsTotal - questionsCorrect;
-
-        // Registrar cada acerto
-        for (let i = 0; i < questionsCorrect; i++) {
-          await trackAnswer('A', 'A'); // Simular acerto
-        }
-
-        // Registrar cada erro
-        for (let i = 0; i < questionsWrong; i++) {
-          await trackAnswer('A', 'B'); // Simular erro
-        }
-      }
       setShowEditModal(false);
       setEditingSession(null);
 

@@ -2,11 +2,6 @@ import type { StudySession, StudyStatistics } from '@/types/userStudy';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import { defaultUserStudy } from '@/types/userStudy';
 import { toLocalDateKey } from '@/utils/studyStatisticsFilters';
-import { generateId } from '@/lib/utils';
-
-const QUESTION_TRACKER_SUBJECT = 'Questões avulsas';
-
-export { QUESTION_TRACKER_SUBJECT };
 
 /**
  * Converte entradas legadas de sessionHistory (sem study_sessions) em sessões sintéticas.
@@ -108,40 +103,4 @@ export function resolveStudyStatistics(
   }
 
   return defaultUserStudy.study_statistics as StudyStatistics;
-}
-
-export function isQuestionTrackerSession(session: StudySession): boolean {
-  return (
-    session.discipline_name === QUESTION_TRACKER_SUBJECT &&
-    (session.duration_minutes ?? session.total_duration_minutes ?? 0) === 0
-  );
-}
-
-export function findOrCreateQuestionTrackerSession(
-  sessions: StudySession[],
-  dateKey: string
-): { sessions: StudySession[]; index: number } {
-  const existingIndex = sessions.findIndex((s) => {
-    const d = s.session_date ?? s.date ?? s.last_session_date;
-    return d && toLocalDateKey(d) === dateKey && isQuestionTrackerSession(s);
-  });
-
-  if (existingIndex >= 0) {
-    return { sessions, index: existingIndex };
-  }
-
-  const newSession: StudySession = {
-    id: generateId(),
-    duration_minutes: 0,
-    questions: 0,
-    correct_answers: 0,
-    session_date: dateKey,
-    discipline_name: QUESTION_TRACKER_SUBJECT,
-    study_type: 'manual',
-    session_count: 1,
-    start_time: '00:00:00',
-    created_at: new Date().toISOString(),
-  };
-
-  return { sessions: [...sessions, newSession], index: sessions.length };
 }

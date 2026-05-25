@@ -29,3 +29,26 @@ export function getPendingTimerTask(): PendingTimerTask | null {
 export function clearPendingTimerTask(): void {
   sessionStorage.removeItem(STORAGE_KEY);
 }
+
+const SUGGESTED_MINUTES_KEY = 'convoca-timer-suggested-minutes';
+
+/** Minutos do timer para pré-preencher o modal da tarefa (não persiste estatísticas). */
+export function setTimerSuggestedMinutes(scheduleSessionId: string, minutes: number): void {
+  sessionStorage.setItem(
+    SUGGESTED_MINUTES_KEY,
+    JSON.stringify({ scheduleSessionId, minutes })
+  );
+}
+
+export function consumeTimerSuggestedMinutes(scheduleSessionId: string): number | null {
+  try {
+    const raw = sessionStorage.getItem(SUGGESTED_MINUTES_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { scheduleSessionId: string; minutes: number };
+    if (parsed.scheduleSessionId !== scheduleSessionId) return null;
+    sessionStorage.removeItem(SUGGESTED_MINUTES_KEY);
+    return parsed.minutes;
+  } catch {
+    return null;
+  }
+}

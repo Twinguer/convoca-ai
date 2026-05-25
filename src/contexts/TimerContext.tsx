@@ -1,22 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useStudyStatistics } from '@/hooks/useStudyStatistics';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { devLog } from '@/utils/productionLogger';
 import {
-  clearPendingTimerTask,
   getPendingTimerTask,
+  setTimerSuggestedMinutes,
 } from '@/utils/timerTaskContext';
-import { completeScheduleTaskFromTimer } from '@/services/studyTimerCompletion';
 
-async function registerTimerStudyTime(
-  userId: string | undefined,
-  sessionStartTime: Date | null,
-  addStudySession:
-    | ((duration: number, type?: 'timer' | 'manual', subject?: string) => Promise<void>)
-    | undefined
-): Promise<void> {
-  if (!userId || !sessionStartTime || !addStudySession) return;
+function suggestTimerMinutesForTask(sessionStartTime: Date | null): void {
+  if (!sessionStartTime) return;
 
   const sessionDuration = Math.floor(
     (Date.now() - sessionStartTime.getTime()) / (1000 * 60)
@@ -25,14 +17,7 @@ async function registerTimerStudyTime(
 
   const pending = getPendingTimerTask();
   if (pending) {
-    const ownerId = pending.ownerUserId ?? userId;
-    await completeScheduleTaskFromTimer(ownerId, pending, sessionDuration);
-    clearPendingTimerTask();
-    return;
-  }
-
-  if (sessionDuration >= 20) {
-    await addStudySession(sessionDuration, 'timer');
+    setTimerSuggestedMinutes(pending.scheduleSessionId, sessionDuration);
   }
 }
 
@@ -66,12 +51,6 @@ interface TimerProviderProps {
 
 export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const { addStudySession } = useStudyStatistics();
-  
-  // Defensive check for hooks
-  if (!addStudySession) {
-    devLog.warn('addStudySession not available in TimerProvider');
-  }
 
   // Create user-specific localStorage keys
   const getStorageKey = (key: string) => {
@@ -294,7 +273,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
             intervalRef.current = null;
           }
 
-          void registerTimerStudyTime(user?.id, sessionStartTime, addStudySession);
+          suggestTimerMinutesForTask(sessionStartTime);
 
           // Reset state
           setIsRunning(false);
@@ -305,11 +284,11 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           // Notification
           if (Notification.permission === 'granted') {
             new Notification('Timer Finalizado!', {
-              body: 'Sua sessão de estudo foi concluída.',
+              body: 'Volte ao cronograma para confirmar e salvar seu registro.',
               icon: '/favicon.ico'
             });
           } else {
-            alert('Tempo esgotado! Sessão de estudo finalizada.');
+            alert('Tempo esgotado! Volte ao cronograma para salvar seu registro.');
           }
           setMinutes(0);
           setSeconds(0);
@@ -350,7 +329,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         intervalRef.current = null;
       }
     };
-  }, [isRunning, isPaused, initialMinutes]);
+  }, [isRunning, isPaused, initialMinutes, sessionStartTime]);
 
   // Ensure time is recalculated immediately when tab becomes visible or window gains focus
   useEffect(() => {
@@ -471,7 +450,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   };
 
   const stopTimer = () => {
-    void registerTimerStudyTime(user?.id, sessionStartTime, addStudySession);
+    suggestTimerMinutesForTask(sessionStartTime);
 
     // Clear ticking
     if (intervalRef.current) {

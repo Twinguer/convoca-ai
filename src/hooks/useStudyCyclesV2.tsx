@@ -6,6 +6,7 @@ import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2, StudySchedule } from '@/types/userStudy';
 import { createStudyCycleV2 } from '@/utils/userStudyHelpers';
 import { generateId } from '@/lib/utils';
+import { resolveStudySessions, resolveStudyStatistics } from '@/utils/studyStatisticsMerge';
 import { supabase } from '@/integrations/supabase/client';
 import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { logger } from '@/utils/logger';
@@ -414,9 +415,19 @@ export const useStudyCyclesV2 = () => {
         return c;
       });
 
-      // Salvar tudo: study_sessions, study_schedule e cycles
+      // Salvar tudo: study_sessions, study_schedule, cycles e estatísticas recalculadas
+      const sessionsForStats = resolveStudySessions(
+        updatedStudySessions,
+        userStudyData.study_statistics
+      );
+      const calculatedStats = resolveStudyStatistics(
+        sessionsForStats,
+        userStudyData.study_statistics
+      );
+
       const success = await UserStudyService.upsertUserStudyData(userId, {
         study_sessions: updatedStudySessions,
+        study_statistics: calculatedStats,
         study_schedule: updatedSchedule,
         study_cycles: updatedCycles
       });
