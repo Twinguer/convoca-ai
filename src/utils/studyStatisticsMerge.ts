@@ -1,4 +1,4 @@
-import type { StudySession, StudyStatistics } from '@/types/userStudy';
+import type { StudySession, StudyStatistics, UserStudy } from '@/types/userStudy';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import { defaultUserStudy } from '@/types/userStudy';
 import { toLocalDateKey } from '@/utils/studyStatisticsFilters';
@@ -103,4 +103,19 @@ export function resolveStudyStatistics(
   }
 
   return defaultUserStudy.study_statistics as StudyStatistics;
+}
+
+/** Resolve estatísticas a partir do documento completo user_study_v2. */
+export function resolveUserStudyStatisticsFromData(
+  userStudyData: UserStudy | null | undefined
+): StudyStatistics {
+  if (!userStudyData) {
+    return defaultUserStudy.study_statistics as StudyStatistics;
+  }
+
+  const sessions = resolveStudySessions(
+    userStudyData.study_sessions,
+    userStudyData.study_statistics
+  );
+  return resolveStudyStatistics(sessions, userStudyData.study_statistics);
 }

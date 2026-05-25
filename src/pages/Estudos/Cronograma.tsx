@@ -19,9 +19,9 @@ import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { setPendingTimerTask, consumeTimerSuggestedMinutes } from '@/utils/timerTaskContext';
+import { getScheduleSessions } from '@/utils/scheduleHelpers';
 import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { StudyCycleV2 } from '@/types/userStudy';
-import { useStudySessions } from '@/hooks/useStudySessions';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
@@ -137,10 +137,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     setQuestionsError('');
     return true;
   };
-  const {
-    createOrUpdateSession,
-    updateSessionLink
-  } = useStudySessions();
 
   // Usar hook otimizado para dados de sessão
   const {
@@ -191,7 +187,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
   const scheduleByCycleId = useMemo(() => {
     const map: Record<string, StudySchedule[]> = {};
-    (userStudy?.study_schedule || []).forEach((session: StudySchedule) => {
+    if (!userStudy) return map;
+    getScheduleSessions(userStudy).forEach((session) => {
       if (!session.cycle_id) return;
       if (!map[session.cycle_id]) map[session.cycle_id] = [];
       map[session.cycle_id].push(session);
@@ -274,52 +271,26 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       setUserStudy(userStudyData);
       const allSessions: StudySession[] = [];
 
-      // ✅ Buscar de study_schedule primeiro
-      if (userStudyData.study_schedule && userStudyData.study_schedule.length > 0) {
-        userStudyData.study_schedule.forEach(session => {
-          // Verificar se o ciclo está ativo
-          const cycle = userStudyData.study_cycles.find(c => c.id === session.cycle_id);
-          if (cycle && cycle.is_active) {
-            const dayOfWeek = toUiDayOfWeek(session.day_of_week);
+      getScheduleSessions(userStudyData).forEach((session) => {
+        const cycle = userStudyData.study_cycles.find((c) => c.id === session.cycle_id);
+        if (cycle && cycle.is_active) {
+          const dayOfWeek = toUiDayOfWeek(session.day_of_week);
 
-            allSessions.push({
-              id: session.id,
-              day: dayOfWeek,
-              startTime: session.start_time,
-              endTime: session.end_time,
-              durationMinutes: session.duration_minutes,
-              displayOrder: session.display_order ?? 0,
-              disciplineName: session.discipline_name || 'Disciplina',
-              blockName: session.block_name || 'Bloco',
-              cycleId: session.cycle_id!,
-              sessionLink: session.session_link || ''
-            });
-          }
-        });
-      }
+          allSessions.push({
+            id: session.id,
+            day: dayOfWeek,
+            startTime: session.start_time,
+            endTime: session.end_time,
+            durationMinutes: session.duration_minutes,
+            displayOrder: session.display_order ?? 0,
+            disciplineName: session.discipline_name || 'Disciplina',
+            blockName: session.block_name || 'Bloco',
+            cycleId: session.cycle_id!,
+            sessionLink: session.session_link || '',
+          });
+        }
+      });
 
-      // ✅ Fallback: buscar de weekly_schedule (legado)
-      if (allSessions.length === 0) {
-        userStudyData.study_cycles.forEach(cycle => {
-          if (cycle.is_active && cycle.schedule_data?.weekly_schedule) {
-            cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
-              daySchedule.sessions.forEach(session => {
-                allSessions.push({
-                  id: session.id,
-                  day: daySchedule.day,
-                  startTime: session.start_time,
-                  endTime: session.end_time,
-                  durationMinutes: session.duration_minutes,
-                  disciplineName: session.discipline_name || 'Disciplina',
-                  blockName: session.block_name || 'Bloco',
-                  cycleId: cycle.id,
-                  sessionLink: session.session_link || ''
-                });
-              });
-            });
-          }
-        });
-      }
       setSessions(allSessions);
     } catch (error) {
       devLog.error('Error fetching sessions:', error);

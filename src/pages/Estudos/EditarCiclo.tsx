@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Edit, BookOpen, CheckCircle, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
+import { getScheduleSessions } from '@/utils/scheduleHelpers';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
@@ -109,29 +110,26 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
             }));
             setBlocks(loadedBlocks);
           } else {
-            // Fallback: extrair disciplinas do schedule_data.weekly_schedule
+            // Fallback: extrair disciplinas do cronograma (study_schedule ou weekly_schedule legado)
             const blocksMap = new Map<string, Block>();
-            
-            cycle.schedule_data?.weekly_schedule?.forEach(daySchedule => {
-              daySchedule.sessions?.forEach(session => {
-                if (session.block_name && session.discipline_name) {
-                  // Se o bloco ainda não existe, criar
-                  if (!blocksMap.has(session.block_name)) {
-                    blocksMap.set(session.block_name, {
-                      id: generateId(),
-                      name: session.block_name,
-                      disciplines: []
-                    });
-                  }
-                  
-                  const block = blocksMap.get(session.block_name)!;
-                  
-                  // Verificar se a disciplina já existe no bloco
-                  const existingDiscipline = block.disciplines.find(d => d.name === session.discipline_name);
-                  
-                  if (!existingDiscipline) {
-                    // Adicionar nova disciplina
-                    const discipline: Discipline = {
+
+            getScheduleSessions(userStudyData, cycle.id).forEach((session) => {
+              if (session.block_name && session.discipline_name) {
+                if (!blocksMap.has(session.block_name)) {
+                  blocksMap.set(session.block_name, {
+                    id: generateId(),
+                    name: session.block_name,
+                    disciplines: [],
+                  });
+                }
+
+                const block = blocksMap.get(session.block_name)!;
+                const existingDiscipline = block.disciplines.find(
+                  (d) => d.name === session.discipline_name
+                );
+
+                if (!existingDiscipline) {
+                  const discipline: Discipline = {
                       id: generateId(),
                       name: session.discipline_name,
                       status: 'em-andamento',
@@ -153,9 +151,8 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
                     existingDiscipline.wrongAnswers += (session.total_stats?.total_questions || 0) - (session.total_stats?.total_correct || 0);
                   }
                 }
-              });
             });
-            
+
             setBlocks(Array.from(blocksMap.values()));
           }
         } else {

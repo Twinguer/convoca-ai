@@ -12,7 +12,6 @@ import {
   SpacedRepetitionItem,
   UserStudyDay,
   StudyContest,
-  SessionProgress,
   UserStudy
 } from '@/types/userStudy';
 
@@ -20,85 +19,6 @@ import {
  * Helper functions for manipulating user study data
  * These functions provide utilities for working with JSONB data structures
  */
-
-// ===== STUDY SESSIONS HELPERS =====
-
-/**
- * Create a new study session from session progress
- */
-export function createStudySessionFromProgress(
-  progress: SessionProgress,
-  scheduleSessionId?: string,
-  sessionLink?: string
-): Omit<StudySession, 'id' | 'created_at' | 'updated_at'> {
-  const now = new Date();
-  const sessionDate = now.toISOString().split('T')[0];
-  const startTime = now.toTimeString().split(' ')[0];
-
-  return {
-    schedule_session_id: scheduleSessionId,
-    session_link: sessionLink,
-    total_duration_minutes: progress.duration,
-    total_questions: progress.questions,
-    total_correct_answers: progress.correctAnswers,
-    session_count: 1,
-    last_session_date: sessionDate,
-    session_date: sessionDate,
-    start_time: startTime,
-    end_time: new Date(now.getTime() + progress.duration * 60000).toTimeString().split(' ')[0],
-    duration_minutes: progress.duration,
-    notes: progress.notes,
-    study_type: progress.studyType,
-    quality_rating: undefined,
-    study_plan_id: undefined,
-    subject_id: undefined,
-    study_contest_id: undefined
-  };
-}
-
-/**
- * Update session with new progress
- */
-export function updateSessionWithProgress(
-  session: StudySession,
-  progress: SessionProgress
-): StudySession {
-  const newDuration = session.duration_minutes + progress.duration;
-  const newQuestions = session.total_questions + progress.questions;
-  const newCorrectAnswers = session.total_correct_answers + progress.correctAnswers;
-  const newSessionCount = session.session_count + 1;
-
-  return {
-    ...session,
-    total_duration_minutes: newDuration,
-    total_questions: newQuestions,
-    total_correct_answers: newCorrectAnswers,
-    session_count: newSessionCount,
-    last_session_date: new Date().toISOString().split('T')[0],
-    duration_minutes: newDuration,
-    notes: progress.notes || session.notes,
-    updated_at: new Date().toISOString()
-  };
-}
-
-/**
- * Calculate session statistics
- */
-export function calculateSessionStats(sessions: StudySession[]) {
-  const totalDuration = sessions.reduce((sum, session) => sum + session.total_duration_minutes, 0);
-  const totalQuestions = sessions.reduce((sum, session) => sum + session.total_questions, 0);
-  const totalCorrectAnswers = sessions.reduce((sum, session) => sum + session.total_correct_answers, 0);
-  const totalSessions = sessions.length;
-
-  return {
-    totalDuration,
-    totalQuestions,
-    totalCorrectAnswers,
-    totalSessions,
-    averageAccuracy: totalQuestions > 0 ? (totalCorrectAnswers / totalQuestions) * 100 : 0,
-    averageDuration: totalSessions > 0 ? totalDuration / totalSessions : 0
-  };
-}
 
 // ===== STUDY SCHEDULE HELPERS =====
 

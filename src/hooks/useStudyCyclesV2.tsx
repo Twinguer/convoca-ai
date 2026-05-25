@@ -6,7 +6,8 @@ import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2, StudySchedule } from '@/types/userStudy';
 import { createStudyCycleV2 } from '@/utils/userStudyHelpers';
 import { generateId } from '@/lib/utils';
-import { resolveStudySessions, resolveStudyStatistics } from '@/utils/studyStatisticsMerge';
+import { getScheduleSessions } from '@/utils/scheduleHelpers';
+import { recordCompletedSessionForUser } from '@/services/studySessionService';
 import { supabase } from '@/integrations/supabase/client';
 import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
 import { logger } from '@/utils/logger';
@@ -281,206 +282,59 @@ export const useStudyCyclesV2 = () => {
     }
   };
 
-  // Registrar sessão completada (agora salva em study_sessions separado)
   const recordCompletedSession = async (
     cycleId: string,
     dayOfWeek: number,
     sessionId: string,
     sessionDetails: Omit<CompletedSession, 'date'>,
-    targetUserId?: string // ✅ NOVO: userId opcional para permitir criação por coach
+    targetUserId?: string
   ) => {
     const userId = targetUserId || user?.id;
     if (!userId || !user) return false;
 
+    const result = await recordCompletedSessionForUser(
+      userId,
+      cycleId,
+      dayOfWeek,
+      sessionId,
+      sessionDetails
+    );
+
+    if (result.ok) {
+      await fetchCycles();
+      toast.success('Tarefa registrada com sucesso!');
+      return true;
+    }
+
+    if (result.reason === 'session_not_found') {
+      toast.error('Tarefa não encontrada');
+    } else {
+      toast.error('Erro ao registrar tarefa');
+    }
+    return false;
+  };
+
+  // Remover sessão do cronograma (delega ao service — fonte única study_schedule)
+  const removeScheduleSession = async (
+    _cycleId: string,
+    _dayOfWeek: number,
+    sessionId: string,
+    targetUserId?: string
+  ) => {
+    const userId = targetUserId || user?.id;
+    if (!userId) return false;
+
     try {
-      const today = new Date();
-      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000))
-        .toISOString()
-        .split('T')[0];
-
-      const completedSession: CompletedSession = {
-        ...sessionDetails,
-        date: localDate
-      };
-
-      // Buscar dados atuais do usuário
-      const userStudyData = await UserStudyService.getUserStudyData(userId);
-      if (!userStudyData) return false;
-
-      // Encontrar informações da sessão no ciclo
-      const cycle = userStudyData.study_cycles.find(c => c.id === cycleId);
-      if (!cycle) return false;
-
-      // ✅ Buscar sessão em study_schedule primeiro (novo)
-      let session = userStudyData.study_schedule?.find((s: any) => s.id === sessionId);
-      let disciplineName = session?.discipline_name;
-      let blockName = session?.block_name;
-      
-      // Fallback: buscar em weekly_schedule (legado)
-      if (!session) {
-        const daySchedule = cycle.schedule_data.weekly_schedule?.find((d: any) => d.day === dayOfWeek);
-        // @ts-expect-error - day_of_week is added dynamically on line 245
-        session = daySchedule?.sessions.find((s: any) => s.id === sessionId);
-        disciplineName = session?.discipline_name;
-        blockName = session?.block_name;
-      }
-      
-      // Adicionar day_of_week se não existir
-      if (session && !session.day_of_week) {
-        session = { ...session, day_of_week: dayOfWeek };
-      }
-      
-      if (!session) {
-        toast.error('Tarefa não encontrada');
-        return false;
-      }
-
-      // Salvar sessão completada em study_sessions
-      const newCompletedSession = {
-        id: generateId(),
-        schedule_session_id: sessionId,
-        cycle_id: cycleId,
-        date: localDate,
-        duration_minutes: completedSession.duration_minutes,
-        questions: completedSession.questions,
-        correct_answers: completedSession.correct_answers,
-        notes: completedSession.notes,
-        course_name: completedSession.course_name,
-        session_link: completedSession.session_link || session.session_link,
-        discipline_name: disciplineName,
-        block_name: blockName,
-        study_type: completedSession.study_type || 'manual',
-        session_date: localDate,
-        start_time: session.start_time,
-        end_time: session.end_time,
-        session_count: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const updatedStudySessions = [...(userStudyData.study_sessions || []), newCompletedSession];
-
-      // Atualizar total_stats em study_schedule (novo)
-      const updatedSchedule = (userStudyData.study_schedule || []).map((s: any) => {
-        if (s.id === sessionId) {
-          const currentStats = s.total_stats || {
-            total_duration_minutes: 0,
-            total_questions: 0,
-            total_correct: 0,
-            session_count: 0
-          };
-          
-          return {
-            ...s,
-            total_stats: {
-              total_duration_minutes: currentStats.total_duration_minutes + completedSession.duration_minutes,
-              total_questions: currentStats.total_questions + completedSession.questions,
-              total_correct: currentStats.total_correct + completedSession.correct_answers,
-              session_count: currentStats.session_count + 1,
-              last_session_date: localDate
-            }
-          };
-        }
-        return s;
-      });
-
-      // Atualizar total_stats no ciclo (para exibição no cronograma) - fallback legado
-      const updatedCycles = userStudyData.study_cycles.map(c => {
-        if (c.id === cycleId) {
-          const updatedSchedule = { ...c.schedule_data };
-          const day = updatedSchedule.weekly_schedule?.find((d: any) => d.day === dayOfWeek);
-          
-          if (day) {
-            const sess = day.sessions.find((s: any) => s.id === sessionId);
-            if (sess) {
-              if (!sess.total_stats) {
-                sess.total_stats = {
-                  total_duration_minutes: 0,
-                  total_questions: 0,
-                  total_correct: 0,
-                  session_count: 0
-                };
-              }
-              
-              sess.total_stats.total_duration_minutes += completedSession.duration_minutes;
-              sess.total_stats.total_questions += completedSession.questions;
-              sess.total_stats.total_correct += completedSession.correct_answers;
-              sess.total_stats.session_count += 1;
-              sess.total_stats.last_session_date = localDate;
-            }
-          }
-          
-          return { ...c, schedule_data: updatedSchedule };
-        }
-        return c;
-      });
-
-      // Salvar tudo: study_sessions, study_schedule, cycles e estatísticas recalculadas
-      const sessionsForStats = resolveStudySessions(
-        updatedStudySessions,
-        userStudyData.study_statistics
-      );
-      const calculatedStats = resolveStudyStatistics(
-        sessionsForStats,
-        userStudyData.study_statistics
-      );
-
-      const success = await UserStudyService.upsertUserStudyData(userId, {
-        study_sessions: updatedStudySessions,
-        study_statistics: calculatedStats,
-        study_schedule: updatedSchedule,
-        study_cycles: updatedCycles
-      });
+      const success = await UserStudyService.removeScheduleSession(userId, sessionId);
 
       if (success) {
         await fetchCycles();
-        toast.success('Tarefa registrada com sucesso!');
-        return true;
-      } else {
-        toast.error('Erro ao atualizar estatísticas');
-        return false;
-      }
-    } catch (error) {
-      devLog.error('Error recording session:', error);
-      toast.error('Erro ao registrar tarefa');
-      return false;
-    }
-  };
-
-  // Remover sessão do cronograma
-  const removeScheduleSession = async (
-    cycleId: string,
-    dayOfWeek: number,
-    sessionId: string
-  ) => {
-    if (!user) return false;
-
-    try {
-      const cycle = cycles.find(c => c.id === cycleId);
-      if (!cycle) return false;
-
-      const updatedSchedule = { ...cycle.schedule_data };
-      const daySchedule = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
-      
-      if (daySchedule) {
-        daySchedule.sessions = daySchedule.sessions.filter(s => s.id !== sessionId);
-        updatedSchedule.metadata.total_sessions -= 1;
-      }
-
-      const success = await UserStudyService.updateCycle(user.id, cycleId, {
-        schedule_data: updatedSchedule
-      });
-
-      if (success) {
-        setCycles(prev => prev.map(c => 
-          c.id === cycleId ? { ...c, schedule_data: updatedSchedule } : c
-        ));
         toast.success('Tarefa removida!');
         return true;
-      } else {
-        toast.error('Erro ao remover tarefa');
-        return false;
       }
+
+      toast.error('Erro ao remover tarefa');
+      return false;
     } catch (error) {
       devLog.error('Error removing session:', error);
       toast.error('Erro ao remover tarefa');
@@ -524,28 +378,16 @@ export const useStudyCyclesV2 = () => {
       const userStudyData = await UserStudyService.getUserStudyData(user!.id);
       if (!userStudyData) return [];
 
-      // Buscar de study_schedule primeiro
-      const scheduleSessions = (userStudyData.study_schedule || [])
-        .filter(s => s.cycle_id === cycleId && s.day_of_week === dayOfWeek)
-        .map(s => ({
-          id: s.id,
-          start_time: s.start_time,
-          end_time: s.end_time,
-          discipline_name: s.discipline_name || '',
-          block_name: s.block_name || '',
-          session_link: s.session_link,
-          total_stats: s.total_stats,
-          completed_sessions: []
-        }));
-
-      if (scheduleSessions.length > 0) return scheduleSessions;
-
-      // Fallback: buscar de weekly_schedule (legado)
-      const cycle = cycles.find(c => c.id === cycleId);
-      if (!cycle) return [];
-
-      const daySchedule = cycle.schedule_data.weekly_schedule?.find(d => d.day === dayOfWeek);
-      return daySchedule?.sessions || [];
+      return getScheduleSessions(userStudyData, cycleId, dayOfWeek).map((s) => ({
+        id: s.id,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        discipline_name: s.discipline_name || '',
+        block_name: s.block_name || '',
+        session_link: s.session_link,
+        total_stats: s.total_stats,
+        completed_sessions: [],
+      }));
     } catch (error) {
       devLog.error('Error getting sessions for day:', error);
       return [];

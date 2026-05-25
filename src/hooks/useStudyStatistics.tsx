@@ -8,7 +8,7 @@ import {
 } from '@/utils/studyStatisticsFilters';
 import {
   resolveStudySessions,
-  resolveStudyStatistics,
+  resolveUserStudyStatisticsFromData,
 } from '@/utils/studyStatisticsMerge';
 import { devLog } from '@/utils/productionLogger';
 
@@ -58,10 +58,7 @@ export const useStudyStatistics = () => {
         userStudyData.study_sessions,
         userStudyData.study_statistics
       );
-      const resolvedStats = resolveStudyStatistics(
-        sessions,
-        userStudyData.study_statistics
-      );
+      const resolvedStats = resolveUserStudyStatisticsFromData(userStudyData);
 
       setStatistics(resolvedStats);
 

@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { UserStudyService } from '@/services/userStudyService';
+import { getScheduleSessions } from '@/utils/scheduleHelpers';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
@@ -56,24 +57,36 @@ const StudyDashboard = () => {
     try {
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       if (userStudyData) {
-        // Buscar sessões dos próximos dias nos ciclos ativos
         const today = new Date().getDay();
-        const upcomingSessions: any[] = [];
-        
-        userStudyData.study_cycles
-          .filter(cycle => cycle.is_active)
-          .forEach(cycle => {
-            cycle.schedule_data.weekly_schedule
-              .filter(day => day.day >= today)
-              .forEach(day => {
-                day.sessions.forEach(session => {
-                  upcomingSessions.push({
-                    ...session,
-                    cycle_name: cycle.cycle_name,
-                    day_of_week: day.day
-                  });
-                });
-              });
+        const activeCycleIds = new Set(
+          userStudyData.study_cycles.filter((cycle) => cycle.is_active).map((cycle) => cycle.id)
+        );
+        const upcomingSessions: Array<{
+          id: string;
+          discipline_name?: string;
+          block_name?: string;
+          start_time?: string;
+          cycle_name: string;
+          day_of_week: number;
+        }> = [];
+
+        getScheduleSessions(userStudyData)
+          .filter(
+            (session) =>
+              session.cycle_id &&
+              activeCycleIds.has(session.cycle_id) &&
+              session.day_of_week >= today
+          )
+          .forEach((session) => {
+            const cycle = userStudyData.study_cycles.find((c) => c.id === session.cycle_id);
+            upcomingSessions.push({
+              id: session.id,
+              discipline_name: session.discipline_name,
+              block_name: session.block_name,
+              start_time: session.start_time,
+              cycle_name: cycle?.cycle_name || 'Ciclo',
+              day_of_week: session.day_of_week,
+            });
           });
         
         // Ordenar por dia da semana e horário

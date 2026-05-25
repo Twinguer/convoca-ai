@@ -17,7 +17,6 @@ import {
   SpacedRepetitionItem,
   UserStudyDay,
   StudyContest,
-  SessionProgress,
   StudyDataUpdate,
   defaultUserStudy
 } from '@/types/userStudy';
@@ -222,86 +221,6 @@ export class UserStudyService {
     } catch (error) {
       devLog.error('Error initializing user study data: Database operation failed');
       return false;
-    }
-  }
-
-  // ===== STUDY SESSIONS =====
-
-  /**
-   * Get user study sessions
-   */
-  static async getSessions(userId: string): Promise<StudySession[]> {
-    try {
-      const data = await this.getUserStudyData(userId);
-      return data?.study_sessions || [];
-    } catch (error) {
-      devLog.error('Error fetching sessions: Database operation failed');
-      return [];
-    }
-  }
-
-  /**
-   * Add a new study session
-   */
-  static async addSession(userId: string, session: Omit<StudySession, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
-    try {
-      const newSession: StudySession = {
-        ...session,
-        id: generateId(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase.rpc('add_study_session', {
-        user_uuid: userId,
-        session_data: newSession
-      });
-
-      if (error) {
-        devLog.error('Error adding session: Database operation failed');
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      devLog.error('Error adding session: Database operation failed');
-      return false;
-    }
-  }
-
-  /**
-   * Update an existing study session
-   */
-  static async updateSession(userId: string, sessionId: string, updates: Partial<StudySession>): Promise<boolean> {
-    try {
-      const data = await this.getUserStudyData(userId);
-      if (!data) return false;
-
-      const updatedSessions = data.study_sessions.map(session => 
-        session.id === sessionId 
-          ? { ...session, ...updates, updated_at: new Date().toISOString() }
-          : session
-      );
-
-      return await this.upsertUserStudyData(userId, {
-        study_sessions: updatedSessions
-      });
-    } catch (error) {
-      devLog.error('Error updating session: Database operation failed');
-      return false;
-    }
-  }
-
-  /**
-   * Get session by schedule ID
-   */
-  static async getSessionByScheduleId(userId: string, scheduleSessionId: string): Promise<StudySession | null> {
-    try {
-      const sessions = await this.getSessions(userId);
-      return sessions.find(session => session.schedule_session_id === scheduleSessionId) || null;
-    } catch (error) {
-      devLog.error('Error getting session by schedule ID: Database operation failed');
-      return null;
     }
   }
 

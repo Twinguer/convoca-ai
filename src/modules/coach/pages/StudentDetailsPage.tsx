@@ -15,7 +15,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { StudentRelationship } from '@/types/coach';
-import { calculateStudyStatistics, getLastStudyActivityDate } from '@/utils/userStudyHelpers';
+import { getLastStudyActivityDate } from '@/utils/userStudyHelpers';
+import { resolveUserStudyStatisticsFromData, resolveStudySessions } from '@/utils/studyStatisticsMerge';
 import { formatLocalDatePtBr } from '@/utils/dateFormat';
 import { UserStudyService } from '@/services/userStudyService';
 import type { StudyStatistics } from '@/types/userStudy';
@@ -150,87 +151,8 @@ const StudentDetailsPage = () => {
 
       const userStudyData = await UserStudyService.getUserStudyData(validatedStudentId);
       if (!userStudyData) return null;
-      
-      // Calcular estatísticas como faz o useStudyStatistics
-      if (userStudyData.study_sessions && userStudyData.study_sessions.length > 0) {
-        return calculateStudyStatistics(userStudyData.study_sessions);
-      } else if (userStudyData.study_schedule && userStudyData.study_schedule.length > 0) {
-        const scheduleSessions = userStudyData.study_schedule;
-        let totalHours = 0;
-        let totalSessions = 0;
-        let totalQuestions = 0;
-        let totalCorrect = 0;
-        
-        // Calcular subjectStats
-        const subjectStats: Record<string, any> = {};
-        const sessionHistory: any[] = [];
-        
-        scheduleSessions.forEach((session: any) => {
-          const stats = session.total_stats || {};
-          if (stats.session_count > 0) {
-            totalHours += (stats.total_duration_minutes || 0) / 60;
-            totalSessions += stats.session_count || 0;
-            totalQuestions += stats.total_questions || 0;
-            totalCorrect += stats.total_correct || 0;
-            
-            // Adicionar a disciplinas
-            const discipline = session.discipline_name || 'Sem Disciplina';
-            if (!subjectStats[discipline]) {
-              subjectStats[discipline] = {
-                totalHours: 0,
-                totalSessions: 0,
-                questionsAnswered: 0,
-                correctAnswers: 0,
-                wrongAnswers: 0
-              };
-            }
-            
-            const disciplineHours = (stats.total_duration_minutes || 0) / 60;
-            subjectStats[discipline].totalHours += disciplineHours;
-            subjectStats[discipline].totalSessions += stats.session_count || 0;
-            subjectStats[discipline].questionsAnswered += stats.total_questions || 0;
-            subjectStats[discipline].correctAnswers += stats.total_correct || 0;
-            subjectStats[discipline].wrongAnswers += (stats.total_questions || 0) - (stats.total_correct || 0);
-            
-            // Adicionar ao histórico de sessões
-            sessionHistory.push({
-              date: stats.last_session_date || new Date().toISOString().split('T')[0],
-              duration: stats.total_duration_minutes || 0,
-              type: 'manual' as const,
-              subject: discipline,
-              questions: stats.total_questions || 0,
-              correctAnswers: stats.total_correct || 0
-            });
-          }
-        });
-        
-        // Ordenar sessionHistory por data
-        sessionHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
-        return {
-          totalHours: totalHours,
-          totalSessions: totalSessions,
-          questionsAnswered: totalQuestions,
-          correctAnswers: totalCorrect,
-          wrongAnswers: totalQuestions - totalCorrect,
-          currentStreak: 0,
-          longestStreak: 0,
-          lastStudyDate: scheduleSessions[0]?.total_stats?.last_session_date || null,
-          dailyStats: {},
-          weeklyStats: {},
-          monthlyStats: {},
-          averages: {
-            dailyHours: totalHours / 7,
-            weeklyHours: totalHours,
-            monthlyHours: totalHours * 4
-          },
-          sessionHistory: sessionHistory,
-          subjectStats: subjectStats,
-          lastUpdated: new Date().toISOString()
-        } as StudyStatistics;
-      }
-      
-      return null;
+
+      return resolveUserStudyStatisticsFromData(userStudyData);
     },
     enabled: !!validatedStudentId,
   });
@@ -407,7 +329,10 @@ const StudentDetailsPage = () => {
     }
 
     // Fallback: usar study_sessions
-    const sessions = student.studyData.study_sessions || [];
+    const sessions = resolveStudySessions(
+      student.studyData.study_sessions,
+      student.studyData.study_statistics
+    );
     
     if (sessions.length === 0) {
       return {
@@ -421,8 +346,7 @@ const StudentDetailsPage = () => {
       };
     }
 
-    // Calcular estatísticas usando o helper
-    const stats = calculateStudyStatistics(sessions);
+    const stats = resolveUserStudyStatisticsFromData(student.studyData);
     
     // Calcular período desta semana e semana passada
     const now = new Date();

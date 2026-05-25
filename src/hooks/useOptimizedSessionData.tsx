@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { getScheduleSessions } from '@/utils/scheduleHelpers';
+import type { UserStudy } from '@/types/userStudy';
+import { devLog } from '@/utils/productionLogger';
 
 interface SessionData {
   id: string;
@@ -21,8 +23,28 @@ interface UseOptimizedSessionDataReturn {
 }
 
 interface UseOptimizedSessionDataOptions {
-  dependencies?: any[];
-  targetUserId?: string; // ✅ NOVO: userId opcional para permitir uso no modo coach
+  dependencies?: unknown[];
+  targetUserId?: string;
+}
+
+function processAllSessions(userStudyData: UserStudy): Record<string, SessionData> {
+  const allSessionData: Record<string, SessionData> = {};
+  const scheduleSessions = getScheduleSessions(userStudyData);
+
+  for (const session of scheduleSessions) {
+    const cycle = userStudyData.study_cycles?.find((c) => c.id === session.cycle_id);
+    allSessionData[session.id] = {
+      id: session.id,
+      cycle_name: cycle?.cycle_name || 'Ciclo desconhecido',
+      duration_minutes: session.total_stats?.total_duration_minutes || 0,
+      questions: session.total_stats?.total_questions || 0,
+      correct_answers: session.total_stats?.total_correct || 0,
+      session_count: session.total_stats?.session_count || 1,
+      session_link: session.session_link,
+    };
+  }
+
+  return allSessionData;
 }
 
 /**
@@ -31,65 +53,17 @@ interface UseOptimizedSessionDataOptions {
  * - Cache inteligente
  * - Refresh manual
  */
-export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions = {}): UseOptimizedSessionDataReturn => {
+export const useOptimizedSessionData = (
+  options: UseOptimizedSessionDataOptions = {}
+): UseOptimizedSessionDataReturn => {
   const { user } = useAuth();
-  const { targetUserId, dependencies = [] } = options;
+  const { targetUserId } = options;
   const [sessionData, setSessionData] = useState<Record<string, SessionData>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetch, setLastFetch] = useState<number>(0);
+  const lastFetchRef = useRef(0);
 
-  // Cache de 30 segundos
   const CACHE_DURATION = 30 * 1000;
-
-  const processAllSessions = useCallback((userStudyData: any): Record<string, SessionData> => {
-    const allSessionData: Record<string, SessionData> = {};
-    
-    // ✅ Prioridade 1: Buscar de study_schedule (estrutura nova)
-    if (userStudyData.study_schedule && Array.isArray(userStudyData.study_schedule)) {
-      
-      for (const session of userStudyData.study_schedule) {
-        // Buscar ciclo (incluindo inativos para garantir que o nome apareça)
-        const cycle = userStudyData.study_cycles?.find((c: any) => c.id === session.cycle_id);
-        
-        // Sempre criar entrada, mesmo sem ciclo (para exibir dados parciais)
-        allSessionData[session.id] = {
-          id: session.id,
-          cycle_name: cycle?.cycle_name || 'Ciclo desconhecido',
-          duration_minutes: session.total_stats?.total_duration_minutes || 0,
-          questions: session.total_stats?.total_questions || 0,
-          correct_answers: session.total_stats?.total_correct || 0,
-          session_count: session.total_stats?.session_count || 1,
-          session_link: session.session_link
-        };
-      }
-    }
-    
-    // ✅ Fallback: Buscar de weekly_schedule (estrutura antiga)
-    if (Object.keys(allSessionData).length === 0) {
-      
-      for (const cycle of userStudyData.study_cycles) {
-        if (cycle.schedule_data?.weekly_schedule) {
-          for (const daySchedule of cycle.schedule_data.weekly_schedule) {
-            for (const session of daySchedule.sessions) {
-              allSessionData[session.id] = {
-                id: session.id,
-                cycle_name: cycle.cycle_name,
-                duration_minutes: session.total_stats?.total_duration_minutes || 0,
-                questions: session.total_stats?.total_questions || 0,
-                correct_answers: session.total_stats?.total_correct || 0,
-                session_count: session.total_stats?.session_count || 1,
-                session_link: session.session_link
-              };
-            }
-          }
-        }
-      }
-    }
-    
-    // Debug logs removed for security
-    return allSessionData;
-  }, []);
 
   const loadData = useCallback(async (forceRefresh = false) => {
     const userId = targetUserId || user?.id;
@@ -100,7 +74,10 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     }
 
     const now = Date.now();
-    const isCacheValid = !forceRefresh && (now - lastFetch) < CACHE_DURATION && Object.keys(sessionData).length > 0;
+    const isCacheValid =
+      !forceRefresh &&
+      now - lastFetchRef.current < CACHE_DURATION &&
+      lastFetchRef.current > 0;
 
     if (isCacheValid) {
       devLog.log('📦 Usando dados em cache');
@@ -108,24 +85,20 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       return;
     }
 
-    // Debug logs removed for security
     setLoading(true);
     setError(null);
 
     try {
       const userStudyData = await UserStudyService.getUserStudyData(userId);
-      
+
       if (!userStudyData) {
         devLog.warn('⚠️ Nenhum dado do usuário encontrado');
         setSessionData({});
         return;
       }
 
-      const processedData = processAllSessions(userStudyData);
-      setSessionData(processedData);
-      setLastFetch(now);
-      
-      // Debug logs removed for security
+      setSessionData(processAllSessions(userStudyData));
+      lastFetchRef.current = now;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       devLog.error('❌ Erro ao carregar dados de sessão', err);
@@ -134,13 +107,12 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     } finally {
       setLoading(false);
     }
-  }, [user?.id, targetUserId, processAllSessions]);
+  }, [user?.id, targetUserId]);
 
   const refreshData = useCallback(async () => {
     await loadData(true);
   }, [loadData]);
 
-  // Carregar dados quando o hook é montado ou quando dependências mudam
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -149,6 +121,6 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     sessionData,
     loading,
     error,
-    refreshData
+    refreshData,
   };
 };
