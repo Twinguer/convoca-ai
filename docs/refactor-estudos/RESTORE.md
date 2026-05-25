@@ -2,12 +2,10 @@
 
 Tags Git criadas após cada fase validada (build + testes).
 
-| Tag | Fase | Conteúdo |
+| Tag / commit | Fase | Conteúdo |
 |-----|------|----------|
-| `restore/refactor-estudos-baseline` | Pré-refatoração | Estado antes das fases 0–3 |
-| `restore/refactor-estudos-phase-0-1` | 0 + 1 | Higiene, testes, auditoria SQL |
-| `restore/refactor-estudos-phase-2` | 2 | Migration backfill `study_schedule` |
-| `restore/refactor-estudos-phase-3` | 3 | Escrita unificada + flag espelhamento |
+| `restore/refactor-estudos-baseline` → `0ab4c568` | Pré-refatoração | Antes das fases 0–3 |
+| `restore/refactor-estudos-complete` → `cd89bb06` | 0–3 | Higiene, testes, backfill, `studySessionService` |
 
 ## Restaurar código
 
@@ -16,10 +14,10 @@ Tags Git criadas após cada fase validada (build + testes).
 git tag -l "restore/refactor-estudos-*"
 
 # Voltar para um ponto (cria branch de recuperação)
-git checkout -b recovery/from-phase-2 restore/refactor-estudos-phase-2
+git checkout -b recovery/from-complete restore/refactor-estudos-complete
 
 # Ou resetar main local (CUIDADO: descarta commits posteriores)
-git reset --hard restore/refactor-estudos-phase-1
+git reset --hard restore/refactor-estudos-baseline
 ```
 
 ## Restaurar dados (Fase 2)
