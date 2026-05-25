@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { generateId } from '@/lib/utils';
+import { MIRROR_WEEKLY_STATS } from '@/config/studyWrite';
 import { logger } from '@/utils/logger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 
@@ -364,8 +365,13 @@ export class UserStudyService {
           }
           return cycle;
         });
-      } else {
-        // Fallback: remover de weekly_schedule (legado)
+      } else if (!MIRROR_WEEKLY_STATS) {
+        logger.warn('Sessão não encontrada em study_schedule (espelhamento legado desligado)', {
+          sessionId,
+        });
+        return false;
+      } else if (MIRROR_WEEKLY_STATS) {
+        // Fallback legado: remover de weekly_schedule (só com espelhamento ativo)
         updatedCycles = data.study_cycles.map(cycle => {
           const updatedScheduleData = { ...cycle.schedule_data };
           

@@ -10,7 +10,7 @@ Documento de referência para refatoração sem regressão.
 | Histórico de estudo | `study_sessions[]` (ledger) | `resolveStudySessions()` | Save manual (`recordCompletedSession`) |
 | Totais globais | Derivado do ledger | `resolveUserStudyStatisticsFromData()` | Recalculado em todo save manual |
 | Totais por tarefa | `study_schedule[].total_stats` | Cronograma / coach | `recordCompletedSession` |
-| Legado | `study_cycles[].schedule_data.weekly_schedule` | Fallback em `getScheduleSessions()` | **Deprecado** — espelhamento opcional via flag |
+| Legado | `study_cycles[].schedule_data.weekly_schedule` | Fallback em `getScheduleSessions()` | **Somente leitura** (escrita com `VITE_MIRROR_WEEKLY_STATS=true`) |
 
 ## Regras de produto (não quebrar)
 
@@ -21,8 +21,8 @@ Documento de referência para refatoração sem regressão.
 
 ## Flag de transição
 
-- `VITE_MIRROR_WEEKLY_STATS=true` — espelha `total_stats` em `weekly_schedule` ao registrar (compatibilidade).
-- `VITE_MIRROR_WEEKLY_STATS=false` — escrita só em `study_schedule` + ledger + stats.
+- `VITE_MIRROR_WEEKLY_STATS=true` — espelha `total_stats` e remoções em `weekly_schedule` (compatibilidade).
+- Omitido ou `false` (**padrão**) — escrita só em `study_schedule` + ledger + stats.
 
 ## Pontos de restauração
 

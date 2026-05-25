@@ -6,6 +6,8 @@ Tags Git criadas após cada fase validada (build + testes).
 |-----|------|----------|
 | `restore/refactor-estudos-baseline` → `0ab4c568` | Pré-refatoração | Antes das fases 0–3 |
 | `restore/refactor-estudos-complete` → `cd89bb06` | 0–3 | Higiene, testes, backfill, `studySessionService` |
+| `restore/refactor-estudos-phase-4-5` → `586fc711` | 4–5 | Fatia Cronograma, redirect `/session`, botão voltar no timer |
+| `restore/refactor-estudos-phase-6` → *(após commit)* | 6 | Testes `studySessionService`, espelhamento off por padrão |
 
 ## Restaurar código
 
