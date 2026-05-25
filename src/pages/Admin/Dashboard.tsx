@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Crown, GraduationCap, User, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +8,7 @@ import MonitoringMetrics from '@/components/Admin/MonitoringMetrics';
 import PciConcursoFeedSync from '@/components/Admin/PciConcursoFeedSync';
 import { fetchAdminMetrics } from '@/services/adminMetricsService';
 import { ADMIN_METRICS_QUERY_KEY } from '@/types/adminMetrics';
+import { useAdminNavLinks } from '@/hooks/useAdminNavLinks';
 
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -40,6 +42,7 @@ function healthClass(health: string): string {
 }
 
 const AdminDashboard: React.FC = () => {
+  const { links } = useAdminNavLinks();
   const { data, isLoading, error } = useQuery({
     queryKey: ADMIN_METRICS_QUERY_KEY,
     queryFn: fetchAdminMetrics,
@@ -132,30 +135,30 @@ const AdminDashboard: React.FC = () => {
             <CardDescription>Acesse as principais funcionalidades</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a
-              href="/criar-ranking"
+            <Link
+              to="/criar-ranking"
               className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors"
             >
               Cadastrar Novo Ranking
-            </a>
-            <a
-              href="/project/admin/man/concursos"
+            </Link>
+            <Link
+              to={links.concursos}
               className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors"
             >
               Gerenciar Rankings
-            </a>
-            <a
-              href="/project/admin/man/usuarios"
+            </Link>
+            <Link
+              to={links.usuarios}
               className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors"
             >
               Gerenciar Usuários
-            </a>
-            <a
-              href="/project/admin/man/vouchers"
+            </Link>
+            <Link
+              to={links.vouchers}
               className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors"
             >
               Gerenciar Vouchers
-            </a>
+            </Link>
             <a href="/" target="_blank" rel="noopener noreferrer" className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors">
               Visualizar Site
             </a>

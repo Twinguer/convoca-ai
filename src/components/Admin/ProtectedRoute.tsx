@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { ADMIN_LOGIN_PATH } from '@/config/adminRoutes';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface ProtectedRouteProps {
@@ -21,7 +22,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // If not authenticated as admin, redirect to secure login
   if (!isAdmin) {
-    return <Navigate to="/project/admin/man/login" replace />;
+    return <Navigate to={ADMIN_LOGIN_PATH} replace />;
   }
 
   // If authenticated as admin, render the children

@@ -17,6 +17,7 @@ import { getTotalQuestions } from '@/hooks/useAnswerSheet/questionCountUtils';
 import { useEditUrls } from '@/hooks/useEditUrls';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
+import { AdminUrlObfuscationService } from '@/services/adminUrlObfuscation';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
@@ -672,12 +673,18 @@ const CriarRanking = () => {
       navigate(`/ranking/${createdConcursoId}`);
     }
   };
-  const handleBack = () => {
-    if (isAdmin) {
-      navigate('/project/admin/man/concursos');
-    } else {
-      navigate('/pre-classificacao');
+  const handleBack = async () => {
+    if (isAdmin && user?.id) {
+      try {
+        const url = await AdminUrlObfuscationService.generateSecureConcursosUrl(user.id);
+        navigate(url);
+      } catch {
+        navigate('/internal/console/concursos');
+      }
+      return;
     }
+
+    navigate('/pre-classificacao');
   };
 
   // Mostrar loading enquanto valida o token de edição

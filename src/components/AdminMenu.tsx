@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSecureAdminUrls } from '@/services/adminUrlObfuscation';
+import { adminResourcePath } from '@/config/adminRoutes';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, FileText, Users, Gift } from 'lucide-react';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
@@ -35,10 +36,10 @@ const AdminMenu = () => {
         devLog.error('Erro ao gerar URLs seguras:', error);
         // Fallback para URLs não ofuscadas
         setSecureUrls({
-          dashboard: '/project/admin/man/dashboard',
-          concursos: '/project/admin/man/concursos',
-          usuarios: '/project/admin/man/usuarios',
-          vouchers: '/project/admin/man/vouchers'
+          dashboard: adminResourcePath('dashboard'),
+          concursos: adminResourcePath('concursos'),
+          usuarios: adminResourcePath('usuarios'),
+          vouchers: adminResourcePath('vouchers'),
         });
       } finally {
         setLoading(false);

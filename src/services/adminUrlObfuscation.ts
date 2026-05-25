@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { adminResourcePath, type AdminResource } from '@/config/adminRoutes';
 import { logError, logWarn } from '@/utils/secureLogger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
@@ -8,7 +9,7 @@ export class AdminUrlObfuscationService {
   // Tokens agora são gerados apenas via RPC no backend
   
   // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves no frontend)
-  static async generateAdminToken(adminId: string, resource: 'dashboard' | 'concursos' | 'usuarios' | 'vouchers'): Promise<string> {
+  static async generateAdminToken(adminId: string, resource: AdminResource): Promise<string> {
     try {
       // Verificar se o usuário é admin
       const { data: userProfile, error } = await supabase
@@ -80,9 +81,9 @@ export class AdminUrlObfuscationService {
   // ✅ REMOVIDO: storeToken() - tokens agora são armazenados apenas no banco via RPC
   
   // Gerar URL segura para administração
-  static async generateSecureAdminUrl(adminId: string, resource: string): Promise<string> {
-    const token = await this.generateAdminToken(adminId, resource as any);
-    return `/project/admin/man/${resource}/${token}`;
+  static async generateSecureAdminUrl(adminId: string, resource: AdminResource): Promise<string> {
+    const token = await this.generateAdminToken(adminId, resource);
+    return adminResourcePath(resource, token);
   }
   
   // Gerar URL segura para dashboard
@@ -108,7 +109,7 @@ export class AdminUrlObfuscationService {
 
 // Hook para usar o serviço de ofuscação de admin
 export const useSecureAdminUrls = () => {
-  const generateSecureUrl = async (adminId: string, resource: 'dashboard' | 'concursos' | 'usuarios' | 'vouchers') => {
+  const generateSecureUrl = async (adminId: string, resource: AdminResource) => {
     return await AdminUrlObfuscationService.generateSecureAdminUrl(adminId, resource);
   };
   

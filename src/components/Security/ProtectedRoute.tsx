@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { ADMIN_LOGIN_PATH } from '@/config/adminRoutes';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
@@ -64,7 +65,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect if admin required but user is not admin
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/project/admin/man/login" replace />;
+    return <Navigate to={ADMIN_LOGIN_PATH} replace />;
   }
 
   return <>{children}</>;

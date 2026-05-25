@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,26 +14,15 @@ import PreClassificacao from "./pages/PreClassificacao";
 import CargosPage from "./pages/CargosPage";
 import Resultado from "./pages/Resultado";
 import ConcursoDetails from "./pages/ConcursoDetails";
-import ResultadosPage from "./pages/ResultadosPage";
 import NotFound from "./pages/NotFound";
-import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import ConfirmacaoSucesso from "./pages/Auth/ConfirmacaoSucesso";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import AuthCallback from "./pages/Auth/AuthCallback";
-import UserProfile from "./pages/UserProfile";
-import PublicUserProfile from "./pages/PublicUserProfile";
 import Notifications from "./pages/Notifications";
 import { AuthProvider } from "./hooks/useAuth";
 import { PresenceProvider } from "./contexts/PresenceContext";
-import { SecureAdminLogin } from "./components/Admin/SecureLogin";
-import AdminDashboard from "./pages/Admin/Dashboard";
-import ListarConcursos from "./pages/Admin/ListarConcursos";
-import ListarUsuarios from "./pages/Admin/ListarUsuarios";
-import VouchersManager from "./pages/Admin/VouchersManager";
-import AdminLayout from "./components/Admin/AdminLayout";
-import AdminProtectedRoute from "./components/Admin/ProtectedRoute";
 import { ProtectedRoute } from "./components/Security/ProtectedRoute";
 import { SecureConcursoRoute } from "./components/Security/SecureConcursoRoute";
 import { SecureUserRoute } from "./components/Security/SecureUserRoute";
@@ -51,7 +40,6 @@ import CommunityPage from "./modules/community/pages/CommunityPage";
 import ConcursosPage from "./pages/ConcursosPage";
 import { GroupDetailsPage } from "./pages/GroupDetailsPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
-import RankingParticipationWrapper from "./components/resultados/RankingParticipationWrapper";
 import SecureStudyCycleRoute from "./components/Security/SecureStudyCycleRoute";
 import CoachDashboard from "./modules/coach/pages/CoachDashboard";
 import InviteStudentPage from "./modules/coach/pages/InviteStudentPage";
@@ -65,6 +53,7 @@ import StudentCycleDisciplinesPage from "./modules/coach/pages/StudentCycleDisci
 import { useParams } from 'react-router-dom';
 import { useTokenCleanup } from './hooks/useTokenCleanup';
 import { GoogleAdsRouteTracker } from '@/components/analytics/GoogleAdsRouteTracker';
+import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from '@/config/adminRoutes';
 // Páginas de teste removidas após migração completa
 // import TestRankingsV2 from "./pages/TestRankingsV2";
 // import DebugRanking from "./pages/DebugRanking";
@@ -74,6 +63,33 @@ import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import EmailPreview from "./pages/EmailPreview";
 import RecalculateScores from "./pages/RecalculateScores";
+
+const SecureAdminLogin = lazy(() =>
+  import("./components/Admin/SecureLogin").then((m) => ({ default: m.SecureAdminLogin }))
+);
+const AdminLayout = lazy(() => import("./components/Admin/AdminLayout"));
+const AdminProtectedRoute = lazy(() => import("./components/Admin/ProtectedRoute"));
+const AdminDashboard = lazy(() => import("./pages/Admin/Dashboard"));
+const ListarConcursos = lazy(() => import("./pages/Admin/ListarConcursos"));
+const ListarUsuarios = lazy(() => import("./pages/Admin/ListarUsuarios"));
+const VouchersManager = lazy(() => import("./pages/Admin/VouchersManager"));
+const AdminTokenGate = lazy(() => import("./components/Admin/AdminTokenGate"));
+const SecureAdminRoute = lazy(() => import("./components/Admin/SecureAdminRoute"));
+const LegacyAdminRedirect = lazy(() => import("./components/Admin/LegacyAdminRedirect"));
+
+const ResultadosPage = lazy(() => import("./pages/ResultadosPage"));
+const ConcursoParticipation = lazy(() => import("./pages/ConcursoParticipation"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const PublicUserProfile = lazy(() => import("./pages/PublicUserProfile"));
+
+function RouteChunkLoader() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
 // Wrapper components for passing URL parameters
 const ConcursoResultadosWrapper = () => {
   const { token } = useParams<{ token: string }>();
@@ -98,22 +114,79 @@ const AppContent = () => {
       >
                   <GoogleAdsRouteTracker />
                   <Routes>
-                    <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />
-                    <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
-                    <Route path="/project/admin/man" element={<AdminProtectedRoute>
-                        <AdminLayout />
-                      </AdminProtectedRoute>}>
-                      <Route path="dashboard" element={<AdminDashboard />} />
-                      <Route path="dashboard/:token" element={<AdminDashboard />} />
-                      <Route path="concursos" element={<ListarConcursos />} />
-                      <Route path="concursos/:token" element={<ListarConcursos />} />
-                      <Route path="usuarios" element={<ListarUsuarios />} />
-                      <Route path="usuarios/:token" element={<ListarUsuarios />} />
-                      <Route path="vouchers" element={<VouchersManager />} />
-                      <Route path="vouchers/:token" element={<VouchersManager />} />
+                    <Route path={ADMIN_LOGIN_PATH} element={
+                      <Suspense fallback={<RouteChunkLoader />}>
+                        <SecureAdminLogin />
+                      </Suspense>
+                    } />
+                    <Route path="/project/admin/man" element={
+                      <Suspense fallback={<RouteChunkLoader />}>
+                        <LegacyAdminRedirect />
+                      </Suspense>
+                    } />
+                    <Route path="/project/admin/man/*" element={
+                      <Suspense fallback={<RouteChunkLoader />}>
+                        <LegacyAdminRedirect />
+                      </Suspense>
+                    } />
+                    <Route path="/admin/*" element={<NotFound />} />
+                    <Route path={ADMIN_BASE_PATH} element={
+                      <Suspense fallback={<RouteChunkLoader />}>
+                        <AdminProtectedRoute>
+                          <AdminLayout />
+                        </AdminProtectedRoute>
+                      </Suspense>
+                    }>
+                      <Route index element={<Navigate to="dashboard" replace />} />
+                      <Route path="dashboard" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <AdminTokenGate resource="dashboard" />
+                        </Suspense>
+                      } />
+                      <Route path="dashboard/:token" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureAdminRoute resource="dashboard">
+                            <AdminDashboard />
+                          </SecureAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="concursos" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <AdminTokenGate resource="concursos" />
+                        </Suspense>
+                      } />
+                      <Route path="concursos/:token" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureAdminRoute resource="concursos">
+                            <ListarConcursos />
+                          </SecureAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="usuarios" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <AdminTokenGate resource="usuarios" />
+                        </Suspense>
+                      } />
+                      <Route path="usuarios/:token" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureAdminRoute resource="usuarios">
+                            <ListarUsuarios />
+                          </SecureAdminRoute>
+                        </Suspense>
+                      } />
+                      <Route path="vouchers" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <AdminTokenGate resource="vouchers" />
+                        </Suspense>
+                      } />
+                      <Route path="vouchers/:token" element={
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureAdminRoute resource="vouchers">
+                            <VouchersManager />
+                          </SecureAdminRoute>
+                        </Suspense>
+                      } />
                     </Route>
-                    <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
-                    <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirmacao-sucesso" element={<ConfirmacaoSucesso />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
@@ -121,12 +194,16 @@ const AppContent = () => {
           <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="/perfil" element={<>
                         <Menu />
-                        <UserProfile />
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <UserProfile />
+                        </Suspense>
                       </>} />
                      <Route path="/usuario/profile/:token" element={<>
                         <Menu />
                         <SecureUserRoute action="profile">
-                          <PublicUserProfile />
+                          <Suspense fallback={<RouteChunkLoader />}>
+                            <PublicUserProfile />
+                          </Suspense>
                         </SecureUserRoute>
                       </>} />
                      {/* ✅ SEGURANÇA: Rota legada - redirecionar para versão segura */}
@@ -348,19 +425,25 @@ const AppContent = () => {
                     <Route path="/concurso/resultados/:token" element={<>
                         <Menu />
                         <SecureConcursoRoute action="resultados">
-                          <ConcursoResultadosWrapper />
+                          <Suspense fallback={<RouteChunkLoader />}>
+                            <ConcursoResultadosWrapper />
+                          </Suspense>
                         </SecureConcursoRoute>
                       </>} />
                     <Route path="/concurso/participar/:token" element={<>
                         <Menu />
                         <SecureConcursoRoute action="participar">
-                          <ConcursoParticipation />
+                          <Suspense fallback={<RouteChunkLoader />}>
+                            <ConcursoParticipation />
+                          </Suspense>
                         </SecureConcursoRoute>
                       </>} />
                     <Route path="/concurso/ranking/:token" element={<>
                         <Menu />
                         <SecureConcursoRoute action="ranking">
-                          <ResultadosPage />
+                          <Suspense fallback={<RouteChunkLoader />}>
+                            <ResultadosPage />
+                          </Suspense>
                         </SecureConcursoRoute>
                       </>} />
                     <Route path="/concurso/estatisticas/:token" element={<>
@@ -372,7 +455,9 @@ const AppContent = () => {
                     <Route path="/concurso/historico/:token" element={<>
                         <Menu />
                         <SecureConcursoRoute action="historico">
-                          <ResultadosPage />
+                          <Suspense fallback={<RouteChunkLoader />}>
+                            <ResultadosPage />
+                          </Suspense>
                         </SecureConcursoRoute>
                       </>} />
                     {/* Rotas legadas - redirecionar para versão segura */}

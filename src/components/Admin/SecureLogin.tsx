@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,20 +7,49 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield } from 'lucide-react';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { TurnstileCaptcha } from '@/components/Security/TurnstileCaptcha';
+import { AdminUrlObfuscationService } from '@/services/adminUrlObfuscation';
+import { devLog } from '@/utils/productionLogger';
 
 export const SecureAdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!captchaToken) {
+      toast.error('Complete a verificação de segurança');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Authenticate with Supabase
+      const { data: captchaData, error: captchaError } = await supabase.functions.invoke('validate-turnstile', {
+        body: { token: captchaToken },
+      });
+
+      if (captchaError || !captchaData?.valid) {
+        toast.error('Verificação de segurança falhou. Tente novamente.');
+        setCaptchaToken(null);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -32,7 +61,6 @@ export const SecureAdminLogin: React.FC = () => {
       }
 
       if (data.user) {
-        // Check if user has admin role
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -46,16 +74,16 @@ export const SecureAdminLogin: React.FC = () => {
           return;
         }
 
-        // Log admin login
         await supabase.rpc('log_admin_operation', {
           operation_type: 'admin_login',
           operation_details: {
             login_time: new Date().toISOString(),
-            user_email: email
-          }
+            user_email: email,
+          },
         });
 
-        navigate('/project/admin/man/dashboard');
+        const dashboardUrl = await AdminUrlObfuscationService.generateSecureDashboardUrl(data.user.id);
+        navigate(dashboardUrl);
       }
     } catch (error) {
       devLog.error('Login error:', error);
@@ -101,18 +129,24 @@ export const SecureAdminLogin: React.FC = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
+            <TurnstileCaptcha
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || ''}
+              onSuccess={setCaptchaToken}
+              onError={() => setCaptchaToken(null)}
+            />
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || !captchaToken}
             >
               {isLoading ? 'Authenticating...' : 'Secure Login'}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => navigate('/')}
               className="text-sm"
             >

@@ -12,6 +12,8 @@ import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
 import AdminMenu from './AdminMenu';
+import { useAdminNavLinks } from '@/hooks/useAdminNavLinks';
+import { ADMIN_BASE_PATH } from '@/config/adminRoutes';
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
@@ -22,6 +24,7 @@ const Menu = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPlansSubmenuOpen, setIsPlansSubmenuOpen] = useState(false);
+  const { links: adminLinks } = useAdminNavLinks();
   useEffect(() => {
     // Check if admin mode is enabled via URL param
     const urlParams = new URLSearchParams(window.location.search);
@@ -245,15 +248,15 @@ const Menu = () => {
                 {isAdmin() && <>
                   <div className="h-px bg-border mt-2 mb-2"></div>
                   <div className="font-bold text-foreground/70 mb-2">Administração</div>
-                  <Link to="/project/admin/man/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
+                  <Link to={adminLinks.dashboard} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/dashboard`) ? "text-primary" : "text-foreground/70")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </Link>
-                  <Link to="/project/admin/man/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
+                  <Link to={adminLinks.concursos} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/concursos`) ? "text-primary" : "text-foreground/70")}>
                     <FileText className="mr-2 h-4 w-4" />
                     Concursos
                   </Link>
-                  <Link to="/project/admin/man/usuarios" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
+                  <Link to={adminLinks.usuarios} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/usuarios`) ? "text-primary" : "text-foreground/70")}>
                     <Users className="mr-2 h-4 w-4" />
                     Usuários
                   </Link>
