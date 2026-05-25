@@ -1,7 +1,10 @@
 import { devLog } from '@/utils/productionLogger';
 import type { GoogleAdsConversionEvent } from './types';
-
-const ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID?.trim();
+import {
+  ensureGtagConfigured,
+  GOOGLE_ADS_ID,
+  shouldRunAnalyticsInDev,
+} from './gtagCore';
 
 const CONVERSION_ENV_MAP: Record<GoogleAdsConversionEvent, string | undefined> = {
   signup: import.meta.env.VITE_GOOGLE_ADS_CONVERSION_SIGNUP,
@@ -10,57 +13,30 @@ const CONVERSION_ENV_MAP: Record<GoogleAdsConversionEvent, string | undefined> =
   view_planos: import.meta.env.VITE_GOOGLE_ADS_CONVERSION_VIEW_PLANOS,
 };
 
-let scriptInjected = false;
-let configured = false;
-
-/** Produção com ID configurado; em dev só se VITE_GOOGLE_ADS_ENABLE_DEV=true */
+/** Produção com ID configurado; em dev só se VITE_GOOGLE_ADS_ENABLE_DEV=true (ou VITE_GA_ENABLE_DEV). */
 export function isGoogleAdsEnabled(): boolean {
-  if (!ADS_ID) return false;
-  if (import.meta.env.DEV) {
-    return import.meta.env.VITE_GOOGLE_ADS_ENABLE_DEV === 'true';
-  }
+  if (!GOOGLE_ADS_ID) return false;
+  if (import.meta.env.DEV) return shouldRunAnalyticsInDev();
   return true;
 }
 
 export function getGoogleAdsId(): string | undefined {
-  return ADS_ID;
+  return GOOGLE_ADS_ID;
 }
 
-/**
- * Carrega gtag.js e configura a conta Google Ads (AW-...).
- * page_view manual via trackPageView (SPA).
- */
 export function initGoogleAds(): void {
-  if (!isGoogleAdsEnabled() || typeof window === 'undefined') return;
-  if (configured) return;
-
-  window.dataLayer = window.dataLayer ?? [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
-  };
-
-  window.gtag('js', new Date());
-
-  if (!scriptInjected) {
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ADS_ID!)}`;
-    document.head.appendChild(script);
-    scriptInjected = true;
-  }
-
-  window.gtag('config', ADS_ID, { send_page_view: false });
-  configured = true;
-
-  if (import.meta.env.DEV) {
-    devLog.log('[googleAds] inicializado', ADS_ID);
-  }
+  if (!isGoogleAdsEnabled()) return;
+  ensureGtagConfigured({ ga: false, ads: true });
 }
 
-export function trackPageView(pagePath: string, pageTitle?: string): void {
-  if (!isGoogleAdsEnabled() || typeof window.gtag !== 'function' || !ADS_ID) return;
+export function trackAdsPageView(pagePath: string, pageTitle?: string): void {
+  if (!isGoogleAdsEnabled() || typeof window.gtag !== 'function' || !GOOGLE_ADS_ID) {
+    return;
+  }
 
-  window.gtag('config', ADS_ID, {
+  ensureGtagConfigured({ ga: false, ads: true });
+
+  window.gtag('config', GOOGLE_ADS_ID, {
     page_path: pagePath,
     page_title: pageTitle ?? document.title,
   });
@@ -84,6 +60,8 @@ export function trackConversion(
 
   if (!isGoogleAdsEnabled() || typeof window.gtag !== 'function') return;
 
+  ensureGtagConfigured({ ga: false, ads: true });
+
   window.gtag('event', 'conversion', {
     send_to: sendTo,
     value: options?.value ?? 1.0,
@@ -93,4 +71,9 @@ export function trackConversion(
   if (import.meta.env.DEV) {
     devLog.log('[googleAds] conversion', event, sendTo);
   }
+}
+
+/** @deprecated Use trackAnalyticsPageView — mantido por compatibilidade. */
+export function trackPageView(pagePath: string, pageTitle?: string): void {
+  trackAdsPageView(pagePath, pageTitle);
 }

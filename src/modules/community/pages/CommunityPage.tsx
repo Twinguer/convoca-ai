@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Trophy, Star, TrendingUp, UserPlus, MessageSquare, Search, UserCheck, BookOpen, Award, UserCircle, GraduationCap } from 'lucide-react';
+import { Users, UserPlus, MessageSquare, Search, UserCheck, BookOpen, UserCircle, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useCommunityUsers } from '@/hooks/useCommunityUsers';
@@ -128,7 +128,7 @@ const CommunityPage = () => {
         <Tabs defaultValue="usuarios" className="space-y-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
           {/* Community Stats - moved to the left */}
-          <div className="hidden md:grid grid-cols-4 gap-2" style={{ width: '48%' }}>
+          <div className="hidden md:grid grid-cols-3 gap-2" style={{ width: '48%' }}>
             <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
                 <CardTitle className="text-sm font-semibold">Total</CardTitle>
@@ -159,18 +159,6 @@ const CommunityPage = () => {
               <CardContent className="pt-0 text-left px-3">
                 <div className="text-xl font-black">
                   {users.filter(u => u.is_studying).length}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
-                <CardTitle className="text-sm font-semibold">Aprovados</CardTitle>
-                <Award className="h-4 w-4" />
-              </CardHeader>
-              <CardContent className="pt-0 text-left px-3">
-                <div className="text-xl font-black">
-                  {users.filter(u => u.approvalCount > 0).length}
                 </div>
               </CardContent>
             </Card>
