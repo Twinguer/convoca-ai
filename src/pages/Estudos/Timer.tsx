@@ -1,14 +1,23 @@
 import React, { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus, ArrowLeft, BookOpen } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
 import { getPendingTimerTask } from '@/utils/timerTaskContext';
 
-const Timer = () => {
+interface TimerProps {
+  cycleId?: string;
+  secureToken?: string;
+}
+
+const Timer = ({ secureToken }: TimerProps = {}) => {
   const navigate = useNavigate();
+  const { token: urlToken } = useParams();
   const pendingTask = useMemo(() => getPendingTimerTask(), []);
+  const cronogramaPath =
+    pendingTask?.returnPath ??
+    (secureToken ?? urlToken ? `/estudos/cronograma/${secureToken ?? urlToken}` : '/estudos/cronograma');
   const {
     minutes,
     seconds,
@@ -54,6 +63,16 @@ const Timer = () => {
     <>
       <div className="container mx-auto p-6">
         <div className="max-w-2xl mx-auto">
+          <Button
+            type="button"
+            variant="ghost"
+            className="mb-4 -ml-2"
+            onClick={() => navigate(cronogramaPath)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao cronograma
+          </Button>
+
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
             <p className="text-muted-foreground">
@@ -80,15 +99,6 @@ const Timer = () => {
                     )}
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate(pendingTask.returnPath)}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar ao cronograma
-                </Button>
               </CardContent>
             </Card>
           )}

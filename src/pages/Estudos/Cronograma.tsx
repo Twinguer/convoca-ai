@@ -8,9 +8,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2, FileText, Upload, Loader2, Pencil, Check, Download } from 'lucide-react';
+import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, ExternalLink, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,18 +18,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { setPendingTimerTask, consumeTimerSuggestedMinutes } from '@/utils/timerTaskContext';
 import { getScheduleSessions } from '@/utils/scheduleHelpers';
-import { validateFileUploadSimple } from '@/utils/fileUploadValidator';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
 import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
 import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
-import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { WeeklyScheduleBoard } from '@/components/study/WeeklyScheduleBoard';
 import { WeeklyScheduleTaskCard } from '@/components/study/WeeklyScheduleTaskCard';
 import { ScheduleModePicker } from '@/components/study/ScheduleModePicker';
+import { CycleDocumentsPanel } from '@/components/study/CycleDocumentsPanel';
+import { CronogramaTimerLinkCard } from '@/components/study/CronogramaTimerLinkCard';
+import { ScheduleTaskEditDialog } from '@/components/study/ScheduleTaskEditDialog';
+import { useCycleDocuments } from '@/hooks/useCycleDocuments';
 import {
   getCycleScheduleMode,
   toStorageDayOfWeek,
@@ -67,18 +67,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const {
     user
   } = useAuth();
-  const {
-    minutes,
-    seconds,
-    isRunning,
-    isPaused,
-    initialMinutes,
-    startTimer,
-    pauseTimer,
-    resumeTimer,
-    stopTimer,
-    setInitialTime
-  } = useTimer();
+  const { setInitialTime } = useTimer();
   const {
     addScheduleSession,
     recordCompletedSession,
@@ -152,37 +141,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   // Armazenar userStudy completo para acessar study_sessions
   const [userStudy, setUserStudy] = useState<any>(null);
 
-  // Estados para upload de PDF
-  const [uploadingPDF, setUploadingPDF] = useState<string | null>(null);
-
-  // Estados para edição de labels
-  const [editingLabel, setEditingLabel] = useState<'trilha_semanal' | 'subjetiva' | null>(null);
-  const [labelValue, setLabelValue] = useState<string>('');
-
-  // Timer helper functions
-  const formatTime = (mins: number, secs: number) => {
-    return `${mins.toString().padStart(2, '0')} min`;
-  };
-  const getProgressPercentage = () => {
-    const totalSeconds = initialMinutes * 60;
-    const remainingSeconds = minutes * 60 + seconds;
-    return (totalSeconds - remainingSeconds) / totalSeconds * 100;
-  };
-  const handleStart = () => {
-    startTimer(initialMinutes);
-  };
-  const addTime = () => {
-    if (initialMinutes < 360) {
-      const newTime = initialMinutes + 5;
-      setInitialTime(newTime);
-    }
-  };
-  const removeTime = () => {
-    if (initialMinutes > 5) {
-      const newTime = initialMinutes - 5;
-      setInitialTime(newTime);
-    }
-  };
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
   const scheduleByCycleId = useMemo(() => {
@@ -525,475 +483,27 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
   };
 
-  // Funções para upload/download de PDFs
-  const handlePDFUpload = (type: 'trilha_semanal' | 'subjetiva') => {
-    if (!selectedCycle) {
-      toast.error('Nenhum ciclo selecionado');
-      return;
-    }
-    if (uploadingPDF === type) {
-      return; // Já está fazendo upload
-    }
-    const inputId = type === 'trilha_semanal' ? 'trilha-semanal-upload' : 'subjetiva-upload';
-    const input = document.getElementById(inputId) as HTMLInputElement;
-    if (input) {
-      // Resetar o valor para permitir selecionar o mesmo arquivo novamente se necessário
-      input.value = '';
-      // Garantir que o input não está desabilitado antes de clicar
-      if (input.disabled) {
-        devLog.warn(`Input ${inputId} está desabilitado`);
-        toast.error('Não é possível fazer upload no momento');
-        return;
-      }
-      input.click();
-    } else {
-      devLog.error(`Input ${inputId} não encontrado`);
-      toast.error('Erro ao abrir seletor de arquivos');
-    }
-  };
+  const {
+    uploadingPDF,
+    editingLabel,
+    labelValue,
+    setLabelValue,
+    handlePDFUpload,
+    handlePDFFileSelect,
+    handleDownloadDocument,
+    handlePDFRemove,
+    startEditingLabel,
+    cancelEditingLabel,
+    saveLabel,
+  } = useCycleDocuments({
+    cycles,
+    selectedCycle,
+    coachMode,
+    targetStudentId,
+    userId: user?.id,
+    refreshCycles: fetchCycles,
+  });
 
-  const handlePDFFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: 'trilha_semanal' | 'subjetiva'
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedCycle) {
-      event.target.value = '';
-      return;
-    }
-
-    // Validação de tipo (MIME type ou extensão)
-    const fileName = file.name.toLowerCase();
-    const fileType = file.type.toLowerCase();
-    
-    // Tipos de imagem permitidos
-    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    
-    // Verificar se é PDF
-    const hasPDFExtension = fileName.endsWith('.pdf') || 
-                           fileName.endsWith('pdf') ||
-                           fileName.includes('.pdf');
-    const isPDFMimeType = fileType === 'application/pdf' || 
-                         fileType === 'application/x-pdf' ||
-                         fileType === 'application/acrobat' ||
-                         fileType.includes('pdf');
-    const isPDF = isPDFMimeType || hasPDFExtension;
-    
-    // Verificar se é imagem
-    const hasImageExtension = allowedImageExtensions.some(ext => fileName.endsWith(ext));
-    const isImage = allowedImageTypes.includes(fileType) || hasImageExtension;
-    
-    if (!isPDF && !isImage) {
-      toast.error(`Apenas arquivos PDF ou imagens (JPG, PNG, GIF, WEBP) são permitidos. Arquivo selecionado: ${file.name} (tipo: ${file.type || 'desconhecido'})`);
-      event.target.value = '';
-      return;
-    }
-
-    // Validar arquivo usando o sistema padronizado
-    const validation = validateFileUploadSimple(file, 'STUDY_DOCUMENT', isImage);
-    
-    if (!validation.isValid) {
-      toast.error(validation.errors.join('. '));
-      event.target.value = '';
-      return;
-    }
-
-    setUploadingPDF(type);
-    const targetUserId = coachMode ? targetStudentId : user?.id;
-    
-    if (!targetUserId) {
-      toast.error('Erro ao identificar usuário');
-      setUploadingPDF(null);
-      event.target.value = '';
-      return;
-    }
-
-    try {
-      const cycle = cycles.find(c => c.id === selectedCycle);
-      if (!cycle) {
-        toast.error('Ciclo não encontrado');
-        setUploadingPDF(null);
-        event.target.value = '';
-        return;
-      }
-
-      // Determinar extensão baseado no tipo do arquivo
-      let fileExt: string;
-      if (isPDF) {
-        fileExt = 'pdf';
-      } else {
-        // Extrair extensão da imagem
-        const imageExt = fileName.match(/\.(jpg|jpeg|png|gif|webp)$/)?.[1] || 'jpg';
-        fileExt = imageExt === 'jpeg' ? 'jpg' : imageExt;
-      }
-      
-      const uploadFileName = `cycle-${selectedCycle}-${type}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `study-documents/${targetUserId}/${uploadFileName}`;
-
-      // Upload para storage
-      // Manter o arquivo original, apenas garantir que tem a extensão correta no nome
-      let fileToUpload: File | Blob = file;
-      
-      // Se for PDF e o tipo não for application/pdf, criar um novo File/Blob com tipo correto
-      if (isPDF && file.type !== 'application/pdf') {
-        // Ler o arquivo como ArrayBuffer
-        const arrayBuffer = await file.arrayBuffer();
-        // Criar um Blob com tipo application/pdf
-        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-        // Converter Blob para File mantendo o nome original
-        fileToUpload = new File([blob], file.name.endsWith('.pdf') ? file.name : `${file.name}.pdf`, {
-          type: 'application/pdf',
-          lastModified: file.lastModified
-        });
-      }
-      
-      const { data, error: uploadError } = await supabase.storage
-        .from('profiles') // Usando bucket profiles (mesmo que CreatePostForm)
-        .upload(filePath, fileToUpload, {
-          cacheControl: '3600',
-          upsert: false,
-          // Não especificar contentType - deixar o Supabase usar o tipo do File/Blob
-        });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      // ✅ SEGURANÇA: Salvar apenas filePath (não URL pública)
-      // A URL será gerada via Edge Function com token seguro quando necessário
-      const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
-      const urlField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
-      
-      // Atualizar ciclo com filePath (e manter URL para compatibilidade temporária)
-      await UserStudyService.updateCycle(targetUserId, selectedCycle, {
-        [filePathField]: filePath,
-        [urlField]: null // Remover URL pública antiga
-      } as any);
-
-      // Recarregar ciclos
-      await fetchCycles();
-      const fileTypeLabel = isPDF ? 'PDF' : 'imagem';
-      toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} (${fileTypeLabel}) enviada com sucesso!`);
-    } catch (error: any) {
-      toast.error(`Erro ao fazer upload: ${error.message || 'Tente novamente'}`);
-    } finally {
-      setUploadingPDF(null);
-      event.target.value = '';
-    }
-  };
-
-  // ✅ SEGURANÇA: Gerar token seguro para visualizar documento
-  const generateDocumentToken = async (
-    type: 'trilha_semanal' | 'subjetiva',
-    cycleId: string,
-    filePath: string
-  ): Promise<string | null> => {
-    if (!user?.id) {
-      toast.error('Erro ao identificar usuário');
-      return null;
-    }
-
-    try {
-      const { data: tokenHash, error } = await supabase.rpc('generate_secure_token', {
-        p_entity_type: 'study_document',
-        p_entity_id: user.id,
-        p_metadata: {
-          filePath: filePath,
-          cycleId: cycleId,
-          documentType: type
-        },
-        p_expires_in_minutes: 60 // Token expira em 1 hora
-      });
-
-      if (error || !tokenHash) {
-        devLog.error('Erro ao gerar token seguro:', error);
-        toast.error('Erro ao gerar link seguro');
-        return null;
-      }
-
-      return tokenHash;
-    } catch (error: any) {
-      devLog.error('Erro ao gerar token seguro:', error);
-      toast.error('Erro ao gerar link seguro');
-      return null;
-    }
-  };
-
-  // ✅ SEGURANÇA: Migrar URL antiga para filePath (se necessário)
-  const migrateLegacyUrlToFilePath = async (
-    type: 'trilha_semanal' | 'subjetiva',
-    legacyUrl: string
-  ): Promise<string | null> => {
-    try {
-      devLog.log('Iniciando migração de URL legada para filePath:', { type, legacyUrl: legacyUrl.substring(0, 100) + '...' });
-      
-      // Extrair filePath da URL pública
-      // Formato: https://{project}.supabase.co/storage/v1/object/public/{bucket}/{filePath}
-      const urlPattern = /\/storage\/v1\/object\/public\/profiles\/(.+)$/;
-      const match = legacyUrl.match(urlPattern);
-      
-      if (!match || !match[1]) {
-        devLog.error('Não foi possível extrair filePath da URL:', legacyUrl);
-        toast.error('Erro ao processar URL do documento. Por favor, faça upload novamente.');
-        return null;
-      }
-
-      const filePath = match[1];
-      devLog.log('FilePath extraído:', filePath);
-      
-      // Verificar se o arquivo existe no storage (tentar fazer download)
-      const { error: checkError } = await supabase.storage
-        .from('profiles')
-        .download(filePath);
-
-      if (checkError) {
-        devLog.error('Arquivo não encontrado no storage:', checkError);
-        // Mesmo assim, tentar salvar o filePath (pode ser que o arquivo exista mas tenha erro de permissão)
-        // O sistema seguro vai validar novamente quando tentar servir
-      } else {
-        devLog.log('Arquivo confirmado no storage');
-      }
-
-      // Salvar filePath no banco
-      const targetUserId = coachMode ? targetStudentId : user?.id;
-      if (!targetUserId) {
-        devLog.error('User ID não encontrado para migração');
-        return null;
-      }
-
-      const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
-      const urlField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
-      
-      devLog.log('Salvando filePath no banco...', { filePathField, urlField });
-      
-      const updateResult = await UserStudyService.updateCycle(targetUserId, selectedCycle, {
-        [filePathField]: filePath,
-        [urlField]: null // Remover URL pública
-      } as any);
-
-      if (!updateResult) {
-        devLog.error('Erro ao atualizar ciclo com filePath');
-        toast.error('Erro ao migrar documento. Tente novamente.');
-        return null;
-      }
-
-      devLog.log('Migração concluída com sucesso');
-      
-      // Recarregar ciclos
-      await fetchCycles();
-      
-      return filePath;
-    } catch (error) {
-      devLog.error('Erro ao migrar URL legada:', error);
-      toast.error('Erro ao migrar documento. Por favor, faça upload novamente.');
-      return null;
-    }
-  };
-
-  // ✅ SEGURANÇA: Download documento via Edge Function com token seguro
-  const handleDownloadDocument = async (
-    type: 'trilha_semanal' | 'subjetiva'
-  ) => {
-    const cycle = cycles.find(c => c.id === selectedCycle);
-    if (!cycle || !selectedCycle) {
-      toast.error('Ciclo não encontrado');
-      return;
-    }
-
-    // Verificar se tem filePath (sistema seguro obrigatório)
-    const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
-    let filePath = (cycle as any)[filePathField] as string | undefined;
-
-    // Se não tem filePath mas tem URL legada, tentar migrar automaticamente
-    if (!filePath) {
-      const legacyUrl = type === 'trilha_semanal' ? cycle.trilha_semanal_pdf_url : cycle.subjetiva_pdf_url;
-      
-      if (legacyUrl) {
-        // Tentar migrar URL antiga para filePath
-        toast.info('Migrando documento para sistema seguro...');
-        filePath = await migrateLegacyUrlToFilePath(type, legacyUrl);
-        
-        if (!filePath) {
-          toast.error('Não foi possível migrar o documento. Por favor, faça upload novamente.');
-          return;
-        }
-        
-        toast.success('Documento migrado com sucesso!');
-      } else {
-        toast.error('Documento não encontrado. Por favor, faça upload novamente.');
-        return;
-      }
-    }
-
-    // Gerar token seguro e fazer download via Edge Function
-    const token = await generateDocumentToken(type, selectedCycle, filePath);
-    if (!token) return;
-
-    // Construir URL da Edge Function usando a URL do Supabase
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      toast.error('Erro de configuração: URL ou chave do Supabase não encontrada');
-      return;
-    }
-    
-    // ✅ Download: Fazer fetch com header de autorização e fazer download
-    try {
-      const functionUrl = `${supabaseUrl}/functions/v1/serve-document?token=${token}`;
-      
-      const response = await fetch(functionUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-        toast.error(`Erro ao baixar documento: ${errorData.error || response.statusText}`);
-        return;
-      }
-
-      // Criar blob e fazer download
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      // Extrair nome do arquivo do filePath
-      const fileName = filePath.split('/').pop() || `documento_${type}_${selectedCycle}.pdf`;
-      
-      // Criar link temporário para download
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Limpar blob URL
-      URL.revokeObjectURL(blobUrl);
-      
-      toast.success('Download iniciado!');
-    } catch (error: any) {
-      devLog.error('Erro ao baixar documento:', error);
-      toast.error('Erro ao baixar documento. Tente novamente.');
-    }
-  };
-
-  const handlePDFRemove = async (type: 'trilha_semanal' | 'subjetiva') => {
-    if (!selectedCycle) {
-      toast.error('Nenhum ciclo selecionado');
-      return;
-    }
-    
-    const targetUserId = coachMode ? targetStudentId : user?.id;
-    if (!targetUserId) {
-      toast.error('Erro ao identificar usuário');
-      return;
-    }
-
-    const cycle = cycles.find(c => c.id === selectedCycle);
-    if (!cycle) {
-      toast.error('Ciclo não encontrado');
-      return;
-    }
-
-    // Remover arquivo do storage se existir filePath
-    const filePathField = type === 'trilha_semanal' ? 'trilha_semanal_file_path' : 'subjetiva_file_path';
-    const filePath = (cycle as any)[filePathField] as string | undefined;
-
-    if (filePath) {
-      try {
-        const { error: deleteError } = await supabase.storage
-          .from('profiles')
-          .remove([filePath]);
-
-        if (deleteError) {
-          devLog.error('Erro ao remover arquivo do storage:', deleteError);
-          // Continuar mesmo se falhar (pode já ter sido removido)
-        }
-      } catch (error) {
-        devLog.error('Erro ao remover arquivo:', error);
-        // Continuar mesmo se falhar
-      }
-    }
-
-    // Remover campos do banco
-    const urlField = type === 'trilha_semanal' ? 'trilha_semanal_pdf_url' : 'subjetiva_pdf_url';
-    
-    try {
-      await UserStudyService.updateCycle(targetUserId, selectedCycle, {
-        [filePathField]: null,
-        [urlField]: null
-      } as any);
-      
-      await fetchCycles();
-      toast.success(`${type === 'trilha_semanal' ? 'Trilha Semanal' : 'Subjetiva'} removida`);
-    } catch (error) {
-      devLog.error('Error removing PDF:', error);
-      toast.error('Erro ao remover PDF');
-    }
-  };
-
-  // Funções para edição de labels
-  const startEditingLabel = (type: 'trilha_semanal' | 'subjetiva') => {
-    const cycle = cycles.find(c => c.id === selectedCycle);
-    if (!cycle) return;
-    
-    const currentLabel = type === 'trilha_semanal' 
-      ? (cycle.trilha_semanal_label || 'Trilha Semanal')
-      : (cycle.subjetiva_label || 'Subjetiva');
-    
-    setEditingLabel(type);
-    setLabelValue(currentLabel);
-  };
-
-  const cancelEditingLabel = () => {
-    setEditingLabel(null);
-    setLabelValue('');
-  };
-
-  const saveLabel = async (type: 'trilha_semanal' | 'subjetiva') => {
-    if (!selectedCycle) {
-      toast.error('Nenhum ciclo selecionado');
-      return;
-    }
-
-    const trimmedValue = labelValue.trim();
-    if (trimmedValue.length === 0) {
-      toast.error('O nome não pode estar vazio');
-      return;
-    }
-
-    if (trimmedValue.length > 20) {
-      toast.error('O nome deve ter no máximo 20 caracteres');
-      return;
-    }
-    
-    const targetUserId = coachMode ? targetStudentId : user?.id;
-    if (!targetUserId) {
-      toast.error('Erro ao identificar usuário');
-      return;
-    }
-
-    const updateField = type === 'trilha_semanal' ? 'trilha_semanal_label' : 'subjetiva_label';
-    
-    try {
-      await UserStudyService.updateCycle(targetUserId, selectedCycle, {
-        [updateField]: trimmedValue
-      });
-      
-      await fetchCycles();
-      setEditingLabel(null);
-      setLabelValue('');
-      toast.success('Nome atualizado');
-    } catch (error) {
-      devLog.error('Error saving label:', error);
-      toast.error('Erro ao salvar nome');
-    }
-  };
   const getSessionsForDay = (day: number) => {
     return sessions.filter(s => s.day === day).sort((a, b) => {
       // Tarefas com horário vêm primeiro, ordenadas por horário
@@ -1276,67 +786,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
           </CardContent>
         </Card>
 
-        {/* Timer Card */}
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
-        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
-      }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Timer className="h-5 w-5" />
-              Timer de Estudo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center space-y-4">
-              {/* Time Display */}
-              <div className="text-4xl font-bold">
-                {formatTime(minutes, seconds)}
-              </div>
-
-              {/* Progress Bar */}
-              {isRunning && <div className="w-full bg-secondary rounded-full h-2">
-                  <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{
-                width: `${getProgressPercentage()}%`
-              }} />
-                </div>}
-
-              {/* Time Controls */}
-              {!isRunning && <div className="flex justify-center items-center gap-2 mb-4">
-                  <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="text-sm text-muted-foreground min-w-[60px]">
-                    {initialMinutes} min
-                  </div>
-                  
-                  <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>}
-
-              {/* Control Buttons */}
-              <div className="flex justify-center gap-2">
-                {!isRunning ? <Button onClick={handleStart} className="w-full">
-                    <Play className="h-4 w-4 mr-2" />
-                    Iniciar
-                  </Button> : <>
-                    {!isPaused ? <Button variant="outline" onClick={pauseTimer} className="flex-1">
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pausar
-                      </Button> : <Button onClick={resumeTimer} className="flex-1">
-                        <Play className="h-4 w-4 mr-2" />
-                        Continuar
-                      </Button>}
-                    <Button variant="outline" onClick={stopTimer} className="flex-1">
-                      <Square className="h-4 w-4 mr-2" />
-                      Parar
-                    </Button>
-                  </>}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <CronogramaTimerLinkCard />
 
         {/* Calendar Card */}
         <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
@@ -1418,269 +868,22 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
               </PopoverContent>
             </Popover>
 
-            {/* Divisor e Documentos - Compacto */}
             {selectedCycle && (
-              <div className="border-t border-border pt-2 space-y-1.5">
-                {/* Trilha Semanal - Linha única */}
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                    {editingLabel === 'trilha_semanal' ? (
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <Input
-                          value={labelValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.length <= 20) {
-                              setLabelValue(val);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              saveLabel('trilha_semanal');
-                            } else if (e.key === 'Escape') {
-                              cancelEditingLabel();
-                            }
-                          }}
-                          className="h-6 px-2 text-xs flex-1 min-w-0"
-                          autoFocus
-                          maxLength={20}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => saveLabel('trilha_semanal')}
-                          title="Salvar"
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={cancelEditingLabel}
-                          title="Cancelar"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 flex-1 min-w-0 group">
-                        <span className="font-medium truncate">
-                          {cycles.find(c => c.id === selectedCycle)?.trilha_semanal_label || 'Trilha Semanal'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => startEditingLabel('trilha_semanal')}
-                          title="Editar nome"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {(cycles.find(c => c.id === selectedCycle) as any)?.trilha_semanal_file_path || 
-                      cycles.find(c => c.id === selectedCycle)?.trilha_semanal_pdf_url ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => handleDownloadDocument('trilha_semanal')}
-                        >
-                          <Download className="h-3 w-3 mr-1" />
-                          Download
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handlePDFUpload('trilha_semanal')}
-                          disabled={uploadingPDF === 'trilha_semanal'}
-                          title="Substituir PDF"
-                        >
-                          {uploadingPDF === 'trilha_semanal' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Upload className="h-3 w-3" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handlePDFRemove('trilha_semanal')}
-                          title="Remover PDF"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handlePDFUpload('trilha_semanal')}
-                        disabled={uploadingPDF === 'trilha_semanal'}
-                      >
-                        {uploadingPDF === 'trilha_semanal' ? (
-                          <>
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-3 w-3 mr-1" />
-                            Enviar
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                  <input
-                    id="trilha-semanal-upload"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/jpeg,image/png,image/gif,image/webp"
-                    onChange={(e) => handlePDFFileSelect(e, 'trilha_semanal')}
-                    className="hidden"
-                    disabled={!selectedCycle || uploadingPDF === 'trilha_semanal'}
-                  />
-                </div>
-
-                {/* Subjetiva - Linha única */}
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                    {editingLabel === 'subjetiva' ? (
-                      <div className="flex items-center gap-1 flex-1 min-w-0">
-                        <Input
-                          value={labelValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.length <= 20) {
-                              setLabelValue(val);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              saveLabel('subjetiva');
-                            } else if (e.key === 'Escape') {
-                              cancelEditingLabel();
-                            }
-                          }}
-                          className="h-6 px-2 text-xs flex-1 min-w-0"
-                          autoFocus
-                          maxLength={20}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => saveLabel('subjetiva')}
-                          title="Salvar"
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={cancelEditingLabel}
-                          title="Cancelar"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 flex-1 min-w-0 group">
-                        <span className="font-medium truncate">
-                          {cycles.find(c => c.id === selectedCycle)?.subjetiva_label || 'Subjetiva'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => startEditingLabel('subjetiva')}
-                          title="Editar nome"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {(cycles.find(c => c.id === selectedCycle) as any)?.subjetiva_file_path || 
-                      cycles.find(c => c.id === selectedCycle)?.subjetiva_pdf_url ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => handleDownloadDocument('subjetiva')}
-                        >
-                          <Download className="h-3 w-3 mr-1" />
-                          Download
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handlePDFUpload('subjetiva')}
-                          disabled={uploadingPDF === 'subjetiva'}
-                          title="Substituir PDF"
-                        >
-                          {uploadingPDF === 'subjetiva' ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Upload className="h-3 w-3" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handlePDFRemove('subjetiva')}
-                          title="Remover PDF"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => handlePDFUpload('subjetiva')}
-                        disabled={uploadingPDF === 'subjetiva'}
-                      >
-                        {uploadingPDF === 'subjetiva' ? (
-                          <>
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-3 w-3 mr-1" />
-                            Enviar
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                  <input
-                    id="subjetiva-upload"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/jpeg,image/png,image/gif,image/webp"
-                    onChange={(e) => handlePDFFileSelect(e, 'subjetiva')}
-                    className="hidden"
-                    disabled={!selectedCycle || uploadingPDF === 'subjetiva'}
-                  />
-                </div>
-              </div>
+              <CycleDocumentsPanel
+                selectedCycle={selectedCycle}
+                cycles={cycles}
+                uploadingPDF={uploadingPDF}
+                editingLabel={editingLabel}
+                labelValue={labelValue}
+                onLabelValueChange={setLabelValue}
+                onStartEditingLabel={startEditingLabel}
+                onCancelEditingLabel={cancelEditingLabel}
+                onSaveLabel={saveLabel}
+                onDownload={handleDownloadDocument}
+                onUpload={handlePDFUpload}
+                onRemove={handlePDFRemove}
+                onFileSelect={handlePDFFileSelect}
+              />
             )}
           </CardContent>
         </Card>
@@ -1821,162 +1024,33 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
 
       {/* Calendário simplificado - sem funcionalidades de estatísticas */}
 
-      {/* Modal de Edição de Sessão */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Registrar Tarefa de Estudo</DialogTitle>
-            <DialogDescription>
-              Registre os detalhes da sua tarefa de estudo realizada
-            </DialogDescription>
-          </DialogHeader>
-          {editingSession && <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-md">
-                <div className="text-sm font-medium">{editingSession.disciplineName}</div>
-                <div className="text-xs text-muted-foreground">{editingSession.blockName}</div>
-                <div className="text-xs text-muted-foreground">
-                  {editingSession.durationMinutes ? (
-                    <span className="flex items-center gap-1">
-                      <Timer className="h-3 w-3" />
-                      {editingSession.durationMinutes}min
-                    </span>
-                  ) : (
-                    editingSession.startTime && editingSession.endTime ? (
-                      `${editingSession.startTime} - ${editingSession.endTime}`
-                    ) : (
-                      'Horário livre'
-                    )
-                  )}
-                </div>
-              </div>
+      <ScheduleTaskEditDialog
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        session={editingSession}
+        sessionLink={sessionLink}
+        onSessionLinkChange={setSessionLink}
+        courseName={courseName}
+        onCourseNameChange={setCourseName}
+        studyDuration={studyDuration}
+        onStudyDurationChange={setStudyDuration}
+        studyType={studyType}
+        onStudyTypeChange={setStudyType}
+        questionsTotal={questionsTotal}
+        onQuestionsTotalChange={setQuestionsTotal}
+        questionsCorrect={questionsCorrect}
+        onQuestionsCorrectChange={setQuestionsCorrect}
+        questionsError={questionsError}
+        onValidateQuestions={validateQuestions}
+        currentVideo={currentVideo}
+        onCurrentVideoChange={setCurrentVideo}
+        studyNotes={studyNotes}
+        onStudyNotesChange={setStudyNotes}
+        onSave={saveStudySession}
+        onStartTimer={startTimerForTask}
+      />
 
-              <div>
-                <Label htmlFor="sessionLink">Link da Tarefa (Aula/Vídeo/Sistema)</Label>
-                <Input id="sessionLink" type="url" value={sessionLink} onChange={e => setSessionLink(e.target.value)} placeholder="https://exemplo.com/aula ou sistema de questões" />
-              </div>
-
-              <div>
-                <Label htmlFor="courseName">Assunto</Label>
-                <Input id="courseName" value={courseName} onChange={e => {
-                  const value = e.target.value;
-                  if (value.length <= 50) {
-                    setCourseName(value);
-                  }
-                }} placeholder="Ex: Curso Completo de Direito Constitucional" maxLength={50} />
-                <p className="text-xs text-muted-foreground mt-1">{courseName.length}/50 caracteres</p>
-              </div>
-
-              <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  O tempo nas <strong className="text-foreground">estatísticas gerais</strong> só entra pelo{' '}
-                  <strong className="text-foreground">Timer de Estudo</strong> (mín. 20 min). Aqui você registra
-                  anotações, questões e progresso da tarefa no cronograma.
-                </p>
-                <Button type="button" variant="default" className="w-full" onClick={startTimerForTask}>
-                  <Timer className="h-4 w-4 mr-2" />
-                  Estudar com timer (tempo verificado)
-                </Button>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="duration">Tempo na tarefa (cronograma, opcional)</Label>
-                  <Input id="duration" type="number" min="0" max={999} value={studyDuration} onChange={e => {
-                    const value = e.target.value;
-                    if (value === '' || (Number(value) >= 0 && Number(value) <= 999 && value.length <= 3)) {
-                      setStudyDuration(value === '' ? 0 : Number(value));
-                    }
-                  }} placeholder="Ex: 60" maxLength={3} />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Não substitui o timer nas estatísticas globais.
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="studyType">Tipo de Estudo</Label>
-                  <Select value={studyType} onValueChange={(value: 'pdf' | 'video') => setStudyType(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pdf">PDF</SelectItem>
-                      <SelectItem value="video">Vídeo Aula</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="questions-total">Total de questões</Label>
-                  <Input id="questions-total" type="number" min="0" max={9999} value={questionsTotal} onChange={e => {
-                const inputValue = e.target.value;
-                // Limitar a 4 dígitos (máximo 9999)
-                if (inputValue === '' || (Number(inputValue) >= 0 && Number(inputValue) <= 9999 && inputValue.length <= 4)) {
-                  const value = inputValue === '' ? 0 : Number(inputValue);
-                  setQuestionsTotal(value);
-                  // Validar se as questões corretas não ficaram maiores que o novo total
-                  if (questionsCorrect > value) {
-                    setQuestionsCorrect(value);
-                    setQuestionsError('');
-                  }
-                }
-              }} placeholder="Questões resolvidas" maxLength={4} />
-                </div>
-
-                {questionsTotal > 0 && <div>
-                    <Label htmlFor="questions-correct">Questões corretas</Label>
-                    <Input id="questions-correct" type="number" min="0" max={questionsTotal} value={questionsCorrect} onChange={e => {
-                const value = Number(e.target.value);
-                setQuestionsCorrect(value);
-                validateQuestions(questionsTotal, value);
-              }} placeholder="Acertos" className={questionsError ? 'border-red-500' : ''} />
-                    {questionsError && <p className="text-sm text-red-500 mt-1">{questionsError}</p>}
-                  </div>}
-              </div>
-
-              {questionsTotal > 0 && <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">
-                    Aproveitamento: {(questionsCorrect / questionsTotal * 100).toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {questionsCorrect} acertos • {questionsTotal - questionsCorrect} erros • {questionsTotal} total
-                  </div>
-                </div>}
-
-              
-
-              {studyType === 'pdf'}
-
-              {studyType === 'video' && <div>
-                  <Label htmlFor="currentVideo">Aula/Vídeo atual</Label>
-                  <Input id="currentVideo" value={currentVideo} onChange={e => setCurrentVideo(e.target.value)} placeholder="Ex: Aula 05 - Princípios Constitucionais" />
-                </div>}
-
-              <div>
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea id="notes" value={studyNotes} onChange={e => {
-                  const value = e.target.value;
-                  if (value.length <= 300) {
-                    setStudyNotes(value);
-                  }
-                }} placeholder="O que você estudou, dificuldades, pontos importantes..." rows={3} maxLength={300} className="resize-none" />
-                <p className="text-xs text-muted-foreground mt-1">{studyNotes.length}/300 caracteres</p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowEditModal(false)} className="flex-1">
-                  Cancelar
-                </Button>
-                <Button onClick={saveStudySession} className="flex-1">
-                  Salvar Tarefa
-                </Button>
-              </div>
-            </div>}
-        </DialogContent>
-      </Dialog>
-
-      {cycles.length === 0 ? <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
+            {cycles.length === 0 ? <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
       boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
     }}>
           <CardContent className="text-center p-8">
