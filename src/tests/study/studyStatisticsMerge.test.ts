@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveStudySessions,
   resolveUserStudyStatisticsFromData,
-} from '@/modules/study';
+} from '@/modules/statistics';
 import type { StudySession, UserStudy } from '@/types/userStudy';
 import { defaultUserStudy } from '@/types/userStudy';
 

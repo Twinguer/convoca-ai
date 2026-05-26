@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { UserStudyService } from '@/services/userStudyService';
-import { resolveUserStudyStatisticsFromData } from '@/modules/study';
+import { resolveUserStudyStatisticsFromData } from '@/modules/statistics';
 import {
   fetchCoachStudentDetails,
   type CoachStudentDetails,

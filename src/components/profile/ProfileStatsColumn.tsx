@@ -14,7 +14,7 @@ import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import {
   resolveStudySessions,
   resolveStudyStatistics,
-} from '@/modules/study';
+} from '@/modules/statistics';
 
 interface ProfileStatsColumnProps {
   userId: string;

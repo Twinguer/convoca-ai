@@ -23,6 +23,7 @@ export {
   type ScheduleMode,
 } from './domain/scheduleMode';
 
+/** @deprecated Import from `@/modules/statistics`. */
 export {
   toLocalDateKey,
   getPeriodStartDate,
@@ -32,14 +33,18 @@ export {
   getStatisticsForPeriod,
   getFilteredPeriodSummary,
   type StudyTimeFilter,
-} from './domain/studyStatisticsFilters';
+} from '@/modules/statistics';
 
+/** @deprecated Import from `@/modules/statistics`. */
 export {
   sessionHistoryToStudySessions,
   resolveStudySessions,
   resolveStudyStatistics,
   resolveUserStudyStatisticsFromData,
-} from './domain/studyStatisticsMerge';
+} from '@/modules/statistics';
+
+/** @deprecated Import from `@/modules/statistics`. */
+export { useStudyStatistics } from '@/modules/statistics';
 
 export {
   EMPTY_DISCIPLINE_STATS,
@@ -80,7 +85,6 @@ export {
   type UseCronogramaDataOptions,
 } from './hooks/useCronogramaData';
 
-export { useStudyStatistics } from './hooks/useStudyStatistics';
 export { useStudyProAccess } from './hooks/useStudyProAccess';
 export { useSecureStudyCycleUrls } from './hooks/useSecureStudyCycleUrls';
 export { useCycleDocuments, type CycleDocumentType } from './hooks/useCycleDocuments';

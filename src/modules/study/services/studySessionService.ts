@@ -1,7 +1,7 @@
 import { UserStudyService } from '@/services/userStudyService';
 import { generateId } from '@/lib/utils';
 import { getScheduleSessions } from '../domain/scheduleHelpers';
-import { resolveStudySessions, resolveStudyStatistics } from '../domain/studyStatisticsMerge';
+import { resolveStudySessions, resolveStudyStatistics } from '@/modules/statistics';
 import { MIRROR_WEEKLY_STATS } from '../domain/studyWrite';
 import type { StudyCycleV2, StudySchedule, UserStudy } from '@/types/userStudy';
 import { devLog } from '@/utils/productionLogger';

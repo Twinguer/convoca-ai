@@ -13,9 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { resolveUserStudyStatisticsFromData, resolveStudySessions } from '@/modules/study';
+import { resolveUserStudyStatisticsFromData, resolveStudySessions, PerformanceChart } from '@/modules/statistics';
 import { formatLocalDatePtBr } from '@/utils/dateFormat';
-import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import { devLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import {

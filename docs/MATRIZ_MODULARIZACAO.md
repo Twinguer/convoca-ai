@@ -1,8 +1,6 @@
 # Matriz de maturidade — módulos
 
-Atualizado após **Community COM9** e início **Statistics ST1+ST4**.
-
-Camadas avaliadas por módulo em `src/modules/<nome>/`:
+Atualizado após **Statistics ST9** (modularização completa).
 
 | Camada | Critério |
 |--------|----------|
@@ -18,22 +16,20 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | Módulo | Pages | Domain | Services | Hooks | Components | index.ts | Status |
 |--------|:-----:|:------:|:--------:|:-----:|:----------:|:--------:|--------|
 | **rankings** | 5/5 | OK | OK | OK | OK | OK | **Fechado** |
-| **study** | 7/7 | OK | Parcial* | OK (6) | OK | OK | **Fechado** |
+| **study** | 7/7 | OK | Parcial* | OK (5) | OK | OK | **Fechado** |
 | **coach** | 9/9 | OK | OK | OK (8) | OK | OK | **Fechado** |
 | **community** | 2/2 | OK | OK | OK (5+) | OK | OK | **Fechado** |
-| **statistics** | 1 | OK | — | — | Parcial‡ | Parcial | **Parcial** |
+| **statistics** | 1/1 | OK | OK | OK | OK | OK | **Fechado** |
 
-\* `studySessionService` no módulo; `userStudyService` (~3k linhas, JSONB compartilhado) permanece em `src/services/` por decisão de arquitetura.
-
-‡ Charts em `modules/statistics/components/charts/`; hook ainda em study (ST3).
+\* `userStudyService` (~3k linhas, JSONB compartilhado) permanece em `src/services/`.
 
 ## Resumo
 
 | Métrica | Valor |
 |---------|------:|
 | Módulos | 5 |
-| Fechados | 4 (rankings, study, coach, community) |
-| Parciais | 1 (statistics) |
+| Fechados | **5** |
+| Parciais | 0 |
 | Shell | 0 |
 
 ## Tags de restore
@@ -44,7 +40,7 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | study | `restore/refactor-study-modular-complete` | `0dd1f1f1` |
 | coach | `restore/refactor-coach-modular-complete` | `2ac4fb19` |
 | community | `restore/refactor-community-modular-complete` | `1512e25d` |
-| statistics | `restore/refactor-statistics-modular-complete` | *(pendente — ST1 iniciado)* |
+| statistics | `restore/refactor-statistics-modular-complete` | *(pendente tag)* |
 
 ## Documentação por módulo
 
@@ -56,16 +52,4 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | Community | [MODULE.md](./community/MODULE.md) | [ROADMAP.md](./community/ROADMAP.md) | [RESTORE.md](./community/RESTORE.md) |
 | Statistics | [MODULE.md](./statistics/MODULE.md) | [ROADMAP.md](./statistics/ROADMAP.md) | [RESTORE.md](./statistics/RESTORE.md) |
 
-## Roadmap planejado
-
-### Statistics (ST1–ST9) — em andamento
-
-| Fase | Escopo | Status |
-|------|--------|--------|
-| ST1 | Domínio + formatters | ✅ |
-| ST2 | Services facade | ⬜ |
-| ST3 | `useStudyStatistics` | ⬜ |
-| ST4 | Charts | ✅ |
-| ST5–ST9 | Page, cross-module, encerramento | ⬜ |
-
-Tag alvo: `restore/refactor-statistics-modular-complete`
+**Modularização completa:** todos os 5 módulos fechados.
