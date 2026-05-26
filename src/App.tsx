@@ -29,7 +29,7 @@ import CriarRankingPage from "./modules/rankings/pages/CriarRankingPage";
 import EstudosDashboard from "./modules/study/pages/StudyDashboard";
 import Cronograma from "./modules/study/pages/Cronograma";
 import Timer from "./modules/study/pages/Timer";
-import StatisticsPage from "./modules/statistics/pages/StatisticsPage";
+import { StatisticsPage } from '@/modules/statistics';
 import CriarCiclo from "./modules/study/pages/CriarCiclo";
 import EditarCiclo from "./modules/study/pages/EditarCiclo";
 import SessaoEstudos from "./modules/study/pages/SessaoEstudos";

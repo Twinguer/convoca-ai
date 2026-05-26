@@ -1,6 +1,6 @@
 # Matriz de maturidade — módulos
 
-Atualizado após **Community COM9** (modularização completa).
+Atualizado após **Community COM9** e início **Statistics ST1+ST4**.
 
 Camadas avaliadas por módulo em `src/modules/<nome>/`:
 
@@ -21,11 +21,11 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | **study** | 7/7 | OK | Parcial* | OK (6) | OK | OK | **Fechado** |
 | **coach** | 9/9 | OK | OK | OK (8) | OK | OK | **Fechado** |
 | **community** | 2/2 | OK | OK | OK (5+) | OK | OK | **Fechado** |
-| **statistics** | 1 | — | — | — | Parcial‡ | — | **Shell** |
+| **statistics** | 1 | OK | — | — | Parcial‡ | Parcial | **Parcial** |
 
 \* `studySessionService` no módulo; `userStudyService` (~3k linhas, JSONB compartilhado) permanece em `src/services/` por decisão de arquitetura.
 
-‡ Charts em `src/components/StudyStats/`; página em `modules/statistics/pages/`.
+‡ Charts em `modules/statistics/components/charts/`; hook ainda em study (ST3).
 
 ## Resumo
 
@@ -33,8 +33,8 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 |---------|------:|
 | Módulos | 5 |
 | Fechados | 4 (rankings, study, coach, community) |
-| Parciais | 0 |
-| Shell | 1 (statistics) |
+| Parciais | 1 (statistics) |
+| Shell | 0 |
 
 ## Tags de restore
 
@@ -43,7 +43,8 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | rankings | `restore/refactor-rankings-complete` | `72c8ed32` |
 | study | `restore/refactor-study-modular-complete` | `0dd1f1f1` |
 | coach | `restore/refactor-coach-modular-complete` | `2ac4fb19` |
-| community | `restore/refactor-community-modular-complete` | *(pendente tag)* |
+| community | `restore/refactor-community-modular-complete` | `1512e25d` |
+| statistics | `restore/refactor-statistics-modular-complete` | *(pendente — ST1 iniciado)* |
 
 ## Documentação por módulo
 
@@ -53,11 +54,18 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | Study | [MODULE.md](./study/MODULE.md) | [ROADMAP.md](./study/ROADMAP.md) | [refactor-estudos/RESTORE.md](./refactor-estudos/RESTORE.md) |
 | Coach | [MODULE.md](./coach/MODULE.md) | [ROADMAP.md](./coach/ROADMAP.md) | [RESTORE.md](./coach/RESTORE.md) |
 | Community | [MODULE.md](./community/MODULE.md) | [ROADMAP.md](./community/ROADMAP.md) | [RESTORE.md](./community/RESTORE.md) |
+| Statistics | [MODULE.md](./statistics/MODULE.md) | [ROADMAP.md](./statistics/ROADMAP.md) | [RESTORE.md](./statistics/RESTORE.md) |
 
 ## Roadmap planejado
 
-### Statistics — próximo na fila
+### Statistics (ST1–ST9) — em andamento
 
-Modularização do módulo `statistics`: domain, services, hooks, components (`StudyStats`), `index.ts` e testes.
+| Fase | Escopo | Status |
+|------|--------|--------|
+| ST1 | Domínio + formatters | ✅ |
+| ST2 | Services facade | ⬜ |
+| ST3 | `useStudyStatistics` | ⬜ |
+| ST4 | Charts | ✅ |
+| ST5–ST9 | Page, cross-module, encerramento | ⬜ |
 
 Tag alvo: `restore/refactor-statistics-modular-complete`
