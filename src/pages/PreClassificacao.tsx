@@ -1,3 +1,7 @@
+/**
+ * @deprecated Listagem ativa: `modules/rankings/pages/RankingsPage` em `/pre-classificacao`.
+ * Mantido apenas como referência; não está roteado em App.tsx.
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';

@@ -10,10 +10,14 @@ import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { fetchUserRankings } from '@/services/rankingService';
 import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { UrlObfuscationService } from '@/services/urlObfuscation';
+import {
+  canViewClassification,
+  getProfileRankingStatus,
+  openRankingFromProfile,
+} from '@/modules/rankings';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -92,34 +96,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 continue;
               }
 
-              // Usar a versão V3 otimizada
-              const list = await fetchUserRankings(concursoId);
+              // Posição alinhada com a tabela de classificação (rankingService)
+              const { position, isEliminated } = await getProfileRankingStatus(concursoId, userId);
 
-              // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
-              const isBelowMinimum = (rankingData: any, concursoData: any) => {
-                // Usar apenas os flags que vêm do backend
-                const hasDisciplineMinimums = rankingData.belowDisciplineMinimums && 
-                  rankingData.belowDisciplineMinimums.length > 0;
-                const hasBlockMinimums = rankingData.belowBlockMinimums && 
-                  rankingData.belowBlockMinimums.length > 0;
-                
-                return !!rankingData.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
-              };
-
-              // Buscar dados do concurso para verificar o tipo de exame
               const { data: concursoData } = await supabase
                 .from('concursos')
                 .select('exam_type, titulo, orgao, banca')
                 .eq('id', concursoId)
                 .maybeSingle();
-
-              // Filtrar classificados e ordenar por pontuação
-              const classified = list.filter((r: any) => !isBelowMinimum(r, concursoData || {})).sort((a: any, b: any) => b.score - a.score);
-              
-              // Encontrar a posição do usuário
-              const idx = classified.findIndex((r: any) => r.id === rankingId);
-              const isClassified = idx >= 0;
-              const position = isClassified ? idx + 1 : null;
 
               // Mapear dados da nova estrutura para a estrutura esperada
               const mappedRanking = {
@@ -135,7 +119,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 concurso_id: concursoId,
                 concursos: concursoData,
                 position,
-                isEliminated: !isClassified
+                isEliminated
               };
 
               rankingsWithPositions.push(mappedRanking);
@@ -207,47 +191,9 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             return null;
           }
           
-          // Fetch community list from service
-          const communityList = await fetchUserRankingsV3(concursoId);
-          
-          // Buscar dados do concurso para verificar o tipo de exame
-          let concursoData = null;
-          try {
-            const { data, error } = await supabase
-              .from('concursos')
-              .select('exam_type')
-              .eq('id', concursoId)
-              .maybeSingle();
-            
-            if (error || !data) {
-              devLog.error('Error fetching concurso exam_type:', error);
-              // Use default exam_type if we can't fetch it
-              concursoData = { exam_type: 'Alternativas' };
-            } else {
-              concursoData = data;
-            }
-          } catch (err) {
-            devLog.error('Exception fetching concurso exam_type:', err);
-            // Use default exam_type if we can't fetch it
-            concursoData = { exam_type: 'Alternativas' };
-          }
-          
-          // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
-          const isBelowMinimum = (r: any) => {
-            // Usar apenas os flags que vêm do backend
-            const hasDisciplineMinimums = r.belowDisciplineMinimums && 
-              r.belowDisciplineMinimums.length > 0;
-            const hasBlockMinimums = r.belowBlockMinimums && 
-              r.belowBlockMinimums.length > 0;
-            
-            return !!r.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
-          };
-          
-          // ✅ Usar posição que vem do backend (ranking.position)
-          // Não recalcular no frontend
-          const isClassified = !isBelowMinimum(ranking);
-          const position = ranking.position || null;
-          return { ...ranking, position, isEliminated: !isClassified };
+          // Posição alinhada com a tabela de classificação (rankingService)
+          const { position, isEliminated } = await getProfileRankingStatus(concursoId, userId);
+          return { ...ranking, position, isEliminated };
         } catch (e) {
           devLog.error('Erro ao calcular posição (props):', e);
           // ✅ TAMBÉM VERIFICAR NO CATCH
@@ -466,7 +412,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             
             <div className="p-4 bg-card flex justify-end gap-2">
               <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => {
-                // ✅ SEMPRE usar concurso_id (nunca usar ranking.id que é a chave do objeto)
                 const concursoId = ranking.concurso_id || ranking.concursos?.id;
                 if (!concursoId) {
                   devLog.error('ConcursoId não encontrado:', ranking);
@@ -477,7 +422,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                   });
                   return;
                 }
-                navigate(`/ranking/${concursoId}`);
+                openRankingFromProfile(navigate, concursoId);
               }}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>

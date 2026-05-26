@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { openRankingFromList } from '@/modules/rankings';
 
 interface ConcursoDetailsProps {
   concursoId?: string;
@@ -18,6 +21,8 @@ interface ConcursoDetailsProps {
 const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureToken }) => {
   const { id } = useParams<{ id: string; }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isPro } = useSubscription();
   const { generateSecureUrl } = useSecureUrls();
   
   // Usar concursoId da prop se disponível, senão usar id da URL
@@ -151,7 +156,10 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
             <Button 
               variant="outline" 
               className="border-0" 
-              onClick={() => navigate(`/ranking/${actualConcursoId}`)}
+              onClick={() => {
+                if (!actualConcursoId) return;
+                openRankingFromList({ user, isPro, navigate }, actualConcursoId);
+              }}
             >
               <ArrowRight className="mr-2 h-4 w-4" />
               Ver Ranking

@@ -19,6 +19,7 @@ import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { AdminUrlObfuscationService } from '@/services/adminUrlObfuscation';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { openRankingAfterCreate } from '@/modules/rankings';
 const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
   try {
@@ -669,8 +670,7 @@ const CriarRanking = () => {
   };
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      // Redirecionar para a classificação específica do ranking criado
-      navigate(`/ranking/${createdConcursoId}`);
+      openRankingAfterCreate(navigate, createdConcursoId);
     }
   };
   const handleBack = async () => {

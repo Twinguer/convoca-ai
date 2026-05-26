@@ -25,6 +25,7 @@ import { toast as sonnerToast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Lock, Info } from 'lucide-react';
 import { UrlObfuscationService } from '@/services/urlObfuscation';
+import { canViewClassification } from '@/modules/rankings';
 // ✅ REMOVIDO: showProRequiredToast não é mais necessário - rankings são públicos
 import {
   AlertDialog,
@@ -102,61 +103,25 @@ const ResultadosPage = ({ rankingId, concursoId, secureToken }: ResultadosPagePr
   // EXCEÇÃO: Rankings em modo vitrine podem ser visualizados por qualquer usuário
   useEffect(() => {
     const checkAccess = async () => {
-      if (!concurso || !user) {
-        // Se não há concurso ou usuário, permitir visualização (usuário não autenticado pode ver)
+      if (!concurso) {
         setCanViewRanking(true);
         setIsCheckingAccess(false);
         return;
       }
 
-      // ✅ MODE VITRINE: Se o ranking está em modo vitrine, permitir visualização para todos
-      if (concurso.is_showcase === true) {
-        setCanViewRanking(true);
-        setIsCheckingAccess(false);
+      const allowed = canViewClassification({
+        user,
+        isPro,
+        isShowcase: concurso.is_showcase === true,
+        isParticipating,
+        createdByUserId: concurso.created_by_user_id,
+      });
+
+      setCanViewRanking(allowed);
+      setIsCheckingAccess(false);
+
+      if (allowed && concurso.is_showcase) {
         devLog.log('[ResultadosPage] Acesso permitido: ranking em modo vitrine');
-        return;
-      }
-
-      // Se for Pro, sempre pode ver
-      if (isPro) {
-        setCanViewRanking(true);
-        setIsCheckingAccess(false);
-        return;
-      }
-
-      // Para Free users, verificar se participa ou criou
-      try {
-        // Verificar se criou o ranking
-        const { data: concursoData } = await supabase
-          .from('concursos')
-          .select('created_by_user_id')
-          .eq('id', concurso.id)
-          .maybeSingle();
-
-        const isCreator = concursoData?.created_by_user_id === user.id;
-
-        // Se criou, pode ver
-        if (isCreator) {
-          setCanViewRanking(true);
-          setIsCheckingAccess(false);
-          return;
-        }
-
-        // Verificar se participa
-        if (isParticipating) {
-          setCanViewRanking(true);
-          setIsCheckingAccess(false);
-          return;
-        }
-
-        // Não participa e não criou - não pode ver classificação
-        setCanViewRanking(false);
-        setIsCheckingAccess(false);
-      } catch (error) {
-        devLog.error('Erro ao verificar acesso à classificação:', error);
-        // Em caso de erro, permitir visualização (não bloquear)
-        setCanViewRanking(true);
-        setIsCheckingAccess(false);
       }
     };
 

@@ -6,14 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Users, TrendingUp, Search, Filter, Calendar, Plus, Medal, Star, Target } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
-import { showProRequiredToast } from '@/utils/planRestrictions';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
-import { UrlObfuscationService } from '@/services/urlObfuscation';
+import { openRankingFromList } from '@/modules/rankings';
 interface Concurso {
   id: string;
   titulo: string;
@@ -41,112 +40,7 @@ const RankingsPage = () => {
 
   const handleRankingClick = async (e: React.MouseEvent, concursoId: string) => {
     e.preventDefault();
-    
-    // Verificar se é card geral primeiro
-    try {
-      const { data: concursoData } = await supabase
-        .from('concursos')
-        .select('is_general_card')
-        .eq('id', concursoId)
-        .maybeSingle();
-
-      // Se for card geral, navegar para página de cargos
-      if (concursoData?.is_general_card === true) {
-        navigate(`/pre-classificacao/${concursoId}/cargos`);
-        return;
-      }
-    } catch (error) {
-      devLog.error('Erro ao verificar se é card geral:', error);
-      // Continuar com o fluxo normal em caso de erro
-    }
-    
-    if (!user) {
-      navigate('/auth', { state: { from: `/concurso/${concursoId}/resultados` } });
-      return;
-    }
-
-    // Se for Pro, sempre permite ver o ranking
-    if (isPro) {
-      navigate(`/ranking/${concursoId}`);
-      return;
-    }
-
-    // Para usuários Free, verificar se participa do ranking
-    try {
-      const { data: userRankingData, error } = await supabase
-        .from('user_rankings')
-        .select('consolidated_data')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        devLog.error('Erro ao verificar participação:', error);
-        navigate(`/ranking/${concursoId}`);
-        return;
-      }
-
-      // Verificar se criou o ranking (Free users podem ver todos os rankings que criaram)
-      const { data: concursoData } = await supabase
-        .from('concursos')
-        .select('created_by_user_id')
-        .eq('id', concursoId)
-        .maybeSingle();
-
-      const isCreator = concursoData?.created_by_user_id === user.id;
-
-      // Verificar se participa deste ranking específico
-      let isParticipating = false;
-      if (userRankingData?.consolidated_data?.rankings) {
-        Object.values(userRankingData.consolidated_data.rankings).forEach((rankingData: any) => {
-          if (rankingData.concurso_id === concursoId) {
-            isParticipating = true;
-          }
-        });
-      }
-
-      if (isCreator || isParticipating) {
-        // Criou ou participa, pode ver o ranking
-        navigate(`/ranking/${concursoId}`);
-      } else {
-        // Não criou e não participa - Free users não podem ver rankings que não criaram e não participam
-        // Verificar se pode participar (até 2 rankings que não criou)
-        const { data: limitsCheck, error: limitsError } = await supabase.rpc('check_free_user_ranking_limits', {
-          p_user_id: user.id,
-          p_concurso_id: concursoId
-        });
-
-        if (limitsError) {
-          devLog.error('[RankingsPage] Erro ao verificar limites:', limitsError);
-          // Em caso de erro, gerar token e redirecionar para participar
-          try {
-            const token = await UrlObfuscationService.generateConcursoToken(concursoId);
-            navigate(`/concurso/participar/${token}`);
-          } catch (error) {
-            devLog.error('[RankingsPage] Erro ao gerar token:', error);
-            navigate('/pre-classificacao');
-          }
-          return;
-        }
-
-        // Se pode participar (dentro do limite de 2), redireciona para página de participação
-        if (limitsCheck && limitsCheck.allowed) {
-          try {
-            const token = await UrlObfuscationService.generateConcursoToken(concursoId);
-            navigate(`/concurso/participar/${token}`);
-          } catch (error) {
-            devLog.error('[RankingsPage] Erro ao gerar token:', error);
-            navigate('/pre-classificacao');
-          }
-        } else {
-          // Limite atingido, mostrar aviso e redirecionar para planos
-          showProRequiredToast(navigate, 'Visualizar Rankings que Você Não Participa');
-        }
-      }
-    } catch (error) {
-      devLog.error('Erro ao verificar participação:', error);
-      // Em caso de erro, permite acesso (não bloqueia)
-      navigate(`/ranking/${concursoId}`);
-    }
+    await openRankingFromList({ user, isPro, navigate }, concursoId);
   };
   useEffect(() => {
     loadConcursos();
@@ -405,7 +299,7 @@ const RankingsPage = () => {
         
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2" style={{ gridAutoRows: '1fr' }}>
-            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group h-full" onClick={(e) => handleRankingClick(e, concurso.id)}>
+            {filteredConcursos.map(concurso => <div key={concurso.id} className="block group h-full cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
                 <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5 relative h-full flex flex-col">
                   {/* Marca d'água */}
                   {concurso.watermark_image_url && (
@@ -457,7 +351,7 @@ const RankingsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>)}
+              </div>)}
           </div>
           
           {filteredConcursos.length === 0 && <div className="text-center py-12">

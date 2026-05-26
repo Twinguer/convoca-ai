@@ -7,6 +7,7 @@ import { Calendar, Trophy, Users, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UrlObfuscationService } from '@/services/urlObfuscation';
 import { devLog } from '@/utils/productionLogger';
+import { openSecureRankingWithFallback } from '@/modules/rankings';
 
 export interface RankingItemProps {
   id: string;
@@ -68,16 +69,11 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
       }
     } catch (error: any) {
       devLog.error('Erro ao gerar URL segura:', error);
-      // Em produção, se variáveis não estiverem configuradas, mostrar erro
-      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
-        return;
-      }
-      // Em desenvolvimento ou outros erros, usar fallback
       if (isGeneralCard) {
         navigate(`/pre-classificacao/${id}/cargos`);
-      } else {
-        navigate(`/ranking/${id}`);
+        return;
       }
+      await openSecureRankingWithFallback(navigate, id);
     }
   };
 

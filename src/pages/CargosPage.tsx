@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { UrlObfuscationService } from '@/services/urlObfuscation';
+import { openSecureRankingWithFallback } from '@/modules/rankings';
 
 const ESTADOS_BRASILEIROS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
@@ -199,19 +200,7 @@ const CargosPage = () => {
   }
 
   const handleCargoClick = async (cargoId: string) => {
-    try {
-      const { UrlObfuscationService } = await import('@/services/urlObfuscation');
-      const secureUrl = await UrlObfuscationService.generateSecureRankingUrl(cargoId);
-      navigate(secureUrl);
-    } catch (error: any) {
-      devLog.error('Erro ao gerar URL segura:', error);
-      // Em produção, se variáveis não estiverem configuradas, mostrar erro
-      if (import.meta.env.PROD && error?.message?.includes('não configurada')) {
-        return;
-      }
-      // Em desenvolvimento ou outros erros, usar fallback
-      navigate(`/ranking/${cargoId}`);
-    }
+    await openSecureRankingWithFallback(navigate, cargoId);
   };
 
   return (

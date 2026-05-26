@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:study": "vitest run src/tests/study",
+    "test:rankings": "vitest run src/tests/rankings",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
