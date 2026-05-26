@@ -43,8 +43,6 @@ src/modules/rankings/
 | Segurança transversal | `SecureConcursoRoute`, `UrlObfuscationService` |
 | Perfil | `UserProfile`, `RankingsTab` — consomem `@/modules/rankings` |
 
-**Re-exports `@deprecated` (remoção futura):** `pages/ResultadosPage.tsx`, `CriarRanking.tsx`, `CargosPage.tsx`, `ConcursoParticipation.tsx`, `services/rankingService.ts`, `hooks/useResultadosData.tsx`, `utils/rankingNavigation.ts`, stubs em `components/resultados/`.
-
 ## Invariantes (não quebrar)
 
 1. **Posição e eliminação** vêm de `fetchUserRankings` / backend — não recalcular no frontend.
@@ -85,14 +83,12 @@ import {
 } from '@/modules/rankings';
 ```
 
-Re-exports legados em `src/utils/rankingNavigation.ts`, `rankingProfilePosition.ts`, `services/rankingService.ts` e `components/resultados/*` estão **deprecated** — novos imports devem usar `@/modules/rankings`.
-
 ## Status (R9 — modular completo)
 
-- Pages de ranking roteadas via `modules/rankings/pages/` (`App.tsx`)
+- Toda a superfície de rankings vive em `src/modules/rankings/` — sem re-exports legados
+- Pages roteadas via `modules/rankings/pages/` (`App.tsx`)
 - Callers externos (`UserProfile`, `PublicUserProfile`, `concursoService`, rotas seguras) importam `@/modules/rankings`
-- Re-exports legados mantidos para compatibilidade; remoção em PR futuro
-- `PreClassificacao.tsx` — deprecated, não roteado (substituído por `RankingsPage`)
+- `PreClassificacao.tsx` e `components/resultados/` removidos (substituídos pelo módulo)
 
 ## Testes
 

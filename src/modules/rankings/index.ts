@@ -64,6 +64,7 @@ export {
 
 export { rankingCache } from './services/rankingCache';
 
+export { default as RankingsPage } from './pages/RankingsPage';
 export { default as ResultadosPage } from './pages/ResultadosPage';
 export { default as CriarRankingPage } from './pages/CriarRankingPage';
 export { default as CargosPage } from './pages/CargosPage';

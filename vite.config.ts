@@ -17,16 +17,16 @@ const REACT_CORE_PACKAGES = new Set([
  */
 function isSharedRankingLayer(normalizedId: string): boolean {
   return (
-    normalizedId.includes("/src/services/rankingService") ||
-    normalizedId.includes("/src/services/rankingCache") ||
+    normalizedId.includes("/src/modules/rankings/services/rankingService") ||
+    normalizedId.includes("/src/modules/rankings/services/rankingCache") ||
     normalizedId.includes("/src/services/concursoService") ||
     normalizedId.includes("/src/integrations/supabase/rankings/") ||
-    normalizedId.includes("/src/hooks/useResultadosData") ||
+    normalizedId.includes("/src/modules/rankings/hooks/useResultadosData") ||
     normalizedId.includes("/src/hooks/useAnswerSheet") ||
-    normalizedId.includes("/src/hooks/useSaveAnswers") ||
-    normalizedId.includes("/src/hooks/useLeaveRanking") ||
+    normalizedId.includes("/src/modules/rankings/hooks/useSaveAnswers") ||
+    normalizedId.includes("/src/modules/rankings/hooks/useLeaveRanking") ||
     normalizedId.includes("/src/utils/consolidatedDataMapper") ||
-    normalizedId.includes("/src/components/resultados/LoadingState") ||
+    normalizedId.includes("/src/modules/rankings/components/classification/LoadingState") ||
     normalizedId.includes("/src/components/Admin/NullifyQuestionButton")
   );
 }

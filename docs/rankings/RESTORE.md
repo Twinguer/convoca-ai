@@ -15,7 +15,7 @@ Tags Git após cada fase validada (build + `npm run test:rankings`).
 | `restore/refactor-rankings-phase-r8a` | R8a | CargosPage no módulo |
 | `restore/refactor-rankings-phase-r8b` | R8b | ConcursoParticipationPage + ParticipationForm |
 | `restore/refactor-rankings-phase-r8c` | R8c | AnswerSheet + useSaveAnswers + useLeaveRanking |
-| `restore/refactor-rankings-complete` | R9 | Callers migrados para `@/modules/rankings`; re-exports legados mantidos |
+| `restore/refactor-rankings-complete` | R9 | Módulo fechado: re-exports legados e `components/resultados/` removidos |
 
 ## Restaurar código
 

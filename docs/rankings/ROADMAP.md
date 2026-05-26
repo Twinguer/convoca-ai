@@ -267,10 +267,10 @@ R1–R4: **feitas**. Próximas: R5 → R6 → (R7 e R8 em paralelo possível) �
 
 ### Critério de “modular completo”
 
-- [ ] Nenhuma page de ranking em `src/pages/` (exceto re-export temporário)
-- [ ] Nenhum import de `@/services/rankingService` fora do módulo (callers usam `@/modules/rankings`)
-- [ ] `grep ranking` em `App.tsx` só lazy-imports do módulo
-- [ ] Invariantes de `MODULE.md` verificados no smoke test
+- [x] Nenhuma page de ranking em `src/pages/` (exceto re-export temporário)
+- [x] Nenhum import de `@/services/rankingService` fora do módulo (callers usam `@/modules/rankings`)
+- [x] `grep ranking` em `App.tsx` só lazy-imports do módulo
+- [x] Invariantes de `MODULE.md` verificados no smoke test
 
 ---
 
