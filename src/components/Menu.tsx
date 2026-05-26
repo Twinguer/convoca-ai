@@ -4,16 +4,11 @@ import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsActiveCoach } from '@/modules/coach';
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
+import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
+import { Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { UserActions } from './Admin/UserActions';
-import AdminMenu from './AdminMenu';
-import { useAdminNavLinks } from '@/hooks/useAdminNavLinks';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { ADMIN_BASE_PATH } from '@/config/adminRoutes';
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
@@ -21,11 +16,9 @@ const Menu = () => {
   const {
     user
   } = useAuth();
-  const { isAdmin } = useAdminAuth();
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPlansSubmenuOpen, setIsPlansSubmenuOpen] = useState(false);
-  const { links: adminLinks, loading: adminLinksLoading } = useAdminNavLinks();
   useEffect(() => {
     // Check if admin mode is enabled via URL param
     const urlParams = new URLSearchParams(window.location.search);
@@ -148,15 +141,6 @@ const Menu = () => {
                 </NavigationMenuLink>
               </NavigationMenuItem>
               
-              {isAdmin && <NavigationMenuItem>
-                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="p-4">
-                    <AdminMenu links={adminLinks} loading={adminLinksLoading} />
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>}
-              
               <NavigationMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -240,23 +224,6 @@ const Menu = () => {
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Modo Coach
                 </button>
-                
-                {isAdmin && <>
-                  <div className="h-px bg-border mt-2 mb-2"></div>
-                  <div className="font-bold text-foreground/70 mb-2">Administração</div>
-                  <Link to={adminLinks.dashboard} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/dashboard`) ? "text-primary" : "text-foreground/70")}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                  <Link to={adminLinks.concursos} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/concursos`) ? "text-primary" : "text-foreground/70")}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Concursos
-                  </Link>
-                  <Link to={adminLinks.usuarios} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/usuarios`) ? "text-primary" : "text-foreground/70")}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Usuários
-                  </Link>
-                </>}
                 
                 <div className="mt-2">
                   <button
