@@ -42,7 +42,7 @@ Atualizado após **Payments P9** (modularização completa).
 | coach | `restore/refactor-coach-modular-complete` | `2ac4fb19` |
 | community | `restore/refactor-community-modular-complete` | `1512e25d` |
 | statistics | `restore/refactor-statistics-modular-complete` | `32c43ad9` |
-| payments | `restore/refactor-payments-modular-complete` | *(após commit P9)* |
+| payments | `restore/refactor-payments-modular-complete` | `6c29ab9a` |
 
 ## Documentação por módulo
 
