@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
 import AdminMenu from './AdminMenu';
 import { useAdminNavLinks } from '@/hooks/useAdminNavLinks';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { ADMIN_BASE_PATH } from '@/config/adminRoutes';
 const Menu = () => {
   const location = useLocation();
@@ -21,10 +22,11 @@ const Menu = () => {
   const {
     user
   } = useAuth();
+  const { isAdmin } = useAdminAuth();
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPlansSubmenuOpen, setIsPlansSubmenuOpen] = useState(false);
-  const { links: adminLinks } = useAdminNavLinks();
+  const { links: adminLinks, loading: adminLinksLoading } = useAdminNavLinks();
   useEffect(() => {
     // Check if admin mode is enabled via URL param
     const urlParams = new URLSearchParams(window.location.search);
@@ -35,9 +37,6 @@ const Menu = () => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
-  };
-  const isAdmin = () => {
-    return user?.email?.includes('admin') || isAdminMode;
   };
   const handleLinkClick = () => {
     setIsSheetOpen(false);
@@ -152,11 +151,11 @@ const Menu = () => {
                 </NavigationMenuLink>
               </NavigationMenuItem>
               
-              {isAdmin() && <NavigationMenuItem>
+              {isAdmin && <NavigationMenuItem>
                 <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="p-4">
-                    <AdminMenu />
+                    <AdminMenu links={adminLinks} loading={adminLinksLoading} />
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>}
@@ -245,7 +244,7 @@ const Menu = () => {
                   Modo Coach
                 </button>
                 
-                {isAdmin() && <>
+                {isAdmin && <>
                   <div className="h-px bg-border mt-2 mb-2"></div>
                   <div className="font-bold text-foreground/70 mb-2">Administração</div>
                   <Link to={adminLinks.dashboard} onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold cursor-pointer select-none", isActive(`${ADMIN_BASE_PATH}/dashboard`) ? "text-primary" : "text-foreground/70")}>

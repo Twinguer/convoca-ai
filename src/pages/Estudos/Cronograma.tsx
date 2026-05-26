@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,8 +17,6 @@ import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { setPendingTimerTask, consumeTimerSuggestedMinutes } from '@/utils/timerTaskContext';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
-import { StudyCycleV2 } from '@/types/userStudy';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,26 +30,13 @@ import { CycleDocumentsPanel } from '@/components/study/CycleDocumentsPanel';
 import { CronogramaTimerLinkCard } from '@/components/study/CronogramaTimerLinkCard';
 import { ScheduleTaskEditDialog } from '@/components/study/ScheduleTaskEditDialog';
 import { useCycleDocuments } from '@/hooks/useCycleDocuments';
+import { useCronogramaData, type CronogramaStudySession } from '@/hooks/useCronogramaData';
 import {
   getCycleScheduleMode,
   toStorageDayOfWeek,
-  toUiDayOfWeek,
   type ScheduleMode,
 } from '@/utils/scheduleMode';
-import type { StudySchedule } from '@/types/userStudy';
 
-interface StudySession {
-  id: string;
-  day: number; // 0-6 (Sunday to Saturday)
-  startTime?: string; // Opcional para tarefas de duração
-  endTime?: string; // Opcional para tarefas de duração
-  durationMinutes?: number; // Para tarefas de duração livre
-  displayOrder?: number;
-  disciplineName: string;
-  blockName: string;
-  cycleId: string;
-  sessionLink?: string;
-}
 // Interface para props do modo coach
 interface CronogramaProps {
   coachMode?: boolean;
@@ -74,6 +59,21 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     fetchCycles: refetchCycles
   } = useStudyCyclesV2();
 
+  const {
+    cycles,
+    sessions,
+    setSessions,
+    userStudy,
+    loading,
+    scheduleByCycleId,
+    fetchCycles,
+    refreshCronogramaData,
+  } = useCronogramaData({
+    userId: user?.id,
+    coachMode,
+    targetStudentId,
+  });
+
   // Clock state
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -81,10 +81,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   // Calendário simplificado - sem funcionalidades de estatísticas
-
-  // Calendário simplificado - sem funcionalidades de estatísticas
-  const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
-  const [sessions, setSessions] = useState<StudySession[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('');
   const [selectedBlock, setSelectedBlock] = useState<string>('');
@@ -95,14 +91,13 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   const [endTime, setEndTime] = useState<string>('09:00');
   const [sessionTimeMode, setSessionTimeMode] = useState<ScheduleMode>('duration');
   const [durationMinutes, setDurationMinutes] = useState<number>(90);
-  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [selectedDateSessions, setSelectedDateSessions] = useState<any[]>([]);
-  const [editingSession, setEditingSession] = useState<StudySession | null>(null);
+  const [editingSession, setEditingSession] = useState<CronogramaStudySession | null>(null);
   const [sessionLink, setSessionLink] = useState<string>('');
 
   // Estados para edição de sessão
@@ -138,21 +133,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     dependencies: [cycles, coachMode, targetStudentId]
   });
 
-  // Armazenar userStudy completo para acessar study_sessions
-  const [userStudy, setUserStudy] = useState<any>(null);
-
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-
-  const scheduleByCycleId = useMemo(() => {
-    const map: Record<string, StudySchedule[]> = {};
-    if (!userStudy) return map;
-    getScheduleSessions(userStudy).forEach((session) => {
-      if (!session.cycle_id) return;
-      if (!map[session.cycle_id]) map[session.cycle_id] = [];
-      map[session.cycle_id].push(session);
-    });
-    return map;
-  }, [userStudy]);
 
   const getLockedModeForCycle = useCallback(
     (cycleId: string): ScheduleMode | null => {
@@ -167,15 +148,6 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     const locked = getLockedModeForCycle(selectedCycle);
     if (locked) setSessionTimeMode(locked);
   }, [selectedCycle, getLockedModeForCycle]);
-
-  useEffect(() => {
-    const targetUserId = coachMode ? targetStudentId : user?.id;
-    if (targetUserId) {
-      fetchCycles();
-      fetchSessions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, targetStudentId, coachMode]);
 
   // Inicializar selectedCycle automaticamente
   useEffect(() => {
@@ -199,88 +171,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }, 5000); // 5 segundos em vez de 1 segundo para reduzir re-renders
     return () => clearInterval(timer);
   }, []);
-  const fetchCycles = async () => {
-    const targetUserId = coachMode ? targetStudentId : user?.id;
-    if (!targetUserId) return;
-    
-    try {
-      const userStudyData = await UserStudyService.getUserStudyData(targetUserId, true); // Force refresh
-      if (userStudyData) {
-        setUserStudy(userStudyData); // Armazenar dados completos incluindo study_sessions
-        const activeCycles = userStudyData.study_cycles?.filter(cycle => cycle.is_active) || [];
-        setCycles(activeCycles);
-      }
-    } catch (error) {
-      devLog.error('Error fetching cycles:', error);
-      toast.error('Erro ao carregar ciclos de estudo');
-    }
-  };
-  const fetchSessions = async () => {
-    const targetUserId = coachMode ? targetStudentId : user?.id;
-    if (!targetUserId) return;
-    
-    try {
-      const userStudyData = await UserStudyService.getUserStudyData(targetUserId);
-      if (!userStudyData) {
-        setUserStudy(null);
-        setSessions([]);
-        return;
-      }
-      setUserStudy(userStudyData);
-      const allSessions: StudySession[] = [];
 
-      getScheduleSessions(userStudyData).forEach((session) => {
-        const cycle = userStudyData.study_cycles.find((c) => c.id === session.cycle_id);
-        if (cycle && cycle.is_active) {
-          const dayOfWeek = toUiDayOfWeek(session.day_of_week);
-
-          allSessions.push({
-            id: session.id,
-            day: dayOfWeek,
-            startTime: session.start_time,
-            endTime: session.end_time,
-            durationMinutes: session.duration_minutes,
-            displayOrder: session.display_order ?? 0,
-            disciplineName: session.discipline_name || 'Disciplina',
-            blockName: session.block_name || 'Bloco',
-            cycleId: session.cycle_id!,
-            sessionLink: session.session_link || '',
-          });
-        }
-      });
-
-      setSessions(allSessions);
-    } catch (error) {
-      devLog.error('Error fetching sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const saveSessions = async (newSessions: StudySession[]) => {
-    try {
-      // Save to database instead of localStorage
-      for (const session of newSessions) {
-        if (!sessions.find(s => s.id === session.id)) {
-          // This is a new session, add it
-          await UserStudyService.addScheduleSession(user?.id, {
-            day_of_week: session.day,
-            start_time: session.startTime,
-            end_time: session.endTime,
-            duration_minutes: session.durationMinutes,
-            discipline_name: session.disciplineName,
-            block_name: session.blockName,
-            cycle_id: session.cycleId,
-            session_link: session.sessionLink,
-            is_active: true
-          });
-        }
-      }
-      setSessions(newSessions);
-    } catch (error) {
-      devLog.error('Error saving sessions:', error);
-      toast.error('Erro ao salvar cronograma');
-    }
-  };
   // Função para extrair blocos únicos do available_blocks do schedule_data
   const getAvailableBlocks = () => {
     const selectedCycleData = cycles.find(c => c.id === selectedCycle);
@@ -418,11 +309,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
         session_link: sessionLink
       }, targetUserId);
       if (success) {
-        // Recarregar ciclos para atualizar a lista de blocos e disciplinas
-        await fetchCycles();
-
-        // Recarregar sessões para mostrar a nova sessão imediatamente
-        await fetchSessions();
+        await refreshCronogramaData({ force: true });
 
         // Limpar campos
         setSelectedBlock('');
@@ -463,12 +350,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       const success = await UserStudyService.removeScheduleSession(targetUserId, sessionId);
       
       if (success) {
-        // Recarregar dados
-        await Promise.all([
-          fetchSessions(),
-          fetchCycles(),
-          refreshData()
-        ]);
+        await Promise.all([refreshCronogramaData({ force: true }), refreshData()]);
         toast.success('Tarefa removida do cronograma!');
       } else {
         devLog.error('❌ Falha ao remover sessão do banco');
@@ -644,7 +526,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       if (success) {
         // Recarregar ciclos para atualizar total_stats
         await refetchCycles();
-        await fetchSessions();
+        await refreshCronogramaData({ force: true });
       }
     } catch (error) {
       devLog.error('Error recording session:', error);
@@ -731,8 +613,8 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
       setEditingSession(null);
 
       // Recarregar dados para sincronizar
-      await refreshData(); // Recarregar dados do cronograma
-      await fetchCycles(); // Recarregar ciclos para atualizar calendário
+      await refreshData();
+      await refreshCronogramaData({ force: true });
 
       // Limpar campos
       setStudyDuration(0);

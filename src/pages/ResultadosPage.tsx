@@ -43,7 +43,7 @@ interface ResultadosPageProps {
   secureToken?: string; // Prop opcional para evitar erro de tipo
 }
 
-const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => {
+const ResultadosPage = ({ rankingId, concursoId, secureToken }: ResultadosPageProps = {}) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);

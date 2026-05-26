@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useSecureAdminUrls } from '@/services/adminUrlObfuscation';
 import { adminResourcePath, type AdminResource } from '@/config/adminRoutes';
 
@@ -12,12 +13,18 @@ const DEFAULT_LINKS: Record<AdminResource, string> = {
 
 export function useAdminNavLinks() {
   const { user } = useAuth();
+  const { isAdmin, isLoading: isAdminLoading } = useAdminAuth();
   const { generateSecureUrl } = useSecureAdminUrls();
   const [links, setLinks] = useState(DEFAULT_LINKS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) {
+    if (isAdminLoading) {
+      return;
+    }
+
+    if (!user?.id || !isAdmin) {
+      setLinks(DEFAULT_LINKS);
       setLoading(false);
       return;
     }
@@ -25,6 +32,7 @@ export function useAdminNavLinks() {
     let cancelled = false;
 
     const loadLinks = async () => {
+      setLoading(true);
       try {
         const [dashboard, concursos, usuarios, vouchers] = await Promise.all([
           generateSecureUrl(user.id, 'dashboard'),
@@ -52,7 +60,7 @@ export function useAdminNavLinks() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, generateSecureUrl]);
+  }, [user?.id, isAdmin, isAdminLoading, generateSecureUrl]);
 
-  return { links, loading };
+  return { links, loading: loading || isAdminLoading };
 }

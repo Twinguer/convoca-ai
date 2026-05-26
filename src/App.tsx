@@ -50,7 +50,6 @@ import StudentDetailsPage from "./modules/coach/pages/StudentDetailsPage";
 import CreateCycleForStudent from "./modules/coach/pages/CreateCycleForStudent";
 import StudentSchedulePage from "./modules/coach/pages/StudentSchedulePage";
 import StudentCycleDisciplinesPage from "./modules/coach/pages/StudentCycleDisciplinesPage";
-import { useParams } from 'react-router-dom';
 import { useTokenCleanup } from './hooks/useTokenCleanup';
 import { GoogleAdsRouteTracker } from '@/components/analytics/GoogleAdsRouteTracker';
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from '@/config/adminRoutes';
@@ -89,12 +88,6 @@ function RouteChunkLoader() {
     </div>
   );
 }
-
-// Wrapper components for passing URL parameters
-const ConcursoResultadosWrapper = () => {
-  const { token } = useParams<{ token: string }>();
-  return <ResultadosPage secureToken={token} />;
-};
 
 const AppContent = () => {
   
@@ -200,11 +193,11 @@ const AppContent = () => {
                       </>} />
                      <Route path="/usuario/profile/:token" element={<>
                         <Menu />
-                        <SecureUserRoute action="profile">
-                          <Suspense fallback={<RouteChunkLoader />}>
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureUserRoute action="profile">
                             <PublicUserProfile />
-                          </Suspense>
-                        </SecureUserRoute>
+                          </SecureUserRoute>
+                        </Suspense>
                       </>} />
                      {/* ✅ SEGURANÇA: Rota legada - redirecionar para versão segura */}
                      <Route path="/usuario/profile/:id" element={<Navigate to="/comunidade" replace />} />
@@ -424,27 +417,27 @@ const AppContent = () => {
                     {/* Rotas seguras para concursos */}
                     <Route path="/concurso/resultados/:token" element={<>
                         <Menu />
-                        <SecureConcursoRoute action="resultados">
-                          <Suspense fallback={<RouteChunkLoader />}>
-                            <ConcursoResultadosWrapper />
-                          </Suspense>
-                        </SecureConcursoRoute>
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureConcursoRoute action="resultados">
+                            <ResultadosPage />
+                          </SecureConcursoRoute>
+                        </Suspense>
                       </>} />
                     <Route path="/concurso/participar/:token" element={<>
                         <Menu />
-                        <SecureConcursoRoute action="participar">
-                          <Suspense fallback={<RouteChunkLoader />}>
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureConcursoRoute action="participar">
                             <ConcursoParticipation />
-                          </Suspense>
-                        </SecureConcursoRoute>
+                          </SecureConcursoRoute>
+                        </Suspense>
                       </>} />
                     <Route path="/concurso/ranking/:token" element={<>
                         <Menu />
-                        <SecureConcursoRoute action="ranking">
-                          <Suspense fallback={<RouteChunkLoader />}>
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureConcursoRoute action="ranking">
                             <ResultadosPage />
-                          </Suspense>
-                        </SecureConcursoRoute>
+                          </SecureConcursoRoute>
+                        </Suspense>
                       </>} />
                     <Route path="/concurso/estatisticas/:token" element={<>
                         <Menu />
@@ -454,11 +447,11 @@ const AppContent = () => {
                       </>} />
                     <Route path="/concurso/historico/:token" element={<>
                         <Menu />
-                        <SecureConcursoRoute action="historico">
-                          <Suspense fallback={<RouteChunkLoader />}>
+                        <Suspense fallback={<RouteChunkLoader />}>
+                          <SecureConcursoRoute action="historico">
                             <ResultadosPage />
-                          </Suspense>
-                        </SecureConcursoRoute>
+                          </SecureConcursoRoute>
+                        </Suspense>
                       </>} />
                     {/* Rotas legadas - redirecionar para versão segura */}
                     <Route path="/ranking/:id" element={<Navigate to="/pre-classificacao" replace />} />
