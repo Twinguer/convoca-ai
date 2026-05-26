@@ -40,7 +40,7 @@ Atualizado após **Statistics ST9** (modularização completa).
 | study | `restore/refactor-study-modular-complete` | `0dd1f1f1` |
 | coach | `restore/refactor-coach-modular-complete` | `2ac4fb19` |
 | community | `restore/refactor-community-modular-complete` | `1512e25d` |
-| statistics | `restore/refactor-statistics-modular-complete` | *(pendente tag)* |
+| statistics | `restore/refactor-statistics-modular-complete` | `32c43ad9` |
 
 ## Documentação por módulo
 
