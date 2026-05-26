@@ -24,7 +24,7 @@ import RankingsTab from '@/components/profile/RankingsTab';
 import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
-import { fetchUserRankings } from '@/services/rankingService';
+import { fetchUserRankings } from '@/modules/rankings';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { formatPublicNicknameHandle, stripNicknamePrefix } from '@/utils/nicknameUtils';
 import { PrivacySettings } from '@/components/profile/PrivacySettings';

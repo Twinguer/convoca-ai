@@ -7,7 +7,7 @@ import { fetchConcursoById } from '@/services/concursoService';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoadingState } from '@/components/resultados/LoadingState';
+import { LoadingState } from '@/modules/rankings/components/classification/LoadingState';
 import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';

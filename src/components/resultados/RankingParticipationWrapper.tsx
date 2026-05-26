@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useResultadosData } from '@/hooks/useResultadosData';
-import { ParticipationForm } from './ParticipationForm';
-import { LoadingState } from './LoadingState';
+import { ParticipationForm } from '@/modules/rankings/components/participation/ParticipationForm';
+import { LoadingState } from '@/modules/rankings/components/classification/LoadingState';
 import { logger } from '@/utils/logger';
 
 interface RankingParticipationWrapperProps {

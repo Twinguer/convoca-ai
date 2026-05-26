@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
-import { LoadingState } from '@/components/resultados/LoadingState';
+import { LoadingState } from '@/modules/rankings/components/classification/LoadingState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Shield, UserX } from 'lucide-react';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';

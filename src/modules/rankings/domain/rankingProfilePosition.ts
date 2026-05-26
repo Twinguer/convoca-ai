@@ -1,4 +1,4 @@
-import { fetchUserRankings, type Ranking } from '@/services/rankingService';
+import { fetchUserRankings, type Ranking } from '@/modules/rankings/services/rankingService';
 
 export type ProfileRankingStatus = {
   position: number | null;

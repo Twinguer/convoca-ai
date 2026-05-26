@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ const ESTADOS_BRASILEIROS = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-// Helper para verificar se é UUID válido
+// Helper para verificar se ├® UUID v├ílido
 const isValidUUID = (str: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
@@ -34,32 +34,32 @@ const CargosPage = () => {
   const [validatedId, setValidatedId] = useState<string | null>(null);
   const [isValidatingToken, setIsValidatingToken] = useState(false);
 
-  // ✅ Verificar autenticação: usuários não cadastrados não podem acessar
+  // Ô£à Verificar autentica├º├úo: usu├írios n├úo cadastrados n├úo podem acessar
   useEffect(() => {
     if (!user) {
       navigate('/auth');
     }
   }, [user, navigate]);
 
-  // Validar token se necessário
+  // Validar token se necess├írio
   useEffect(() => {
     const validateId = async () => {
       if (!idParam) return;
 
-      // Se for UUID válido, usar diretamente
+      // Se for UUID v├ílido, usar diretamente
       if (isValidUUID(idParam)) {
         setValidatedId(idParam);
         return;
       }
 
-      // Se não for UUID, provavelmente é um token ofuscado
+      // Se n├úo for UUID, provavelmente ├® um token ofuscado
       setIsValidatingToken(true);
       try {
         const validatedConcursoId = await UrlObfuscationService.validateConcursoToken(idParam);
         if (validatedConcursoId) {
           setValidatedId(validatedConcursoId);
         } else {
-          devLog.error('Token inválido ou expirado');
+          devLog.error('Token inv├ílido ou expirado');
           navigate('/pre-classificacao');
         }
       } catch (error) {
@@ -73,7 +73,7 @@ const CargosPage = () => {
     validateId();
   }, [idParam, navigate]);
 
-  // Buscar informações do card geral
+  // Buscar informa├º├Áes do card geral
   const { data: generalCard, isLoading: loadingGeneral } = useQuery({
     queryKey: ['general-card', validatedId],
     queryFn: async () => {
@@ -87,10 +87,10 @@ const CargosPage = () => {
         .single();
 
       if (error) {
-        // Se is_general_card não existir, a migração não foi aplicada
+        // Se is_general_card n├úo existir, a migra├º├úo n├úo foi aplicada
         if (error.message?.includes('is_general_card') || 
             error.message?.includes('does not exist')) {
-          // Retornar null para indicar que a migração precisa ser aplicada
+          // Retornar null para indicar que a migra├º├úo precisa ser aplicada
           return null;
         }
         throw error;
@@ -135,7 +135,7 @@ const CargosPage = () => {
 
       if (error) throw error;
       
-      // Herdar marca d'água do parent para cargos que não têm própria
+      // Herdar marca d'├ígua do parent para cargos que n├úo t├¬m pr├│pria
       const cargosWithWatermark = (data || []).map(cargo => {
         if (!cargo.watermark_image_url && generalCard?.watermark_image_url) {
           return {
@@ -151,9 +151,9 @@ const CargosPage = () => {
     enabled: !!validatedId && !!generalCard
   });
 
-  // ✅ Se não estiver autenticado, não mostrar conteúdo
+  // Ô£à Se n├úo estiver autenticado, n├úo mostrar conte├║do
   if (!user) {
-    return null; // Será redirecionado pelo useEffect
+    return null; // Ser├í redirecionado pelo useEffect
   }
 
   // Se estiver validando token, mostrar loading
@@ -183,11 +183,11 @@ const CargosPage = () => {
         <Card className="border-dashed border-2">
           <CardContent className="p-8 text-center">
             <p className="text-lg font-medium text-muted-foreground mb-2">
-              {loadingGeneral ? 'Carregando...' : 'Card geral não encontrado ou migração não aplicada.'}
+              {loadingGeneral ? 'Carregando...' : 'Card geral n├úo encontrado ou migra├º├úo n├úo aplicada.'}
             </p>
             {!loadingGeneral && (
               <p className="text-sm text-muted-foreground mb-4">
-                A migração SQL precisa ser aplicada para usar a funcionalidade de hierarquia de rankings.
+                A migra├º├úo SQL precisa ser aplicada para usar a funcionalidade de hierarquia de rankings.
               </p>
             )}
             <Button onClick={() => navigate('/pre-classificacao')} className="mt-4">
@@ -250,7 +250,7 @@ const CargosPage = () => {
 
       </div>
 
-      {/* Se for unificado e não tiver estado selecionado, mostrar lista de estados */}
+      {/* Se for unificado e n├úo tiver estado selecionado, mostrar lista de estados */}
       {generalCard.is_unified && !selectedState && (
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-4">Selecione um Estado</h2>
@@ -261,13 +261,13 @@ const CargosPage = () => {
                 className="hover:shadow-lg transition-all duration-300 cursor-pointer hover:translate-y-[-4px]"
                 onClick={async () => {
                   setSelectedState(estado);
-                  // Usar URL ofuscada para segurança
+                  // Usar URL ofuscada para seguran├ºa
                   try {
                     const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(validatedId, estado);
                     navigate(secureUrl, { replace: true });
                   } catch (error) {
                     devLog.error('Erro ao gerar URL segura:', error);
-                    // Fallback apenas em caso de erro crítico
+                    // Fallback apenas em caso de erro cr├¡tico
                     navigate(`/pre-classificacao/${validatedId}/cargos?state=${estado}`, { replace: true });
                   }
                 }}
@@ -281,7 +281,7 @@ const CargosPage = () => {
         </div>
       )}
 
-      {/* Se for unificado e tiver estado selecionado, mostrar breadcrumb e botão voltar */}
+      {/* Se for unificado e tiver estado selecionado, mostrar breadcrumb e bot├úo voltar */}
       {generalCard.is_unified && selectedState && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
@@ -290,13 +290,13 @@ const CargosPage = () => {
               size="sm"
               onClick={async () => {
                 setSelectedState('');
-                // Usar URL ofuscada para segurança
+                // Usar URL ofuscada para seguran├ºa
                 try {
                   const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(validatedId);
                   navigate(secureUrl, { replace: true });
                 } catch (error) {
                   devLog.error('Erro ao gerar URL segura:', error);
-                  // Fallback apenas em caso de erro crítico
+                  // Fallback apenas em caso de erro cr├¡tico
                   navigate(`/pre-classificacao/${validatedId}/cargos`, { replace: true });
                 }
               }}
@@ -312,7 +312,7 @@ const CargosPage = () => {
         </div>
       )}
 
-      {/* Se for unificado e não tiver estado selecionado, não mostrar cargos ainda */}
+      {/* Se for unificado e n├úo tiver estado selecionado, n├úo mostrar cargos ainda */}
       {generalCard.is_unified && !selectedState ? null : (
         <>
           {loadingCargos ? (
@@ -322,10 +322,10 @@ const CargosPage = () => {
           ) : cargos && cargos.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ gridAutoRows: '1fr' }}>
           {cargos.map((cargo) => {
-            // Herdar marca d'água do card geral se o cargo não tiver própria
+            // Herdar marca d'├ígua do card geral se o cargo n├úo tiver pr├│pria
             const watermarkUrl = cargo.watermark_image_url || generalCard?.watermark_image_url;
             
-            // Debug: verificar localidades disponíveis
+            // Debug: verificar localidades dispon├¡veis
             // devLog.log('Cargo:', cargo.cargo, 'localidades:', cargo.localidades, 'generalCard localidades:', generalCard?.localidades);
             
             return (
@@ -369,7 +369,7 @@ const CargosPage = () => {
                       </div>
                       
                       <div className="flex-1">
-                        {/* Mostrar localidade: state_uf se for unificado, ou localidades se não for */}
+                        {/* Mostrar localidade: state_uf se for unificado, ou localidades se n├úo for */}
                         {(() => {
                           // Se for unificado, mostrar state_uf
                           if (generalCard?.is_unified && cargo.state_uf) {
@@ -381,7 +381,7 @@ const CargosPage = () => {
                             );
                           }
                           
-                          // Se não for unificado, mostrar localidades (do cargo ou herdado do geral)
+                          // Se n├úo for unificado, mostrar localidades (do cargo ou herdado do geral)
                           // Priorizar localidades do cargo, depois do geral
                           let localidades = null;
                           
@@ -389,7 +389,7 @@ const CargosPage = () => {
                           if (cargo.localidades && Array.isArray(cargo.localidades) && cargo.localidades.length > 0) {
                             localidades = cargo.localidades;
                           } 
-                          // Se não tiver, tentar do card geral
+                          // Se n├úo tiver, tentar do card geral
                           else if (generalCard?.localidades && Array.isArray(generalCard.localidades) && generalCard.localidades.length > 0) {
                             localidades = generalCard.localidades;
                           }

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isRankingEliminated, getProfileRankingStatus } from '@/modules/rankings';
 
-vi.mock('@/services/rankingService', () => ({
+vi.mock('@/modules/rankings/services/rankingService', () => ({
   fetchUserRankings: vi.fn(),
 }));
 
-import { fetchUserRankings } from '@/services/rankingService';
+import { fetchUserRankings } from '@/modules/rankings/services/rankingService';
 
 describe('rankingProfilePosition', () => {
   beforeEach(() => {

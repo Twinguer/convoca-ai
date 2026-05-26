@@ -10,21 +10,40 @@ src/modules/rankings/
     rankingAccess.ts       # Visibilidade da tabela (Pro / Free / vitrine / participante)
     rankingNavigation.ts   # URLs seguras + fluxo da listagem
     rankingProfilePosition.ts  # Posição no perfil (= mesma fonte da tabela)
+    rankingRefresh.ts      # Recálculo em lote + refetch da classificação
+    answerKeyValidation.ts # Completude do gabarito oficial por caderno
+    rankingFormMappers.ts  # Mapeamento form → JSONB (cotas, subjetivas)
+  hooks/
+    useResultadosData.ts   # Dados da página de classificação
+    useClassificationAccess.ts
+    useSaveRanking.ts      # Persistência na criação/edição
+    useSaveAnswers/        # Save de respostas (RPC)
+    useLeaveRanking.ts
+  services/
+    rankingService.ts         # leitura RPC + ordenação/desempate
+    rankingCache.ts
+    rankingFormatting.ts
+  components/
+    classification/          # tabela, cards, toolbar, loading
+    participation/             # ParticipationForm, AnswerSheet, selectors
   pages/
     RankingsPage.tsx       # /pre-classificacao
+    ResultadosPage.tsx     # classificação (/concurso/ranking/:token)
+    CriarRankingPage.tsx   # /criar-ranking
+    CargosPage.tsx         # /pre-classificacao/:token/cargos
+    ConcursoParticipationPage.tsx  # /concurso/participar/:token
   index.ts                 # API pública do módulo
 ```
 
-**Fora do módulo (fatiamento futuro):**
+**Fora do módulo (compartilhado):**
 
 | Área | Caminho |
 |------|---------|
-| Classificação UI | `pages/ResultadosPage.tsx`, `components/resultados/` |
-| Leitura / ordenação | `services/rankingService.ts` |
-| Dados da página | `hooks/useResultadosData.tsx` |
-| Criação / gabarito | `pages/CriarRanking.tsx`, `hooks/useSaveRanking.ts` |
-| Cargos (hierarquia) | `pages/CargosPage.tsx` |
 | Supabase | `integrations/supabase/rankings/` |
+| Segurança transversal | `SecureConcursoRoute`, `UrlObfuscationService` |
+| Perfil | `UserProfile`, `RankingsTab` — consomem `@/modules/rankings` |
+
+**Re-exports `@deprecated` (remoção futura):** `pages/ResultadosPage.tsx`, `CriarRanking.tsx`, `CargosPage.tsx`, `ConcursoParticipation.tsx`, `services/rankingService.ts`, `hooks/useResultadosData.tsx`, `utils/rankingNavigation.ts`, stubs em `components/resultados/`.
 
 ## Invariantes (não quebrar)
 
@@ -52,7 +71,7 @@ src/modules/rankings/
 2. Card geral → `/pre-classificacao/:token/cargos`
 3. Cargo → `/concurso/ranking/:token`
 4. `SecureConcursoRoute` → `ResultadosPage` + `useResultadosData`
-5. Refresh → `recalculateAllUserScores` (RPC)
+5. Refresh → `refreshClassificationData` (recálculo em lote via RPC)
 
 ## Import recomendado
 
@@ -60,11 +79,20 @@ src/modules/rankings/
 import {
   canViewClassification,
   openRankingFromList,
+  fetchUserRankings,
+  rankingCache,
   getProfileRankingStatus,
 } from '@/modules/rankings';
 ```
 
-Re-exports legados em `src/utils/rankingNavigation.ts` e `rankingProfilePosition.ts` estão **deprecated**.
+Re-exports legados em `src/utils/rankingNavigation.ts`, `rankingProfilePosition.ts`, `services/rankingService.ts` e `components/resultados/*` estão **deprecated** — novos imports devem usar `@/modules/rankings`.
+
+## Status (R9 — modular completo)
+
+- Pages de ranking roteadas via `modules/rankings/pages/` (`App.tsx`)
+- Callers externos (`UserProfile`, `PublicUserProfile`, `concursoService`, rotas seguras) importam `@/modules/rankings`
+- Re-exports legados mantidos para compatibilidade; remoção em PR futuro
+- `PreClassificacao.tsx` — deprecated, não roteado (substituído por `RankingsPage`)
 
 ## Testes
 
@@ -74,5 +102,6 @@ npm run test:rankings
 
 ## Docs relacionados
 
+- [ROADMAP.md](./ROADMAP.md) — planejamento R5–R9 (modularização completa)
 - [RESTORE.md](./RESTORE.md) — pontos de restauração Git
 - [../../src/docs/RankingUpdateFlow.md](../../src/docs/RankingUpdateFlow.md) — recálculo de scores

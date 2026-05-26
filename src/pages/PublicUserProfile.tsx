@@ -13,7 +13,7 @@ import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
-import { fetchUserRankings } from '@/services/rankingService';
+import { fetchUserRankings } from '@/modules/rankings';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getAvatarUrl } from '@/utils/avatarUtils';

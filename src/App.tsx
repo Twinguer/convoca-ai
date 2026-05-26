@@ -10,7 +10,7 @@ import Menu from "./components/Menu";
 import { TimerProvider } from "./contexts/TimerContext";
 import { useTimer } from "./contexts/TimerContext";
 import Index from "./pages/Index";
-import CargosPage from "./pages/CargosPage";
+import CargosPage from "./modules/rankings/pages/CargosPage";
 import Resultado from "./pages/Resultado";
 import ConcursoDetails from "./pages/ConcursoDetails";
 import NotFound from "./pages/NotFound";
@@ -25,7 +25,7 @@ import { PresenceProvider } from "./contexts/PresenceContext";
 import { ProtectedRoute } from "./components/Security/ProtectedRoute";
 import { SecureConcursoRoute } from "./components/Security/SecureConcursoRoute";
 import { SecureUserRoute } from "./components/Security/SecureUserRoute";
-import CriarRanking from "./pages/CriarRanking";
+import CriarRankingPage from "./modules/rankings/pages/CriarRankingPage";
 import EstudosDashboard from "./modules/study/pages/StudyDashboard";
 import Cronograma from "./pages/Estudos/Cronograma";
 import Timer from "./pages/Estudos/Timer";
@@ -75,8 +75,8 @@ const AdminTokenGate = lazy(() => import("./components/Admin/AdminTokenGate"));
 const SecureAdminRoute = lazy(() => import("./components/Admin/SecureAdminRoute"));
 const LegacyAdminRedirect = lazy(() => import("./components/Admin/LegacyAdminRedirect"));
 
-const ResultadosPage = lazy(() => import("./pages/ResultadosPage"));
-const ConcursoParticipation = lazy(() => import("./pages/ConcursoParticipation"));
+const ResultadosPage = lazy(() => import("./modules/rankings/pages/ResultadosPage"));
+const ConcursoParticipationPage = lazy(() => import("./modules/rankings/pages/ConcursoParticipationPage"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const PublicUserProfile = lazy(() => import("./pages/PublicUserProfile"));
 
@@ -249,7 +249,7 @@ const AppContent = () => {
                       </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />
-                        <CriarRanking />
+                        <CriarRankingPage />
                       </>} />
                      <Route path="/estudos" element={<>
                          <Menu />
@@ -426,7 +426,7 @@ const AppContent = () => {
                         <Menu />
                         <Suspense fallback={<RouteChunkLoader />}>
                           <SecureConcursoRoute action="participar">
-                            <ConcursoParticipation />
+                            <ConcursoParticipationPage />
                           </SecureConcursoRoute>
                         </Suspense>
                       </>} />
