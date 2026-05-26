@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { useIsActiveCoach } from '@/modules/coach';
 
 /**
  * Acesso a recursos de estudos do plano Pro: assinatura Pro do aluno OU Modo Coach ativo.
@@ -9,22 +8,17 @@ import { coachSubscriptionService } from '@/integrations/supabase/coach/subscrip
 export function useStudyProAccess() {
   const { user } = useAuth();
   const { isPro, isLoading: isLoadingPro } = useSubscription();
-
-  const { data: coachSubscription, isLoading: isLoadingCoach } = useQuery({
-    queryKey: ['coach-subscription-study-access', user?.id],
-    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
+  const { isActiveCoach, isLoading: isLoadingCoach } = useIsActiveCoach({
+    userId: user?.id,
     enabled: !!user?.id,
-    staleTime: 60_000,
   });
 
-  const isCoachActive = coachSubscription?.status === 'active';
-
-  const canAccessStudyPro = isPro || isCoachActive;
+  const canAccessStudyPro = isPro || isActiveCoach;
   const isLoading = isLoadingPro || isLoadingCoach;
 
   return {
     isPro,
-    isCoachActive,
+    isCoachActive: isActiveCoach,
     canAccessStudyPro,
     isLoading,
   };

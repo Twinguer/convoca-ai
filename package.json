@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:study": "vitest run src/tests/study",
     "test:rankings": "vitest run src/tests/rankings",
+    "test:coach": "vitest run src/tests/coach",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,20 +11,18 @@ import { Alert } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Clock, CheckCircle, BookOpen, TrendingUp, Plus, Calendar, Trash2, MessageSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import type { StudentRelationship } from '@/types/coach';
-import { getLastStudyActivityDate } from '@/utils/userStudyHelpers';
 import { resolveUserStudyStatisticsFromData, resolveStudySessions } from '@/modules/study';
 import { formatLocalDatePtBr } from '@/utils/dateFormat';
-import { UserStudyService } from '@/services/userStudyService';
-import type { StudyStatistics } from '@/types/userStudy';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import { devLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
-import { coachAccessService } from '@/integrations/supabase/coach/access';
-import { coachRelationshipService } from '@/integrations/supabase/coach/relationships';
+import {
+  coachAccessService,
+  useCoachStudentDetails,
+  useCoachStudentGate,
+} from '@/modules/coach';
 
 // ✅ REMOVIDO: isValidUUID - não aceitar UUIDs diretamente por segurança
 
@@ -33,129 +31,34 @@ const StudentDetailsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  // Estado para ID validado do aluno
-  const [validatedStudentId, setValidatedStudentId] = useState<string | null>(null);
-  const [isValidatingToken, setIsValidatingToken] = useState(false);
-  
-  // Estado para estatísticas completas do aluno
-  const [studentStatistics, setStudentStatistics] = useState<StudyStatistics | null>(null);
-  
-  // Estado para modal de mensagem
+
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [messageText, setMessageText] = useState('');
-  
-  // Estado para filtro de tempo do gráfico
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('week');
-  
+
   const queryClient = useQueryClient();
 
-  // Validar token se necessário
-  useEffect(() => {
-    const validateId = async () => {
-      if (!studentIdParam) return;
+  const {
+    validatedStudentId,
+    isValidatingToken,
+    hasAccess,
+    isCheckingAccess,
+    accessDeniedMessage,
+  } = useCoachStudentGate({ studentIdParam });
 
-      // ✅ SEGURANÇA: Validar token (não aceitar UUIDs diretamente)
-      setIsValidatingToken(true);
-      try {
-        const validatedUserId = await UserUrlObfuscationService.validateUserToken(studentIdParam);
-        if (validatedUserId) {
-          setValidatedStudentId(validatedUserId);
-        } else {
-          devLog.error('Token inválido ou expirado');
-          toast({
-            title: 'Erro',
-            description: 'Token de acesso inválido ou expirado.',
-            variant: 'destructive'
-          });
-          navigate('/coach/dashboard');
-        }
-      } catch (error) {
-        devLog.error('Erro ao validar token:', error);
-        toast({
-          title: 'Erro',
-          description: 'Erro ao validar acesso ao aluno.',
-          variant: 'destructive'
-        });
-        navigate('/coach/dashboard');
-      } finally {
-        setIsValidatingToken(false);
-      }
-    };
-
-    validateId();
-  }, [studentIdParam, navigate, toast]);
-
-  const { data: accessCheck, isLoading: isLoadingAccess } = useQuery({
-    queryKey: ['coach-has-access', 'v3', user?.id, validatedStudentId],
-    queryFn: async () => {
-      if (!user?.id || !validatedStudentId) return null;
-      return coachAccessService.checkHasStudentAccess(user.id, validatedStudentId);
-    },
-    enabled: !!user && !!validatedStudentId,
-    retry: false,
+  const {
+    student,
+    fullStatistics,
+    isLoadingStudent,
+    isLoadingStatistics,
+  } = useCoachStudentDetails({
+    coachId: user?.id,
+    validatedStudentId,
+    hasAccess,
   });
 
-  const hasAccess = accessCheck?.allowed === true;
-
-  // Buscar dados do aluno específico (após RPC de acesso)
-  const { data: student, isLoading: isLoadingStudent } = useQuery({
-    queryKey: ['coach-student', user?.id, validatedStudentId],
-    queryFn: async () => {
-      if (!user?.id || !validatedStudentId) return null;
-
-      const studentData = await coachRelationshipService.getStudentData(
-        user.id,
-        validatedStudentId
-      );
-
-      if (!studentData) {
-        return null;
-      }
-
-      const display = await coachAccessService.getStudentDisplay(validatedStudentId);
-
-      const { data: studyData } = await supabase
-        .from('user_study_v2')
-        .select('*')
-        .eq('user_id', validatedStudentId)
-        .single();
-
-      const lastActivityFromStudy = studyData
-        ? getLastStudyActivityDate({
-            last_activity_date: studyData.last_activity_date,
-            study_sessions: studyData.study_sessions,
-            study_schedule: studyData.study_schedule,
-            study_statistics: studyData.study_statistics,
-          })
-        : null;
-
-      return {
-        ...studentData,
-        student_name:
-          display.success && display.display_name ? display.display_name : 'Aluno',
-        last_activity: lastActivityFromStudy ?? studentData.last_activity,
-        studyData,
-      };
-    },
-    enabled: !!user && !!validatedStudentId && hasAccess,
-  });
-
-  const isLoading = isLoadingAccess || (hasAccess && isLoadingStudent);
-
-  // Buscar estatísticas completas do aluno
-  const { data: fullStatistics, isLoading: loadingStats } = useQuery({
-    queryKey: ['coach-student-statistics', validatedStudentId],
-    queryFn: async () => {
-      if (!validatedStudentId) return null;
-
-      const userStudyData = await UserStudyService.getUserStudyData(validatedStudentId);
-      if (!userStudyData) return null;
-
-      return resolveUserStudyStatisticsFromData(userStudyData);
-    },
-    enabled: !!validatedStudentId,
-  });
+  const isLoading = isCheckingAccess || (hasAccess && isLoadingStudent);
+  const loadingStats = isLoadingStatistics;
 
   // Mutation para enviar mensagem ao aluno (deve estar antes de qualquer return condicional)
   const sendMessageMutation = useMutation({
@@ -201,23 +104,28 @@ const StudentDetailsPage = () => {
     if (
       !isValidatingToken &&
       validatedStudentId &&
-      !isLoadingAccess &&
-      accessCheck &&
-      !accessCheck.allowed
+      !isCheckingAccess &&
+      !hasAccess
     ) {
       toast({
         title: 'Acesso negado',
-        description:
-          accessCheck.message ??
-          'Você não tem acesso a este aluno ou o aluno não faz parte da sua equipe',
+        description: accessDeniedMessage,
         variant: 'destructive',
       });
       navigate('/coach/dashboard');
     }
-  }, [accessCheck, isLoadingAccess, isValidatingToken, validatedStudentId, navigate, toast]);
+  }, [
+    hasAccess,
+    isCheckingAccess,
+    isValidatingToken,
+    validatedStudentId,
+    accessDeniedMessage,
+    navigate,
+    toast,
+  ]);
 
   useEffect(() => {
-    if (hasAccess && student === null && !isLoadingStudent && !isLoadingAccess && validatedStudentId) {
+    if (hasAccess && student === null && !isLoadingStudent && !isCheckingAccess && validatedStudentId) {
       toast({
         title: 'Aluno não encontrado',
         description: 'Não foi possível carregar os dados deste aluno.',
@@ -225,7 +133,7 @@ const StudentDetailsPage = () => {
       });
       navigate('/coach/dashboard');
     }
-  }, [student, hasAccess, isLoadingStudent, isLoadingAccess, validatedStudentId, navigate, toast]);
+  }, [student, hasAccess, isLoadingStudent, isCheckingAccess, validatedStudentId, navigate, toast]);
 
   // Se estiver validando token, mostrar loading
   if (isValidatingToken || !validatedStudentId) {
@@ -245,7 +153,7 @@ const StudentDetailsPage = () => {
       <div className="container mx-auto p-6">
         <Card>
           <CardContent className="p-8 text-center">
-            <p>{!hasAccess && !isLoadingAccess ? 'Acesso negado.' : 'Carregando dados do aluno...'}</p>
+            <p>{!hasAccess && !isCheckingAccess ? 'Acesso negado.' : 'Carregando dados do aluno...'}</p>
           </CardContent>
         </Card>
       </div>

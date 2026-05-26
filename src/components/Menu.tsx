@@ -3,8 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { useIsActiveCoach } from '@/modules/coach';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
@@ -43,12 +42,10 @@ const Menu = () => {
     setIsPlansSubmenuOpen(false);
   };
 
-  // Verificar se o usuário tem assinatura de coach
-  const { data: coachSubscription, isLoading: isLoadingSubscription } = useQuery({
-    queryKey: ['coach-subscription-menu', user?.id],
-    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
+  const { subscription: coachSubscription, isLoading: isLoadingSubscription } = useIsActiveCoach({
     enabled: !!user,
   });
+  const isCoachSubscribed = !!coachSubscription;
 
   const handleCoachClick = () => {
     if (!user) {
@@ -60,7 +57,7 @@ const Menu = () => {
     // Se tiver assinatura, vai para dashboard, senão para landing
     if (isLoadingSubscription) {
       navigate('/coach');
-    } else if (coachSubscription) {
+    } else if (isCoachSubscribed) {
       navigate('/coach/dashboard');
     } else {
       navigate('/coach');

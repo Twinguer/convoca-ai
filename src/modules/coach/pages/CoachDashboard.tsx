@@ -1,317 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AlertCircle, Plus, Users, Clock, CheckCircle, X, Trash2, BookOpen, Eye, MessageSquare } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { AlertCircle, Plus, Users, BookOpen, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserGroups } from '@/hooks/useGroupMembers';
 import { CoachGroupsTab } from '@/components/studyGroups/CoachGroupsTab';
 import { useToast } from '@/hooks/use-toast';
-import { coachRelationshipService } from '@/integrations/supabase/coach/relationships';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
-import { supabase } from '@/integrations/supabase/client';
-import { getAvatarUrl } from '@/utils/avatarUtils';
-import { UserStudyService } from '@/services/userStudyService';
 import {
-  calculateStudyStatistics,
-  getLastStudyActivityDate,
-  getStudySessionDateString,
-  getStudySessionDurationMinutes,
-} from '@/utils/userStudyHelpers';
-import { formatLocalDatePtBr, getStartOfLast7Days, isDateOnOrAfter } from '@/utils/dateFormat';
-import type { StudySession } from '@/types/userStudy';
-import type { StudentRelationship, CanInviteResponse } from '@/types/coach';
-import { logError, logWarn } from '@/utils/secureLogger';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+  BroadcastMessageDialog,
+  PendingInvitationsCard,
+  StudentCard,
+  TeamStatsStrip,
+  hasStudentLast7DaysActivity,
+  useCoachBroadcastMessage,
+  useCoachInvitations,
+  useCoachStudents,
+  useCoachSubscription,
+} from '@/modules/coach';
+import { devLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
-import { formatHoursDisplay } from '@/utils/formatHours';
-
-// Helper para obter iniciais
-const getInitials = (name: string) => {
-  if (!name) return 'A';
-  return name
-    .split(' ')
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
-};
 
 const CoachDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [subscriptionData, setSubscriptionData] = useState<CanInviteResponse | null>(null);
-  const queryClient = useQueryClient();
-  
-  // Estado para modal de mensagem para todos os alunos
+
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
 
-  // Buscar assinatura
-  const { data: subscription, isLoading: isLoadingSubscription } = useQuery({
-    queryKey: ['coach-subscription', user?.id],
-    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
-    enabled: !!user,
+  const {
+    subscription,
+    isLoadingSubscription,
+    canInvite: subscriptionData,
+  } = useCoachSubscription();
+
+  const { students, isLoading, removeStudent, isRemovingStudent } = useCoachStudents({
+    enabled: !!subscription,
   });
 
-  // Verificar se pode convidar
-  const { data: canInvite } = useQuery({
-    queryKey: ['coach-can-invite', user?.id],
-    queryFn: () => coachSubscriptionService.checkIfCanInvite(user!.id),
-    enabled: !!user && !!subscription,
-  });
+  const {
+    pendingInvitations,
+    cancelInvitation,
+    isCancellingInvitation,
+  } = useCoachInvitations();
 
-  // Função helper para calcular performance real do aluno
-  const calculateStudentPerformance = async (studentId: string) => {
-    try {
-      const studyData = await UserStudyService.getUserStudyData(studentId);
-      
-      if (!studyData) {
-        return {
-          hours_this_week: 0,
-          hours_last_week: 0,
-          sessions_this_week: 0,
-          tasks_completed: 0,
-          tasks_pending: 0,
-          completion_rate: 0,
-          engagement_score: 0,
-          last_activity: null as string | null,
-        };
-      }
-
-      const last_activity = getLastStudyActivityDate(studyData);
-      const startOfLast7Days = getStartOfLast7Days();
-
-      const sessions: StudySession[] = studyData.study_sessions || [];
-      const last7DaysSessions = sessions.filter(s => {
-        const dateStr = getStudySessionDateString(s);
-        return dateStr ? isDateOnOrAfter(dateStr, startOfLast7Days) : false;
-      });
-
-      const hoursLast7Days =
-        last7DaysSessions.reduce((sum, s) => sum + getStudySessionDurationMinutes(s) / 60, 0);
-
-      const tasksLast7Days = last7DaysSessions.length;
-
-      if (sessions.length === 0) {
-        return {
-          hours_this_week: hoursLast7Days,
-          hours_last_week: 0,
-          sessions_this_week: tasksLast7Days,
-          tasks_completed: tasksLast7Days,
-          tasks_pending: 0,
-          completion_rate: 0,
-          engagement_score: Math.min(10, hoursLast7Days / 2),
-          last_activity,
-        };
-      }
-
-      const stats = calculateStudyStatistics(sessions);
-
-      return {
-        hours_this_week: hoursLast7Days,
-        hours_last_week: Math.max(0, (stats.totalHours - hoursLast7Days) * 0.8),
-        sessions_this_week: tasksLast7Days,
-        tasks_completed: tasksLast7Days,
-        tasks_pending: 0,
-        completion_rate:
-          sessions.length > 0 ? (last7DaysSessions.length / sessions.length) * 100 : 0,
-        engagement_score: Math.min(10, (hoursLast7Days / 20) * 10),
-        last_activity,
-      };
-    } catch (error) {
-      devLog.error('Erro ao calcular performance do aluno:', error);
-      return {
-        hours_this_week: 0,
-        hours_last_week: 0,
-        sessions_this_week: 0,
-        tasks_completed: 0,
-        tasks_pending: 0,
-        completion_rate: 0,
-        engagement_score: 0,
-        last_activity: null,
-      };
-    }
-  };
-
-  // Buscar alunos
-  const { data: students = [], isLoading } = useQuery({
-    queryKey: ['coach-students', user?.id],
-    queryFn: async () => {
-      const studentList = await coachRelationshipService.getStudents(user!.id);
-      
-      // Buscar nomes, fotos e performance real dos alunos
-      const studentsWithData = await Promise.all(
-        studentList.map(async (student) => {
-          const { data: userData } = await supabase
-            .from('users_profiles')
-            .select('name, email, avatar_url')
-            .eq('id', student.student_id)
-            .single();
-          
-          // Calcular performance real
-          const realPerformance = await calculateStudentPerformance(student.student_id);
-          
-          return {
-            ...student,
-            // ✅ SEGURANÇA: Não expor email completo, usar apenas parte local
-            student_name: userData?.name || userData?.email?.split('@')[0] || 'Aluno #' + student.student_id.slice(0, 8),
-            student_email: student.student_email || userData?.email,
-            avatar_url: userData?.avatar_url,
-            last_activity: realPerformance.last_activity ?? student.last_activity,
-            performance: {
-              ...student.performance,
-              ...realPerformance
-            }
-          };
-        })
-      );
-      
-      return studentsWithData;
-    },
-    enabled: !!user && !!subscription,
-  });
-
-  // Buscar convites pendentes
-  const { data: pendingInvitations = [], refetch: refetchInvitations } = useQuery({
-    queryKey: ['coach-pending-invitations', user?.id],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('coach_invitations_history')
-          .select('*')
-          .eq('coach_id', user!.id)
-          .eq('status', 'pending')
-          .order('invited_at', { ascending: false });
-
-        if (error) {
-          logError('Erro ao buscar convites pendentes', error, 'COACH');
-          // Se for erro 403, tentar novamente após 2 segundos (cache pode estar atualizando)
-          if (error.code === 'PGRST301' || error.message?.includes('403')) {
-            logWarn('Erro 403 detectado, aguardando atualização do cache', { coachId: user!.id }, 'COACH');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            // Tentar novamente
-            const { data: retryData, error: retryError } = await supabase
-              .from('coach_invitations_history')
-              .select('*')
-              .eq('coach_id', user!.id)
-              .eq('status', 'pending')
-              .order('invited_at', { ascending: false });
-            
-            if (retryError) throw retryError;
-            return retryData || [];
-          }
-          throw error;
-        }
-      
-      // Buscar nomes dos alunos
-      const invitationsWithNames = await Promise.all(
-        (data || []).map(async (invitation: any) => {
-          if (invitation.student_id) {
-            const { data: studentData } = await supabase
-              .from('users_profiles')
-              .select('name, nickname, avatar_url')
-              .eq('id', invitation.student_id)
-              .single();
-            
-            return {
-              ...invitation,
-              student_name: studentData?.name || invitation.student_email || 'Aluno',
-              student_nickname: studentData?.nickname,
-              student_avatar: studentData?.avatar_url
-            };
-          }
-          // Se não tiver student_id, usar email como fallback
-          return {
-            ...invitation,
-            student_name: invitation.student_email || 'Aluno desconhecido',
-            student_nickname: null,
-            student_avatar: null
-          };
-        })
-      );
-      
-        return invitationsWithNames;
-      } catch (err: any) {
-        logError('Erro completo ao buscar convites', err, 'COACH');
-        // Se ainda for erro de permissão, retornar array vazio
-        if (err.code === 'PGRST301' || err.message?.includes('403')) {
-          logWarn('Ainda com erro de permissão, retornando lista vazia', { code: err.code }, 'COACH');
-          return [];
-        }
-        throw err;
-      }
-    },
-    enabled: !!user,
-    retry: 2,
-    retryDelay: 2000,
-  });
-
-  // Mutation para cancelar convite
-  const cancelInvitationMutation = useMutation({
-    mutationFn: async (invitationId: string) => {
-      const { data, error } = await supabase.rpc('cancel_coach_invitation', {
-        p_invitation_id: invitationId,
-        p_coach_id: user!.id
-      });
-
-      if (error) {
-        devLog.error('Erro ao cancelar convite:', error);
-        throw error;
-      }
-      
-      // Verificar se a resposta indica sucesso
-      if (data && !(data as any).success) {
-        throw new Error((data as any).error || 'Erro ao cancelar convite');
-      }
-      
-      return data;
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: 'Convite cancelado',
-        description: (data as any)?.message || 'O convite foi cancelado com sucesso',
-      });
-      refetchInvitations();
-      queryClient.invalidateQueries({ queryKey: ['coach-pending-invitations'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
-    onError: (error: any) => {
-      devLog.error('Erro completo ao cancelar convite:', error);
-      toast({
-        title: 'Erro ao cancelar convite',
-        description: error.message || 'Não foi possível cancelar o convite',
-        variant: 'destructive'
-      });
-    }
-  });
-
-  useEffect(() => {
-    if (canInvite) {
-      setSubscriptionData(canInvite);
-    }
-  }, [canInvite]);
-
-  // Redirecionar se não tiver assinatura
   useEffect(() => {
     if (subscription === null && !isLoadingSubscription && user) {
       navigate('/coach/subscription');
     }
   }, [subscription, isLoadingSubscription, user, navigate]);
 
-  const hasLast7DaysActivity = (s: (typeof students)[number]) =>
-    (s.performance.sessions_this_week ?? 0) > 0 || (s.performance.hours_this_week ?? 0) > 0;
+  const hasLast7DaysActivity = hasStudentLast7DaysActivity;
 
-  const studentsWithoutLast7DaysActivity = students.filter(s => !hasLast7DaysActivity(s));
+  const studentsWithoutLast7DaysActivity = students.filter((s) => !hasLast7DaysActivity(s));
 
   const activeStudents = students.filter(s => s.status === 'active').length;
 
@@ -334,87 +79,13 @@ const CoachDashboard = () => {
     }
   };
 
-  // Função para remover aluno
-  const removeStudentMutation = useMutation({
-    mutationFn: async (studentId: string) => {
-      try {
-        await coachRelationshipService.removeStudent(user!.id, studentId);
-      } catch (error) {
-        logError('Erro ao remover aluno', error, 'COACH');
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Aluno removido',
-        description: 'O aluno foi removido da sua equipe',
-      });
-      // Atualizar cache
-      queryClient.invalidateQueries({ queryKey: ['coach-students', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['coach-can-invite', user?.id] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Erro ao remover aluno',
-        description: error.message,
-        variant: 'destructive'
-      });
-    }
-  });
-
   const handleRemoveStudent = (studentId: string, studentEmail: string) => {
     if (window.confirm(`Tem certeza que deseja remover ${studentEmail} da sua equipe?`)) {
-      removeStudentMutation.mutate(studentId);
+      removeStudent(studentId);
     }
   };
 
-  // Mutation para enviar mensagem para todos os alunos
-  const broadcastMessageMutation = useMutation({
-    mutationFn: async (message: string) => {
-      if (!user?.id || students.length === 0) {
-        throw new Error('Dados insuficientes para enviar mensagem');
-      }
-
-      // Criar notificações para todos os alunos
-      const notifications = students.map(student => ({
-        user_id: student.student_id,
-        type: 'coach_message',
-        title: 'Mensagem do Coach',
-        message: message.trim(),
-        metadata: {
-          coach_id: user.id,
-          sent_at: new Date().toISOString(),
-          is_broadcast: true
-        }
-      }));
-
-      const { error } = await supabase
-        .from('notifications')
-        .insert(notifications);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Mensagem enviada',
-        description: `A mensagem foi enviada com sucesso para ${students.length} aluno(s).`,
-      });
-      setBroadcastModalOpen(false);
-      setBroadcastMessage('');
-      // Invalidar notificações de todos os alunos
-      students.forEach(student => {
-        queryClient.invalidateQueries({ queryKey: ['notifications', student.student_id] });
-      });
-    },
-    onError: (error: any) => {
-      devLog.error('Erro ao enviar mensagem:', error);
-      toast({
-        title: 'Erro ao enviar mensagem',
-        description: error.message || 'Não foi possível enviar a mensagem. Tente novamente.',
-        variant: 'destructive',
-      });
-    },
-  });
+  const broadcastMessageMutation = useCoachBroadcastMessage(students);
 
   const handleBroadcastMessage = () => {
     const trimmedMessage = broadcastMessage.trim();
@@ -446,7 +117,12 @@ const CoachDashboard = () => {
       return;
     }
 
-    broadcastMessageMutation.mutate(trimmedMessage);
+    broadcastMessageMutation.mutate(trimmedMessage, {
+      onSuccess: () => {
+        setBroadcastModalOpen(false);
+        setBroadcastMessage('');
+      },
+    });
   };
 
   const { groups: coachGroups } = useUserGroups(user?.id);
@@ -480,97 +156,17 @@ const CoachDashboard = () => {
 
         {/* Tab: Alunos */}
         <TabsContent value="alunos" className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardDescription>Total de Alunos</CardDescription>
-            <CardTitle className="text-4xl font-bold">{activeStudents}</CardTitle>
-            {subscriptionData && (
-              <Badge variant="secondary">
-                {subscriptionData.current}/{subscriptionData.max}
-              </Badge>
-            )}
-          </CardHeader>
-        </Card>
+          <TeamStatsStrip
+            activeStudents={activeStudents}
+            inactiveCount={studentsWithoutLast7DaysActivity.length}
+            canInvite={subscriptionData}
+          />
 
-        <Card className={studentsWithoutLast7DaysActivity.length > 0 ? "border-red-500/20 bg-red-500/5" : ""}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardDescription>Avisos</CardDescription>
-              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-            <CardTitle className="text-4xl font-bold">
-              {studentsWithoutLast7DaysActivity.length}
-            </CardTitle>
-            <CardDescription className="text-xs mt-2">
-              {studentsWithoutLast7DaysActivity.length > 0
-                ? `aluno(s) sem atividade nos últimos 7 dias`
-                : 'Nenhum aviso'}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-          </div>
-
-
-          {/* Convites Pendentes */}
-          {pendingInvitations.length > 0 && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Convites Pendentes</CardTitle>
-              <Badge variant="outline" className="bg-primary/10 border-primary/20">
-                {pendingInvitations.length}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {pendingInvitations.map((invitation: any) => (
-                <div
-                  key={invitation.id}
-                  className="flex items-center justify-between p-2 bg-card rounded-lg border border-border"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={getAvatarUrl(invitation.student_avatar)} />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(invitation.student_name || invitation.student_email || 'A')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {invitation.student_name || invitation.student_email || 'Aluno desconhecido'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(invitation.invited_at).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm('Tem certeza que deseja cancelar este convite?')) {
-                        cancelInvitationMutation.mutate(invitation.id);
-                      }
-                    }}
-                    disabled={cancelInvitationMutation.isPending}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 px-2"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-          )}
+          <PendingInvitationsCard
+            invitations={pendingInvitations}
+            onCancel={cancelInvitation}
+            isCancelling={isCancellingInvitation}
+          />
 
           {/* Lista de Alunos */}
           <Card className="bg-primary/5 border-primary/20">
@@ -625,104 +221,15 @@ const CoachDashboard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {students.map((student) => {
-                const avatarUrl = getAvatarUrl(student.avatar_url);
-                
-                return (
-                  <Card 
-                    key={student.student_id} 
-                    className="bg-primary/5 border-primary/20 hover:shadow-lg transition-all duration-200"
-                    style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}
-                  >
-                    <CardContent className="p-5 flex flex-col">
-                      {/* Avatar e Nome */}
-                      <div className="flex flex-col items-center mb-4">
-                        <div className="relative mb-3">
-                          <Avatar className="h-20 w-20 border-2 border-primary/20" style={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
-                            <AvatarImage src={avatarUrl} alt={student.student_name} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold text-lg">
-                              {getInitials(student.student_name || student.student_email || '')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <Badge 
-                            variant={student.status === 'active' ? 'default' : 'secondary'}
-                            className="absolute -bottom-1 -right-1"
-                          >
-                            {student.status === 'active' ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </div>
-                        <h3 className="font-semibold text-base text-center leading-tight">
-                          {student.student_name || student.student_email || 'Aluno #' + student.student_id.slice(0, 8)}
-                        </h3>
-                      </div>
-
-                      {/* Estatísticas */}
-                      <div className="grid grid-cols-2 gap-3 mb-4 border-t border-b py-3">
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-1 text-muted-foreground mb-1">
-                            <Clock className="h-4 w-4" />
-                          </div>
-                          <span className="text-lg font-bold text-primary">
-                            {formatHoursDisplay(student.performance.hours_this_week || 0)}
-                          </span>
-                          <span className="text-xs text-muted-foreground text-center">
-                            Últimos 7 dias
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-1 text-muted-foreground mb-1">
-                            <CheckCircle className="h-4 w-4" />
-                          </div>
-                          <span className="text-lg font-bold text-green-600">
-                            {(student.performance.tasks_completed || 0)}
-                          </span>
-                          <span className="text-xs text-muted-foreground text-center">
-                            Tarefas (7 dias)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Última atividade */}
-                      {student.last_activity && (
-                        <div className="mb-4 text-center">
-                          <p className="text-xs text-muted-foreground">
-                            Última atividade:
-                          </p>
-                          <p className="text-xs font-medium">
-                            {formatLocalDatePtBr(student.last_activity)}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Botões de Ação */}
-                      <div className="flex flex-col gap-2 mt-auto">
-                        <Button 
-                          variant="default"
-                          size="sm"
-                          onClick={async () => await handleViewStudent(student.student_id)}
-                          className="w-full bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          Ver Detalhes
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveStudent(student.student_id, student.student_email || 'aluno');
-                          }}
-                          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
-                          disabled={removeStudentMutation.isPending}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Remover
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {students.map((student) => (
+                <StudentCard
+                  key={student.student_id}
+                  student={student}
+                  onView={handleViewStudent}
+                  onRemove={handleRemoveStudent}
+                  isRemoving={isRemovingStudent}
+                />
+              ))}
             </div>
           )}
           </CardContent>
@@ -746,53 +253,15 @@ const CoachDashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Modal de Mensagem para Todos os Alunos */}
-      <Dialog open={broadcastModalOpen} onOpenChange={setBroadcastModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Enviar Mensagem para Todos os Alunos</DialogTitle>
-            <DialogDescription>
-              Envie uma mensagem de até 600 caracteres que será recebida por todos os {students.length} aluno(s) da sua equipe.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Digite sua mensagem aqui..."
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                maxLength={600}
-                rows={6}
-                className="resize-none"
-              />
-              <div className="flex justify-between items-center text-xs text-muted-foreground">
-                <span>Máximo de 600 caracteres</span>
-                <span>{broadcastMessage.length}/600</span>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setBroadcastModalOpen(false);
-                setBroadcastMessage('');
-              }}
-              disabled={broadcastMessageMutation.isPending}
-              className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-900/30"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleBroadcastMessage}
-              disabled={broadcastMessageMutation.isPending || !broadcastMessage.trim() || students.length === 0}
-              className="bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600"
-            >
-              {broadcastMessageMutation.isPending ? 'Enviando...' : `Enviar para ${students.length} aluno(s)`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BroadcastMessageDialog
+        open={broadcastModalOpen}
+        onOpenChange={setBroadcastModalOpen}
+        message={broadcastMessage}
+        onMessageChange={setBroadcastMessage}
+        studentCount={students.length}
+        onSend={handleBroadcastMessage}
+        isSending={broadcastMessageMutation.isPending}
+      />
       </div>
     </div>
   );

@@ -7,8 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
-import { useQuery } from '@tanstack/react-query';
+import { useIsActiveCoach, isActiveCoachSubscription } from '@/modules/coach';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,11 +35,7 @@ const Planos = () => {
   } = useSubscription();
   
   // Buscar assinatura Coach ativa para verificar hierarquia de planos
-  const { data: coachSubscription } = useQuery({
-    queryKey: ['coach-subscription-planos', user?.id],
-    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
-    enabled: !!user,
-  });
+  const { subscription: coachSubscription } = useIsActiveCoach({ enabled: !!user });
   
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [voucherCode, setVoucherCode] = useState("");
@@ -408,8 +403,7 @@ const Planos = () => {
                   }
                   
                   // Verificar Coach
-                  if (coachSubscription?.status === 'active' && 
-                      (!coachSubscription?.expires_at || new Date(coachSubscription.expires_at) > new Date())) {
+                  if (isActiveCoachSubscription(coachSubscription)) {
                     const coachPlanId = `coach_${coachSubscription.plan_type}`;
                     maxActiveLevel = Math.max(maxActiveLevel, planLevels[coachPlanId] || 0);
                   }

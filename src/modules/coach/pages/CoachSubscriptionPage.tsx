@@ -8,12 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { paymentService } from '@/services/paymentService';
 import { Check, ArrowLeft, Loader2, X, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { useCoachSubscription } from '@/modules/coach';
 import { logError, logWarn } from '@/utils/secureLogger';
 import { isLaunchProPromoActive, LAUNCH_PROMO_COPY } from '@/config/launchPromo';
 
@@ -34,12 +34,10 @@ const CoachSubscriptionPage = () => {
   const [validatingVoucher, setValidatingVoucher] = useState(false);
   const [voucherDialogOpen, setVoucherDialogOpen] = useState(false);
 
-  // Buscar assinatura ativa do Coach
-  const { data: activeSubscription, isLoading: isLoadingSubscription } = useQuery({
-    queryKey: ['coach-subscription', user?.id],
-    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
-    enabled: !!user,
-  });
+  const {
+    subscription: activeSubscription,
+    isLoadingSubscription,
+  } = useCoachSubscription({ fetchCanInvite: false });
 
   // Buscar assinatura Pro para verificar hierarquia de planos
   const { isPro } = useSubscription();

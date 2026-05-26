@@ -9,7 +9,7 @@ import { generateId } from '@/lib/utils';
 import { getScheduleSessions } from '../domain/scheduleHelpers';
 import { recordCompletedSessionForUser } from '../services/studySessionService';
 import { supabase } from '@/integrations/supabase/client';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { coachSubscriptionService, isActiveCoachSubscription } from '@/modules/coach';
 import { logger } from '@/utils/logger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
@@ -120,7 +120,7 @@ export const useStudyCyclesV2 = () => {
       let coachActive = false;
       try {
         const coachSub = await coachSubscriptionService.getCoachSubscription(user.id);
-        coachActive = coachSub?.status === 'active';
+        coachActive = isActiveCoachSubscription(coachSub);
       } catch {
         coachActive = false;
       }

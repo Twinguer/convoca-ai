@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { coachAccessService } from '@/integrations/supabase/coach/access';
+import { coachAccessService } from '@/modules/coach';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { devLog } from '@/utils/productionLogger';
 

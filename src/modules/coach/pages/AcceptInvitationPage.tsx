@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Check, X, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  canRespondToInvitation,
+  coachInvitationService,
+} from '@/modules/coach';
 
 const AcceptInvitationPage = () => {
   const navigate = useNavigate();
@@ -17,46 +18,27 @@ const AcceptInvitationPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [consentData, setConsentData] = useState({
+  const [consentData] = useState({
     study_data: true,
     statistics: true,
-    profile_basic: false
+    profile_basic: false,
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Buscar detalhes do convite
   const { data: invitation, isLoading: isLoadingInvitation } = useQuery({
     queryKey: ['coach-invitation', invitationId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coach_invitations_history')
-        .select(`
-          *,
-          coach:users_profiles!coach_invitations_history_coach_id_fkey(id, name, email)
-        `)
-        .eq('id', invitationId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => coachInvitationService.fetchInvitationById(invitationId!),
     enabled: !!invitationId,
   });
 
-  // Aceitar convite
   const acceptInvitation = async () => {
     if (!user?.id || !invitationId) return;
 
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.rpc('accept_coach_invitation', {
-        p_invitation_id: invitationId,
-        p_consent_data: consentData
-      });
-
-      if (error) throw error;
+      await coachInvitationService.acceptInvitation(invitationId, consentData);
 
       toast({
         title: 'Convite aceito!',
@@ -64,43 +46,25 @@ const AcceptInvitationPage = () => {
       });
 
       navigate('/coach/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao aceitar convite',
-        description: error.message,
-        variant: 'destructive'
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Rejeitar convite
   const rejectInvitation = async () => {
     if (!invitationId) return;
 
     setIsLoading(true);
 
     try {
-      // Deletar o convite em vez de apenas atualizar status
-      const { error: deleteError } = await supabase
-        .from('coach_invitations_history')
-        .delete()
-        .eq('id', invitationId);
-
-      if (deleteError) throw deleteError;
-
-      // Remover notificação associada
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('type', 'coach_invitation')
-        .eq('metadata->>invitation_id', invitationId);
-
-      // Não falhar se não encontrar notificação
-      if (notificationError && notificationError.code !== 'PGRST116') {
-        // Log mas não falha a operação
-      }
+      await coachInvitationService.rejectInvitation(invitationId);
 
       toast({
         title: 'Convite recusado',
@@ -108,11 +72,12 @@ const AcceptInvitationPage = () => {
       });
 
       navigate('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro',
-        description: error.message,
-        variant: 'destructive'
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -145,7 +110,12 @@ const AcceptInvitationPage = () => {
     );
   }
 
-  if (invitation.status !== 'pending') {
+  if (
+    !canRespondToInvitation(
+      invitation.status,
+      invitation.expires_at ?? invitation.invited_at
+    )
+  ) {
     return (
       <div className="container mx-auto p-6 max-w-2xl">
         <Card>
@@ -175,7 +145,6 @@ const AcceptInvitationPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Mensagem do coach */}
           {invitation.invitation_message && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
@@ -184,7 +153,6 @@ const AcceptInvitationPage = () => {
             </div>
           )}
 
-          {/* O que o coach terá acesso */}
           <div>
             <h3 className="font-semibold mb-3 text-green-700 flex items-center gap-2">
               <Check className="h-5 w-5 text-green-600" />
@@ -206,7 +174,6 @@ const AcceptInvitationPage = () => {
             </ul>
           </div>
 
-          {/* O que o coach NÃO terá acesso */}
           <div>
             <h3 className="font-semibold mb-3 text-red-700 flex items-center gap-2">
               <X className="h-5 w-5 text-red-600" />
@@ -228,7 +195,6 @@ const AcceptInvitationPage = () => {
             </ul>
           </div>
 
-          {/* Botões */}
           <div className="flex gap-4 pt-4">
             <Button
               onClick={acceptInvitation}
@@ -256,5 +222,3 @@ const AcceptInvitationPage = () => {
 };
 
 export default AcceptInvitationPage;
-
-

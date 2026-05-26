@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { coachRelationshipService } from '@/integrations/supabase/coach/relationships';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  useCoachInviteUserSearch,
+  useCoachSubscription,
+  useSendCoachInvitation,
+} from '@/modules/coach';
 import { ArrowLeft, Send, Search, User } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getAvatarUrl } from '@/utils/avatarUtils';
@@ -22,7 +22,6 @@ const InviteStudentPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const [studentNickname, setStudentNickname] = useState('');
   const [message, setMessage] = useState('');
@@ -32,69 +31,10 @@ const InviteStudentPage = () => {
   
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Buscar assinatura do coach
-  const { data: subscription } = useQuery({
-    queryKey: ['coach-subscription', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from('coach_subscriptions')
-        .select('*')
-        .eq('coach_id', user.id)
-        .eq('status', 'active')
-        .single();
-      return data;
-    },
-    enabled: !!user
-  });
-
-  // Buscar usuários por nickname ou nome
-  const { data: searchResults = [], isLoading: isSearching } = useQuery({
-    queryKey: ['search-users-for-invite', debouncedSearchQuery],
-    queryFn: async () => {
-      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) return [];
-      
-      const cleanQuery = debouncedSearchQuery.toLowerCase().replace(/^@/, '').trim();
-      
-      if (!cleanQuery) return [];
-      
-      // Buscar por nickname OU nome
-      const { data, error } = await supabase
-        .from('users_profiles')
-        .select('id, name, nickname, avatar_url')
-        .or(`nickname.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
-        .limit(10);
-      
-      if (error) {
-        devLog.error('Error searching users:', error);
-        return [];
-      }
-      
-      devLog.log('Resultados da busca:', data);
-      
-      // Garantir que todos os resultados tenham nickname
-      const resultsWithNickname = (data || []).map(user => {
-        if (!user.nickname || user.nickname.trim() === '') {
-          // Gerar nickname baseado no nome se não tiver
-          const generatedNickname = (user.name || user.email || 'user')
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '')
-            .substring(0, 20) || `user${user.id.substring(0, 8)}`;
-          
-          return {
-            ...user,
-            nickname: generatedNickname
-          };
-        }
-        return user;
-      });
-      
-      devLog.log('Resultados com nickname:', resultsWithNickname);
-      
-      return resultsWithNickname;
-    },
-    enabled: !!debouncedSearchQuery && debouncedSearchQuery.length >= 2
-  });
+  const { subscription } = useCoachSubscription({ fetchCanInvite: false });
+  const { data: searchResults = [], isLoading: isSearching } =
+    useCoachInviteUserSearch(debouncedSearchQuery);
+  const sendInvitationMutation = useSendCoachInvitation();
 
   const handleInviteStudent = async () => {
     if (!user?.id) return;
@@ -113,33 +53,10 @@ const InviteStudentPage = () => {
     setIsLoading(true);
 
     try {
-      // Usar a função RPC que cria convite e envia notificação
-      // Ordem: p_coach_id, p_student_nickname, p_invitation_message
-      const { data, error } = await supabase.rpc('send_coach_invitation', {
-        p_coach_id: user.id,
-        p_student_nickname: nicknameToUse,
-        p_invitation_message: message || null
+      await sendInvitationMutation.mutateAsync({
+        nickname: nicknameToUse,
+        message: message || null,
       });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.success) {
-        const errorMsg = data?.error || 'Erro ao enviar convite';
-        
-        // Se já existe convite pendente, oferecer opção de cancelar e reenviar
-        if (errorMsg.includes('convite pendente')) {
-          toast({
-            title: 'Convite já enviado',
-            description: 'Este aluno já possui um convite pendente. Você pode cancelá-lo e reenviar.',
-            variant: 'default'
-          });
-          throw new Error(errorMsg);
-        }
-        
-        throw new Error(errorMsg);
-      }
 
       const studentName = selectedUser?.name || nicknameToUse;
       toast({
@@ -147,20 +64,18 @@ const InviteStudentPage = () => {
         description: `${studentName} recebeu seu convite por email e notificação`,
       });
 
-      // Atualizar cache
-      queryClient.invalidateQueries({ queryKey: ['coach-students'] });
-      queryClient.invalidateQueries({ queryKey: ['coach-can-invite'] });
-
-      // Voltar para dashboard
       navigate('/coach/dashboard');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao enviar convite';
 
-    } catch (error: any) {
-      devLog.error('Erro ao convidar aluno:', error);
-      toast({
-        title: 'Erro ao convidar',
-        description: error.message || 'Não foi possível convidar o aluno',
-        variant: 'destructive'
-      });
+      if (errorMsg.includes('convite pendente')) {
+        toast({
+          title: 'Convite já enviado',
+          description:
+            'Este aluno já possui um convite pendente. Você pode cancelá-lo e reenviar.',
+          variant: 'default',
+        });
+      }
     } finally {
       setIsLoading(false);
     }

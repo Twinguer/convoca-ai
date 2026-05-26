@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { devLog } from '@/utils/productionLogger';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { coachSubscriptionService, isActiveCoachSubscription } from '@/modules/coach';
 
 interface PlanLimitsResponse {
   is_pro: boolean;
@@ -83,10 +83,7 @@ export const usePlanLimits = () => {
       if (!planLimits?.is_coach) {
         try {
           const coachSub = await coachSubscriptionService.getCoachSubscription(user.id);
-          const coachActive =
-            !!coachSub &&
-            coachSub.status === 'active' &&
-            (!coachSub.expires_at || new Date(coachSub.expires_at) > new Date());
+          const coachActive = isActiveCoachSubscription(coachSub);
           if (coachActive && planLimits) {
             planLimits = {
               ...planLimits,

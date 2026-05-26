@@ -5,7 +5,7 @@ import type { GroupMember } from '@/types/studyGroups';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { coachSubscriptionService, isActiveCoachSubscription } from '@/modules/coach';
 
 /**
  * Hook para buscar membros do grupo
@@ -93,8 +93,7 @@ export const useRequestToJoin = () => {
       let userIsCoach = false;
       try {
         const coachSubscription = await coachSubscriptionService.getCoachSubscription(user.id);
-        userIsCoach = !!coachSubscription && coachSubscription.status === 'active'
-          && (!coachSubscription.expires_at || new Date(coachSubscription.expires_at) > new Date());
+        userIsCoach = isActiveCoachSubscription(coachSubscription);
       } catch (error) {
         // Se der erro ao buscar (ex: RLS), considerar como não Coach - erro silencioso
       }

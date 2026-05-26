@@ -1,86 +1,22 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import { Alert } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Cronograma from '@/modules/study/pages/Cronograma';
-import { useCoachStudentGate } from '@/modules/coach/hooks/useCoachStudentGate';
+import { CoachStudyPageWrapper } from '@/modules/coach/components/layout/CoachStudyPageWrapper';
 
-const StudentSchedulePage = () => {
-  const { studentId: studentIdParam, cycleId: cycleIdParam } = useParams();
-  const {
-    validatedStudentId,
-    validatedCycleId,
-    isValidatingToken,
-    isResolvingCycleToken,
-    isCycleReady,
-    hasAccess,
-    isCheckingAccess,
-    accessDeniedMessage,
-    displayName,
-    navigateToStudent,
-  } = useCoachStudentGate({ studentIdParam, cycleIdParam });
-
-  if (isValidatingToken || !validatedStudentId) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Validando acesso...</div>
-      </div>
-    );
-  }
-
-  if (isCheckingAccess) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Verificando acesso...</div>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <p>{accessDeniedMessage}</p>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (isResolvingCycleToken || !isCycleReady || !validatedCycleId) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Validando ciclo de estudos...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <div className="sticky top-0 z-10 bg-background border-b mb-4 p-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigateToStudent()}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Cronograma de Estudos</h1>
-            <p className="text-sm text-muted-foreground">
-              Cronograma de:{' '}
-              <span className="font-semibold text-foreground">{displayName}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
+const StudentSchedulePage = () => (
+  <CoachStudyPageWrapper
+    title="Cronograma de Estudos"
+    subtitlePrefix="Cronograma de:"
+    requiresCycle
+  >
+    {({ studentId, cycleId, navigateToStudent }) => (
       <Cronograma
         coachMode
-        targetStudentId={validatedStudentId}
-        targetCycleId={validatedCycleId}
+        targetStudentId={studentId}
+        targetCycleId={cycleId}
         onSuccess={() => navigateToStudent()}
       />
-    </div>
-  );
-};
+    )}
+  </CoachStudyPageWrapper>
+);
 
 export default StudentSchedulePage;

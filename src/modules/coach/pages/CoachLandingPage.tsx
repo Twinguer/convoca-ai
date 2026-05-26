@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
-import { coachSubscriptionService } from '@/integrations/supabase/coach/subscriptions';
+import { useCoachSubscription } from '@/modules/coach';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,12 +51,7 @@ const CoachLandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Verificar se o usuário já tem assinatura
-  const { data: subscription } = useQuery({
-    queryKey: ['coach-subscription-landing', user?.id],
-    queryFn: () => coachSubscriptionService.getCoachSubscription(user!.id),
-    enabled: !!user,
-  });
+  const { subscription } = useCoachSubscription({ fetchCanInvite: false });
 
   // ✅ Dados estáticos dos alunos (2 linhas = 10 alunos)
   // Página agora é completamente estática, sem busca dinâmica do banco
