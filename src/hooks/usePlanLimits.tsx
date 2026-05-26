@@ -110,6 +110,23 @@ export const usePlanLimits = () => {
       }
 
       if (!planLimits && rpcError) {
+        // Fallback: RPC get_user_plan_limits ausente ou falhou — usar is_user_pro
+        const { data: isProRpc } = await supabase.rpc('is_user_pro', { p_user_id: user.id });
+        if (isProRpc === true) {
+          return {
+            ...DEFAULT_PLAN_LIMITS,
+            is_pro: true,
+            can_participate_in_ranking: true,
+            can_create_cycle: true,
+            can_access_study_groups: true,
+            can_create_study_group: true,
+            limits: {
+              ...DEFAULT_PLAN_LIMITS.limits,
+              max_rankings_participation: null,
+              max_edits_per_answer_sheet: null,
+            },
+          };
+        }
         throw rpcError;
       }
 

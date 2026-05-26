@@ -39,7 +39,7 @@ const ResultadosPage = ({ rankingId, concursoId, secureToken }: ResultadosPagePr
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const { isPro } = useSubscription();
+  const { isPro, isLoading: isSubscriptionLoading } = useSubscription();
   const { toast } = useToast();
 
   const finalRankingId = rankingId || concursoId || id;
@@ -66,6 +66,7 @@ const ResultadosPage = ({ rankingId, concursoId, secureToken }: ResultadosPagePr
     user,
     isPro,
     isParticipating,
+    isProLoading: isSubscriptionLoading,
   });
 
   const paginatedRankings = rankings;
@@ -183,7 +184,7 @@ const ResultadosPage = ({ rankingId, concursoId, secureToken }: ResultadosPagePr
     });
   };
 
-  if (isLoading || isCheckingAccess) {
+  if (isLoading || isCheckingAccess || (user && isSubscriptionLoading)) {
     return <LoadingState />;
   }
 

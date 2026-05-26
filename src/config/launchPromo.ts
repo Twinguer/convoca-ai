@@ -35,3 +35,8 @@ export function formatLaunchPromoEndDate(locale = 'pt-BR'): string {
 export function isLaunchPromoSubscription(voucherCode: string | null | undefined): boolean {
   return voucherCode === LAUNCH_PRO_PROMO.voucherCode;
 }
+
+/** Durante a promo, usuários autenticados têm benefícios Pro (UI); o banco é atualizado via RPC quando disponível. */
+export function hasLaunchPromoProAccess(userId: string | null | undefined): boolean {
+  return isLaunchProPromoActive() && !!userId;
+}

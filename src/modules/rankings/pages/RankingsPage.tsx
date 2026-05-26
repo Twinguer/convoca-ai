@@ -29,7 +29,7 @@ const RankingsPage = () => {
   const {
     user
   } = useAuth();
-  const { isPro } = useSubscription();
+  const { isPro, isLoading: isSubscriptionLoading } = useSubscription();
   const { currentRankingCount } = usePlanLimits();
   const navigate = useNavigate();
   const [concursos, setConcursos] = useState<Concurso[]>([]);
@@ -40,6 +40,9 @@ const RankingsPage = () => {
 
   const handleRankingClick = async (e: React.MouseEvent, concursoId: string) => {
     e.preventDefault();
+    if (user && isSubscriptionLoading) {
+      return;
+    }
     await openRankingFromList({ user, isPro, navigate }, concursoId);
   };
   useEffect(() => {

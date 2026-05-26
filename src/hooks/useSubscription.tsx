@@ -5,7 +5,10 @@ import { RPCValidator } from '@/utils/rpcValidator';
 import {
   isLaunchProPromoActive,
   isLaunchPromoSubscription,
+  hasLaunchPromoProAccess,
 } from '@/config/launchPromo';
+import { ensureLaunchProSubscriptionIfPromoActive } from '@/utils/ensureLaunchProSubscription';
+import { resolveIsProWithBackend } from '@/utils/subscriptionPlan';
 
 export type SubscriptionPlan = 'free' | 'pro';
 
@@ -18,45 +21,54 @@ export interface Subscription {
   voucher_code: string | null;
 }
 
+type SubscriptionQueryResult = {
+  subscription: Subscription | null;
+  isProFromBackend: boolean;
+};
+
 export const useSubscription = () => {
   const { user } = useAuth();
 
-  const { data: subscription, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['subscription', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+    queryFn: async (): Promise<SubscriptionQueryResult> => {
+      if (!user?.id) {
+        return { subscription: null, isProFromBackend: false };
+      }
 
-      // ✅ SEGURANÇA: RLS deve proteger, mas selecionamos apenas campos necessários
-      // Nota: select('*') é aceitável aqui pois RLS garante que apenas o próprio usuário acessa
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Garantir Pro de lançamento no banco quando RPC existir (ignora 404 se migration pendente)
+      await ensureLaunchProSubscriptionIfPromoActive();
 
-      if (error) throw error;
-      return data as Subscription | null;
+      const [subResult, proResult] = await Promise.all([
+        supabase.from('user_subscriptions').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.rpc('is_user_pro', { p_user_id: user.id }),
+      ]);
+
+      if (subResult.error) {
+        throw subResult.error;
+      }
+
+      if (proResult.error && import.meta.env.DEV) {
+        console.warn('[useSubscription] is_user_pro RPC:', proResult.error.message);
+      }
+
+      return {
+        subscription: subResult.data as Subscription | null,
+        isProFromBackend: proResult.data === true,
+      };
     },
     enabled: !!user?.id,
-    staleTime: 0, // Sempre buscar dados frescos
-    cacheTime: 0, // Não cachear dados
-    refetchOnWindowFocus: true, // Refetch quando a janela ganha foco
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: true,
+    retry: 2,
   });
 
-  // Verificação rigorosa de Pro:
-  // 1. Deve ter subscription registrada (não null)
-  // 2. Deve ter plan='pro' exatamente
-  // 3. Deve estar ativo (is_active=true)
-  // 4. Se tem expires_at, deve estar no futuro (não expirado)
-  // Se qualquer condição falhar, é Free
-  
-  const hasSubscription = !!subscription;
-  const isPlanPro = subscription?.plan === 'pro';
-  const isActive = subscription?.is_active === true;
-  const hasValidExpiry = !subscription?.expires_at || new Date(subscription.expires_at) > new Date();
-  
-  const isPro = hasSubscription && isPlanPro && isActive && hasValidExpiry;
-  const isFree = !isPro; // Se não atender TODAS as condições, é Free
+  const subscription = data?.subscription ?? null;
+  const isProFromBackend = resolveIsProWithBackend(subscription, data?.isProFromBackend);
+  const isPro =
+    isProFromBackend || hasLaunchPromoProAccess(user?.id);
+  const isFree = !isPro;
   const isLaunchPromo =
     isPro && isLaunchPromoSubscription(subscription?.voucher_code ?? null);
   const launchPromoActive = isLaunchProPromoActive();

@@ -11,8 +11,10 @@ export function useClassificationAccess(params: {
   user: { id: string } | null | undefined;
   isPro: boolean;
   isParticipating: boolean;
+  /** Aguardar resolução do plano antes de negar acesso (evita falso Free). */
+  isProLoading?: boolean;
 }) {
-  const { concurso, user, isPro, isParticipating } = params;
+  const { concurso, user, isPro, isParticipating, isProLoading = false } = params;
   const [canViewRanking, setCanViewRanking] = useState<boolean | null>(null);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
@@ -20,6 +22,11 @@ export function useClassificationAccess(params: {
     if (!concurso) {
       setCanViewRanking(true);
       setIsCheckingAccess(false);
+      return;
+    }
+
+    if (user && isProLoading) {
+      setIsCheckingAccess(true);
       return;
     }
 
@@ -33,7 +40,7 @@ export function useClassificationAccess(params: {
       }),
     );
     setIsCheckingAccess(false);
-  }, [concurso, user, isPro, isParticipating]);
+  }, [concurso, user, isPro, isParticipating, isProLoading]);
 
   return { canViewRanking, isCheckingAccess };
 }
