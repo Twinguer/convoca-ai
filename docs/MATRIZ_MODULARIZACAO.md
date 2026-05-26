@@ -1,6 +1,6 @@
 # Matriz de maturidade — módulos
 
-Atualizado após **Coach C9** (modularização completa).
+Atualizado após **Community COM9** (modularização completa).
 
 Camadas avaliadas por módulo em `src/modules/<nome>/`:
 
@@ -20,7 +20,7 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | **rankings** | 5/5 | OK | OK | OK | OK | OK | **Fechado** |
 | **study** | 7/7 | OK | Parcial* | OK (6) | OK | OK | **Fechado** |
 | **coach** | 9/9 | OK | OK | OK (8) | OK | OK | **Fechado** |
-| **community** | 1 | — | — | — | — | — | **Shell** |
+| **community** | 2/2 | OK | OK | OK (5+) | OK | OK | **Fechado** |
 | **statistics** | 1 | — | — | — | Parcial‡ | — | **Shell** |
 
 \* `studySessionService` no módulo; `userStudyService` (~3k linhas, JSONB compartilhado) permanece em `src/services/` por decisão de arquitetura.
@@ -32,9 +32,9 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 | Métrica | Valor |
 |---------|------:|
 | Módulos | 5 |
-| Fechados | 3 (rankings, study, coach) |
+| Fechados | 4 (rankings, study, coach, community) |
 | Parciais | 0 |
-| Shell | 2 (community, statistics) |
+| Shell | 1 (statistics) |
 
 ## Tags de restore
 
@@ -42,7 +42,8 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 |--------|-----|--------|
 | rankings | `restore/refactor-rankings-complete` | `72c8ed32` |
 | study | `restore/refactor-study-modular-complete` | `0dd1f1f1` |
-| coach | `restore/refactor-coach-modular-complete` | *(pendente tag)* |
+| coach | `restore/refactor-coach-modular-complete` | `2ac4fb19` |
+| community | `restore/refactor-community-modular-complete` | *(pendente tag)* |
 
 ## Documentação por módulo
 
@@ -55,19 +56,8 @@ Camadas avaliadas por módulo em `src/modules/<nome>/`:
 
 ## Roadmap planejado
 
-### Community (COM1–COM9) — próximo na fila
+### Statistics — próximo na fila
 
-| Fase | Escopo |
-|------|--------|
-| COM1 | Domínio (`communityProfileRules`, sort, tipos grupos) |
-| COM2 | Services (profiles RPC + studyGroups) |
-| COM3 | Hooks (`useGroupMembers` estável com `useIsActiveCoach`) |
-| COM4 | Componentes (tabs, cards, modals) |
-| COM5 | Pages (CommunityPage, CoachGroupsTab migration) |
-| COM6–COM9 | Encerramento + testes + higiene |
+Modularização do módulo `statistics`: domain, services, hooks, components (`StudyStats`), `index.ts` e testes.
 
-Tag alvo: `restore/refactor-community-modular-complete`
-
-### Statistics — backlog
-
-Modularização após Community ou em paralelo COM4+.
+Tag alvo: `restore/refactor-statistics-modular-complete`

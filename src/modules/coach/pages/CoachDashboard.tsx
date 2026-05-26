@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Plus, Users, BookOpen, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUserGroups } from '@/hooks/useGroupMembers';
-import { CoachGroupsTab } from '@/components/studyGroups/CoachGroupsTab';
+import { CoachGroupsTab, useUserGroups } from '@/modules/community';
 import { useToast } from '@/hooks/use-toast';
 import {
   BroadcastMessageDialog,

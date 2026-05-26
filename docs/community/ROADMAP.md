@@ -2,9 +2,7 @@
 
 Plano para levar o módulo de **Shell** (só `CommunityPage`) a **Fechado**, incluindo grupos de estudo e `GroupDetailsPage`.
 
-**Estado atual:** `CommunityPage` no módulo; UI, hooks, services e page de detalhe do grupo fora.
-
-**Meta:** `@/modules/community` como API única para `/comunidade`, `/comunidade/grupo/:id` e consumo pelo Coach.
+**Estado atual:** COM1–COM9 concluídas. Módulo **Fechado**.
 
 ---
 
@@ -12,15 +10,15 @@ Plano para levar o módulo de **Shell** (só `CommunityPage`) a **Fechado**, inc
 
 | Fase | Escopo | Status |
 |------|--------|--------|
-| COM1 | Domínio + tipos | ⬜ |
-| COM2 | Services (profiles + studyGroups) | ⬜ |
-| COM3 | Hooks (5 hooks) | ⬜ |
-| COM4 | Componentes usuários (`community/`) | ⬜ |
-| COM5 | Componentes grupos (`studyGroups/`) | ⬜ |
-| COM6 | `GroupDetailsPage` no módulo | ⬜ |
-| COM7 | Refatorar `CommunityPage` | ⬜ |
-| COM8 | Integração Coach (`CoachGroupsTab`) | ⬜ |
-| COM9 | index.ts + testes + higiene | ⬜ |
+| COM1 | Domínio + tipos | ✅ |
+| COM2 | Services (profiles + studyGroups) | ✅ |
+| COM3 | Hooks (5 hooks) | ✅ |
+| COM4 | Componentes usuários (`community/`) | ✅ |
+| COM5 | Componentes grupos (`studyGroups/`) | ✅ |
+| COM6 | `GroupDetailsPage` no módulo | ✅ |
+| COM7 | Refatorar `CommunityPage` | ✅ |
+| COM8 | Integração Coach (`CoachGroupsTab`) | ✅ |
+| COM9 | index.ts + testes + higiene | ✅ |
 
 Tag final alvo: `restore/refactor-community-modular-complete`
 
@@ -310,11 +308,7 @@ Community **COM1–COM2** pode começar em paralelo com Coach **C3–C5** se equ
 
 ## Próximo passo imediato
 
-Após iniciar Coach C1, preparar **COM1**:
-
-1. Mover `communityProfileRules` + testes
-2. Extrair `communityUserSort`
-3. Tag `restore/refactor-community-modular-com1`
+**Statistics** — definir roadmap S1–S9 (ver matriz de modularização).
 
 ---
 

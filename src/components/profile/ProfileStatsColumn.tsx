@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Trophy, Users, BookOpen, Clock, CheckCircle, XCircle, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { studyGroupMembersService } from '@/integrations/supabase/studyGroups/members';
+import { studyGroupMembersService } from '@/modules/community';
 import { getInitials } from '@/lib/utils';
 import { UserStudyService } from '@/services/userStudyService';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
