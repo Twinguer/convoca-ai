@@ -5,17 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { paymentService } from '@/services/paymentService';
-import { Check, ArrowLeft, Loader2, X, ChevronDown } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  paymentService,
+  useSubscription,
+  isLaunchProPromoActive,
+  LAUNCH_PROMO_COPY,
+  DiscountCouponSection,
+  useDiscountVoucherValidation,
+  PLAN_LEVELS,
+  calculateDiscountedPrice,
+  formatDiscountLabel,
+} from '@/modules/payments';
+import { Check, ArrowLeft, Loader2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSubscription } from '@/hooks/useSubscription';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCoachSubscription } from '@/modules/coach';
 import { logError, logWarn } from '@/utils/secureLogger';
-import { isLaunchProPromoActive, LAUNCH_PROMO_COPY } from '@/config/launchPromo';
 
 const CoachSubscriptionPage = () => {
   const navigate = useNavigate();
@@ -25,14 +29,16 @@ const CoachSubscriptionPage = () => {
   const queryClient = useQueryClient();
   const { validateDiscountVoucher } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [voucherCode, setVoucherCode] = useState("");
-  const [appliedDiscountVoucher, setAppliedDiscountVoucher] = useState<{
-    code: string;
-    discountType: 'percentage' | 'fixed';
-    discountValue: number;
-  } | null>(null);
-  const [validatingVoucher, setValidatingVoucher] = useState(false);
-  const [voucherDialogOpen, setVoucherDialogOpen] = useState(false);
+  const {
+    voucherCode,
+    setVoucherCode,
+    appliedDiscountVoucher,
+    setAppliedDiscountVoucher,
+    validatingVoucher,
+    voucherDialogOpen,
+    setVoucherDialogOpen,
+    handleValidateDiscountVoucher,
+  } = useDiscountVoucherValidation(validateDiscountVoucher);
 
   const {
     subscription: activeSubscription,
@@ -155,60 +161,6 @@ const CoachSubscriptionPage = () => {
     }
   };
 
-  const handleValidateDiscountVoucher = async () => {
-    if (!voucherCode.trim()) {
-      toast({
-        title: "Código inválido",
-        description: "Digite um código de cupom válido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setValidatingVoucher(true);
-    try {
-      const result = await validateDiscountVoucher(voucherCode) as {
-        valid?: boolean;
-        discount_type?: 'percentage' | 'fixed';
-        discount_value?: number;
-        error?: string;
-      };
-      
-      if (result?.valid) {
-        setAppliedDiscountVoucher({
-          code: voucherCode.trim().toUpperCase(),
-          discountType: result.discount_type || 'percentage',
-          discountValue: parseFloat(result.discount_value?.toString() || '0')
-        });
-        
-        const discountText = result.discount_type === 'percentage' 
-          ? `${result.discount_value}%`
-          : `R$ ${result.discount_value?.toFixed(2)}`;
-        
-        toast({
-          title: "Cupom aplicado!",
-          description: `Desconto de ${discountText} será aplicado no pagamento`
-        });
-        setVoucherCode("");
-        setVoucherDialogOpen(false);
-      } else {
-        toast({
-          title: "Cupom inválido",
-          description: result?.error || "Cupom de desconto inválido ou expirado",
-          variant: "destructive"
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Erro ao validar cupom",
-        description: error.message || "Tente novamente",
-        variant: "destructive"
-      });
-    } finally {
-      setValidatingVoucher(false);
-    }
-  };
-
   const plans = [
     {
       name: 'Coach Inicial',
@@ -312,10 +264,7 @@ const CoachSubscriptionPage = () => {
               <CardTitle className="text-2xl">{plan.name}</CardTitle>
               <div className="mt-4">
                 {appliedDiscountVoucher ? (() => {
-                  const discountAmount = appliedDiscountVoucher.discountType === 'percentage'
-                    ? (plan.price * appliedDiscountVoucher.discountValue) / 100
-                    : appliedDiscountVoucher.discountValue;
-                  const finalPrice = Math.max(0.01, plan.price - discountAmount);
+                  const finalPrice = calculateDiscountedPrice(plan.price, appliedDiscountVoucher);
                   return (
                     <>
                       <div className="flex items-center justify-center gap-2">
@@ -327,9 +276,7 @@ const CoachSubscriptionPage = () => {
                         </div>
                       </div>
                       <div className="text-sm text-green-600 font-medium mt-1">
-                        {appliedDiscountVoucher.discountType === 'percentage' 
-                          ? `${appliedDiscountVoucher.discountValue}% OFF`
-                          : `R$ ${appliedDiscountVoucher.discountValue.toFixed(2)} OFF`}
+                        {formatDiscountLabel(appliedDiscountVoucher)}
                       </div>
                       <div className="text-sm text-muted-foreground">/mês</div>
                     </>
@@ -360,37 +307,25 @@ const CoachSubscriptionPage = () => {
               </ul>
 
               {(() => {
-                // Hierarquia de planos: free (0) < pro (1) < coach_starter (2) < coach_professional (3) < coach_enterprise (4)
-                const planLevels: Record<string, number> = {
-                  'free': 0,
-                  'pro': 1,
-                  'coach_starter': 2,
-                  'coach_professional': 3,
-                  'coach_enterprise': 4
-                };
-
                 const planTypeMap: Record<string, 'starter' | 'professional' | 'enterprise'> = {
                   'Coach Inicial': 'starter',
                   'Coach Intermediário': 'professional',
-                  'Coach Avançado': 'enterprise'
+                  'Coach Avançado': 'enterprise',
                 };
                 const planType = planTypeMap[plan.name];
                 const planId = `coach_${planType}`;
-                const currentPlanLevel = planLevels[planId] || 0;
+                const currentPlanLevel = PLAN_LEVELS[planId] || 0;
 
-                // Determinar nível máximo do plano ativo
                 let maxActiveLevel = 0;
-                
-                // Verificar Pro
+
                 if (isPro) {
-                  maxActiveLevel = Math.max(maxActiveLevel, planLevels['pro']);
+                  maxActiveLevel = Math.max(maxActiveLevel, PLAN_LEVELS.pro);
                 }
-                
-                // Verificar Coach
-                if (activeSubscription?.status === 'active' && 
+
+                if (activeSubscription?.status === 'active' &&
                     (!activeSubscription?.expires_at || new Date(activeSubscription.expires_at) > new Date())) {
                   const activeCoachPlanId = `coach_${activeSubscription.plan_type}`;
-                  maxActiveLevel = Math.max(maxActiveLevel, planLevels[activeCoachPlanId] || 0);
+                  maxActiveLevel = Math.max(maxActiveLevel, PLAN_LEVELS[activeCoachPlanId] || 0);
                 }
 
                 const isCurrentPlan = activeSubscription?.plan_type === planType 
@@ -427,81 +362,18 @@ const CoachSubscriptionPage = () => {
         ))}
       </div>
 
-      {/* Voucher Section */}
       <div className="max-w-5xl mx-auto mt-6 flex items-center justify-center">
-        {appliedDiscountVoucher ? (
-          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-            <Check className="w-4 h-4" />
-            <span>
-              Cupom {appliedDiscountVoucher.code} aplicado ({appliedDiscountVoucher.discountType === 'percentage' 
-                ? `${appliedDiscountVoucher.discountValue}% OFF`
-                : `R$ ${appliedDiscountVoucher.discountValue.toFixed(2)} OFF`})
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-              onClick={() => setAppliedDiscountVoucher(null)}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        ) : (
-          <Dialog open={voucherDialogOpen} onOpenChange={setVoucherDialogOpen}>
-            <DialogTrigger asChild>
-              <button 
-                type="button"
-                className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group"
-              >
-                <span>Inserir um cupom de desconto</span>
-                <ChevronDown className="w-3 h-3 transition-transform group-hover:translate-y-0.5" />
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Inserir cupom de desconto</DialogTitle>
-                <DialogDescription>
-                  Aplique um cupom de desconto no seu plano Modo Coach
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="voucher-code-coach">
-                    Código do cupom
-                  </Label>
-                  <Input
-                    id="voucher-code-coach"
-                    value={voucherCode}
-                    onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                    placeholder="Digite o código"
-                    className="font-mono tracking-wider"
-                    disabled={validatingVoucher}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleValidateDiscountVoucher();
-                      }
-                    }}
-                    autoFocus
-                  />
-                </div>
-                <Button
-                  onClick={handleValidateDiscountVoucher}
-                  disabled={validatingVoucher || !voucherCode.trim()}
-                  className="w-full"
-                >
-                  {validatingVoucher ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Validando...
-                    </>
-                  ) : (
-                    'Aplicar cupom'
-                  )}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+        <DiscountCouponSection
+          appliedDiscountVoucher={appliedDiscountVoucher}
+          onClear={() => setAppliedDiscountVoucher(null)}
+          voucherCode={voucherCode}
+          onVoucherCodeChange={setVoucherCode}
+          validatingVoucher={validatingVoucher}
+          onValidate={handleValidateDiscountVoucher}
+          dialogOpen={voucherDialogOpen}
+          onDialogOpenChange={setVoucherDialogOpen}
+          dialogDescription="Aplique um cupom de desconto no seu plano Modo Coach"
+        />
       </div>
 
       {/* FAQ */}

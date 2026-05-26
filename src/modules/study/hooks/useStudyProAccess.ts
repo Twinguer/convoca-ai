@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/modules/payments';
 import { useIsActiveCoach } from '@/modules/coach';
 
 /**

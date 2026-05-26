@@ -8,7 +8,7 @@ import type { StudyGroup } from '../../domain/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { usePlanLimits } from '@/modules/payments';
 import { useNavigate } from 'react-router-dom';
 
 interface GroupCardProps {

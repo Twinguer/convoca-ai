@@ -10,7 +10,7 @@ import { useResultadosData } from '@/modules/rankings/hooks/useResultadosData';
 import { useLeaveRanking } from '@/modules/rankings/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/modules/payments';
 import { logger } from '@/utils/logger';
 import { rankingCache } from '@/modules/rankings/services/rankingCache';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

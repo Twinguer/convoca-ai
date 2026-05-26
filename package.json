@@ -16,6 +16,7 @@
     "test:coach": "vitest run src/tests/coach",
     "test:community": "vitest run src/tests/community",
     "test:statistics": "vitest run src/tests/statistics",
+    "test:payments": "vitest run src/tests/payments",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",

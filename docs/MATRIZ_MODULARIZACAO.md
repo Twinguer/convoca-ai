@@ -1,6 +1,6 @@
 # Matriz de maturidade — módulos
 
-Atualizado após **Statistics ST9** (modularização completa).
+Atualizado após **Payments P9** (modularização completa).
 
 | Camada | Critério |
 |--------|----------|
@@ -20,6 +20,7 @@ Atualizado após **Statistics ST9** (modularização completa).
 | **coach** | 9/9 | OK | OK | OK (8) | OK | OK | **Fechado** |
 | **community** | 2/2 | OK | OK | OK (5+) | OK | OK | **Fechado** |
 | **statistics** | 1/1 | OK | OK | OK | OK | OK | **Fechado** |
+| **payments** | 1/1 | OK | OK | OK | OK | OK | **Fechado** |
 
 \* `userStudyService` (~3k linhas, JSONB compartilhado) permanece em `src/services/`.
 
@@ -27,8 +28,8 @@ Atualizado após **Statistics ST9** (modularização completa).
 
 | Métrica | Valor |
 |---------|------:|
-| Módulos | 5 |
-| Fechados | **5** |
+| Módulos | 6 |
+| Fechados | **6** |
 | Parciais | 0 |
 | Shell | 0 |
 
@@ -41,6 +42,7 @@ Atualizado após **Statistics ST9** (modularização completa).
 | coach | `restore/refactor-coach-modular-complete` | `2ac4fb19` |
 | community | `restore/refactor-community-modular-complete` | `1512e25d` |
 | statistics | `restore/refactor-statistics-modular-complete` | `32c43ad9` |
+| payments | `restore/refactor-payments-modular-complete` | *(após commit P9)* |
 
 ## Documentação por módulo
 
@@ -51,5 +53,6 @@ Atualizado após **Statistics ST9** (modularização completa).
 | Coach | [MODULE.md](./coach/MODULE.md) | [ROADMAP.md](./coach/ROADMAP.md) | [RESTORE.md](./coach/RESTORE.md) |
 | Community | [MODULE.md](./community/MODULE.md) | [ROADMAP.md](./community/ROADMAP.md) | [RESTORE.md](./community/RESTORE.md) |
 | Statistics | [MODULE.md](./statistics/MODULE.md) | [ROADMAP.md](./statistics/ROADMAP.md) | [RESTORE.md](./statistics/RESTORE.md) |
+| Payments | [MODULE.md](./payments/MODULE.md) | [ROADMAP.md](./payments/ROADMAP.md) | [RESTORE.md](./payments/RESTORE.md) |
 
-**Modularização completa:** todos os 5 módulos fechados.
+**Modularização completa:** todos os 6 módulos fechados.

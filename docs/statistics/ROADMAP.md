@@ -22,4 +22,4 @@ Tag final: `restore/refactor-statistics-modular-complete`
 
 ## Próximo passo
 
-Todos os módulos principais fechados. Manutenção: remover re-exports `@deprecated` em release futuro.
+Todos os módulos principais fechados (6/6, incluindo payments). Manutenção: remover re-exports `@deprecated` em release futuro.

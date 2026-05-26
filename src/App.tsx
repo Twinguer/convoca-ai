@@ -34,7 +34,7 @@ import CriarCiclo from "./modules/study/pages/CriarCiclo";
 import EditarCiclo from "./modules/study/pages/EditarCiclo";
 import SessaoEstudos from "./modules/study/pages/SessaoEstudos";
 import CicloDetalhes from "./modules/study/pages/CicloDetalhes";
-import Planos from "./pages/Planos";
+import { PlanosPage } from '@/modules/payments';
 import { CommunityPage, GroupDetailsPage } from '@/modules/community';
 import ConcursosPage from "./pages/ConcursosPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
@@ -349,7 +349,7 @@ const AppContent = () => {
                         </>} />
                      <Route path="/planos" element={<>
                           <Menu />
-                          <Planos />
+                          <PlanosPage />
                         </>} />
                     {/* Rotas do Coach Mode */}
                     <Route path="/coach" element={<>

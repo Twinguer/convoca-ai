@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveIsPro, resolveIsProWithBackend } from '@/utils/subscriptionPlan';
+import { resolveIsPro, resolveIsProWithBackend } from '@/modules/payments';
 
 describe('resolveIsPro', () => {
   it('retorna false sem assinatura', () => {
@@ -97,7 +97,7 @@ describe('resolveIsProWithBackend', () => {
 
 describe('hasLaunchPromoProAccess', () => {
   it('concede acesso Pro na UI durante promo para usuário autenticado', async () => {
-    const { hasLaunchPromoProAccess } = await import('@/config/launchPromo');
+    const { hasLaunchPromoProAccess } = await import('@/modules/payments');
     expect(hasLaunchPromoProAccess('user-uuid')).toBe(true);
     expect(hasLaunchPromoProAccess(null)).toBe(false);
   });

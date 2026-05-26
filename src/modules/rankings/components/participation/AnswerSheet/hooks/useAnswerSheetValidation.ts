@@ -3,7 +3,7 @@ import { Concurso } from '@/types/concursos';
 import { AnswerSheetValidation } from '../utils/answerSheetTypes';
 import { canEdit, getEditsLeft, getUnansweredQuestions, shouldShowSubjective } from '../utils/answerSheetUtils';
 import { ANSWER_SHEET_CONSTANTS } from '../utils/answerSheetConstants';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/modules/payments';
 
 /**
  * Hook para gerenciar validações do AnswerSheet

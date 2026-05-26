@@ -15,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/modules/rankings/hooks/useSaveRanking';
 import { fetchAndValidateOfficialAnswerKey } from '@/modules/rankings/domain/answerKeyValidation';
 import { useEditUrls } from '@/hooks/useEditUrls';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { usePlanLimits } from '@/modules/payments';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { AdminUrlObfuscationService } from '@/services/adminUrlObfuscation';
 import { devLog } from '@/utils/productionLogger';

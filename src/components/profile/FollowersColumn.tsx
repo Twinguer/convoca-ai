@@ -7,7 +7,7 @@ import { UsersList, User } from './UsersList';
 import { getFollowers, getFollowing } from './FollowersService';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/modules/payments';
 import { showProRequiredToast } from '@/utils/planRestrictions';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 

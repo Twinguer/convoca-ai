@@ -8,7 +8,7 @@ import { validateSaveAnswers } from './validation';
 import { prepareAnswersData } from './prepareData';
 import { rankingCache } from '@/modules/rankings/services/rankingCache';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/modules/payments';
 import { useNavigate } from 'react-router-dom';
 import { showProRequiredToast } from '@/utils/planRestrictions';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';

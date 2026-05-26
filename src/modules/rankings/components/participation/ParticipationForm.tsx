@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useSubscription, usePlanLimits } from '@/modules/payments';
 import { useRankingParticipationLimits } from '@/hooks/useRankingParticipationLimits';
 import { useToast } from '@/components/ui/use-toast';
 import { showProRequiredToast, showRankingParticipationLimitToast } from '@/utils/planRestrictions';

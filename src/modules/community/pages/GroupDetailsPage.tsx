@@ -37,7 +37,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { studyGroupService } from '../services/studyGroupService';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { usePlanLimits } from '@/modules/payments';
 import { useToast } from '@/hooks/use-toast';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import {

@@ -7,7 +7,7 @@ import { CreateGroupModal } from './CreateGroupModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserGroups } from '../../hooks/useGroupMembers';
 import { useNavigate } from 'react-router-dom';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { usePlanLimits } from '@/modules/payments';
 import { CommunityLoadingState } from '../shared/CommunityLoadingState';
 import { CommunityErrorState } from '../shared/CommunityErrorState';
 

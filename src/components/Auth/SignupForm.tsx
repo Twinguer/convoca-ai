@@ -8,7 +8,7 @@ import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 import { TurnstileCaptcha } from '@/components/Security/TurnstileCaptcha';
-import { LaunchPromoBanner } from '@/components/Subscription/LaunchPromoBanner';
+import { LaunchPromoBanner } from '@/modules/payments';
 
 interface SignupFormProps {
   onSubmit: (email: string, password: string, name: string, nickname?: string, captchaToken?: string) => Promise<void>;

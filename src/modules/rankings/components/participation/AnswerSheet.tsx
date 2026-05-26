@@ -20,7 +20,7 @@ import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCoun
 import { getNullifiedQuestionsFromOfficialAnswers } from '@/hooks/useAnswerSheet/officialAnswersUtils';
 import { toast } from 'sonner';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription } from '@/modules/payments';
 import { useEditLimits } from '@/hooks/useEditLimits';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 

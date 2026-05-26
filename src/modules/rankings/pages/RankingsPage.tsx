@@ -9,8 +9,7 @@ import { Trophy, Users, TrendingUp, Search, Filter, Calendar, Plus, Medal, Star,
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { useSubscription, usePlanLimits } from '@/modules/payments';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { openRankingFromList } from '@/modules/rankings';
 interface Concurso {
