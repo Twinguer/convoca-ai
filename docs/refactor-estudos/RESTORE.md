@@ -10,13 +10,14 @@ Tags Git criadas após cada fase validada (build + testes).
 | `restore/refactor-estudos-phase-6` → `f75b9066` | 6 | Testes `studySessionService`, espelhamento off por padrão |
 | `restore/refactor-study-modular-s1` | S1 | Domínio study em `modules/study/domain/` |
 | `restore/refactor-study-modular-s2` | S2 | `studySessionService` no módulo |
-| `restore/refactor-study-modular-complete` | S9 | Módulo study fechado; legado removido |
+| `restore/refactor-study-modular-complete` → `0dd1f1f1` | S9 | Módulo study fechado; legado removido |
 
 ## Restaurar código
 
 ```powershell
 # Ver tags
 git tag -l "restore/refactor-estudos-*"
+git tag -l "restore/refactor-study-*"
 
 # Voltar para um ponto (cria branch de recuperação)
 git checkout -b recovery/from-complete restore/refactor-estudos-complete

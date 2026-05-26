@@ -65,6 +65,7 @@ import {
 
 ## Status (S9 — modular completo)
 
+- Tag: `restore/refactor-study-modular-complete` → `0dd1f1f1`
 - Toda superfície de estudos em `src/modules/study/`
 - `App.tsx` e Coach importam pages do módulo
 - Callers externos (perfil, estatísticas, Pro guard) usam `@/modules/study`
