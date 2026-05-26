@@ -10,9 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useStudyStatistics } from '@/hooks/useStudyStatistics';
+import { useStudyStatistics } from '../hooks/useStudyStatistics';
+import { getScheduleSessions } from '../domain/scheduleHelpers';
 import { UserStudyService } from '@/services/userStudyService';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 

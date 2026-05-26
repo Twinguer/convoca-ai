@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StudyStatistics } from '@/types/userStudy';
-import { toLocalDateKey } from '@/utils/studyStatisticsFilters';
+import { toLocalDateKey } from '@/modules/study';
 
 interface AccuracyEvolutionChartProps {
   statistics: StudyStatistics;

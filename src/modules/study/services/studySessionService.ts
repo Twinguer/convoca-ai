@@ -1,8 +1,8 @@
 import { UserStudyService } from '@/services/userStudyService';
 import { generateId } from '@/lib/utils';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
-import { resolveStudySessions, resolveStudyStatistics } from '@/utils/studyStatisticsMerge';
-import { MIRROR_WEEKLY_STATS } from '@/config/studyWrite';
+import { getScheduleSessions } from '../domain/scheduleHelpers';
+import { resolveStudySessions, resolveStudyStatistics } from '../domain/studyStatisticsMerge';
+import { MIRROR_WEEKLY_STATS } from '../domain/studyWrite';
 import type { StudyCycleV2, StudySchedule, UserStudy } from '@/types/userStudy';
 import { devLog } from '@/utils/productionLogger';
 
@@ -120,9 +120,7 @@ function mirrorWeeklyScheduleStats(
   });
 }
 
-/**
- * Registra sessão manual: ledger + total_stats + estatísticas globais.
- */
+/** Registra sessão manual: ledger + total_stats + estatísticas globais. */
 export async function recordCompletedSessionForUser(
   userId: string,
   cycleId: string,

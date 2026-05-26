@@ -6,12 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle } from 'lucide-react';
-import { useStudyStatistics } from '@/hooks/useStudyStatistics';
+import { useStudyStatistics, getStatisticsForPeriod } from '@/modules/study';
 import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import SubjectTimeDistributionChart from '@/components/StudyStats/SubjectTimeDistributionChart';
 import AccuracyEvolutionChart from '@/components/StudyStats/AccuracyEvolutionChart';
-import { getStatisticsForPeriod } from '@/utils/studyStatisticsFilters';
 const StatisticsPage = () => {
   const {
     statistics,

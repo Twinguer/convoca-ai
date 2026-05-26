@@ -1,4 +1,4 @@
-import type { DisciplineProgressStatus } from '@/utils/disciplineStudyStats';
+import type { DisciplineProgressStatus } from '../domain/disciplineStudyStats';
 
 export interface EditalDiscipline {
   id: string;

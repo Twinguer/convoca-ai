@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import CicloDetalhes from '@/pages/Estudos/CicloDetalhes';
+import CicloDetalhes from '@/modules/study/pages/CicloDetalhes';
 import { useCoachStudentGate } from '@/modules/coach/hooks/useCoachStudentGate';
 
 const StudentCycleDisciplinesPage = () => {

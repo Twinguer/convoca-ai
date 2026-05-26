@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
+import { getScheduleSessions } from '@/modules/study';
 import type { UserStudy } from '@/types/userStudy';
 import { devLog } from '@/utils/productionLogger';
 

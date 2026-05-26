@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronDown, Plus, Trash2, GripVertical } from 'lucide-react';
-import type { DisciplineStudyStats } from '@/utils/disciplineStudyStats';
+import type { DisciplineStudyStats } from '../domain/disciplineStudyStats';
 import {
   aggregateBlockStats,
   DisciplineProgressStatus,
@@ -16,9 +16,9 @@ import {
   isDisciplineCompletedForProgress,
   normalizeDisciplineKey,
   resolveDisciplineStats,
-} from '@/utils/disciplineStudyStats';
-import { blockSortId, disciplineSortId } from '@/components/study/editalDnd';
-import type { EditalBlock, EditalDiscipline } from '@/components/study/editalTypes';
+} from '../domain/disciplineStudyStats';
+import { blockSortId, disciplineSortId } from './editalDnd';
+import type { EditalBlock, EditalDiscipline } from './editalTypes';
 
 function StatChip({ children }: { children: React.ReactNode }) {
   return (

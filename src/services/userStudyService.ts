@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { generateId } from '@/lib/utils';
-import { MIRROR_WEEKLY_STATS } from '@/config/studyWrite';
+import { MIRROR_WEEKLY_STATS } from '@/modules/study/domain/studyWrite';
 import { logger } from '@/utils/logger';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { 

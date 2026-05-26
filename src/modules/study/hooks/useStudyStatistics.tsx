@@ -5,11 +5,11 @@ import { StudyStatistics, defaultUserStudy, StudySession } from '@/types/userStu
 import {
   getFilteredPeriodSummary,
   type StudyTimeFilter,
-} from '@/utils/studyStatisticsFilters';
+} from '../domain/studyStatisticsFilters';
 import {
   resolveStudySessions,
   resolveUserStudyStatisticsFromData,
-} from '@/utils/studyStatisticsMerge';
+} from '../domain/studyStatisticsMerge';
 import { devLog } from '@/utils/productionLogger';
 
 let globalPersistInProgress = false;

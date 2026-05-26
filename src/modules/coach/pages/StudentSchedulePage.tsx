@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Alert } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Cronograma from '@/pages/Estudos/Cronograma';
+import Cronograma from '@/modules/study/pages/Cronograma';
 import { useCoachStudentGate } from '@/modules/coach/hooks/useCoachStudentGate';
 
 const StudentSchedulePage = () => {

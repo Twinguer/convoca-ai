@@ -12,15 +12,15 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen } from 'lucide-react';
-import { applyBlocksDragEnd, blockSortId } from '@/components/study/editalDnd';
-import { EditalBlockRow } from '@/components/study/EditalBlockRow';
-import type { EditalBlock } from '@/components/study/editalTypes';
+import { applyBlocksDragEnd, blockSortId } from './editalDnd';
+import { EditalBlockRow } from './EditalBlockRow';
+import type { EditalBlock } from './editalTypes';
 
-export type { EditalBlock, EditalDiscipline } from '@/components/study/editalTypes';
+export type { EditalBlock, EditalDiscipline } from './editalTypes';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
-import { useStudyProAccess } from '@/hooks/useStudyProAccess';
-import type { DisciplineStudyStats } from '@/utils/disciplineStudyStats';
-import { DisciplineProgressStatus, isDisciplineCompletedForProgress } from '@/utils/disciplineStudyStats';
+import { useStudyProAccess } from '../hooks/useStudyProAccess';
+import type { DisciplineStudyStats } from '../domain/disciplineStudyStats';
+import { DisciplineProgressStatus, isDisciplineCompletedForProgress } from '../domain/disciplineStudyStats';
 
 interface EditalVerticalizadoProps {
   blocks: EditalBlock[];

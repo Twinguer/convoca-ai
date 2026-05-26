@@ -1,12 +1,8 @@
 import type { StudySession, StudyStatistics, UserStudy } from '@/types/userStudy';
 import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 import { defaultUserStudy } from '@/types/userStudy';
-import { toLocalDateKey } from '@/utils/studyStatisticsFilters';
+import { toLocalDateKey } from './studyStatisticsFilters';
 
-/**
- * Converte entradas legadas de sessionHistory (sem study_sessions) em sessões sintéticas.
- * Usado apenas quando study_sessions está vazio — evita dupla contagem.
- */
 export function sessionHistoryToStudySessions(
   history: StudyStatistics['sessionHistory']
 ): StudySession[] {
@@ -31,9 +27,6 @@ function sessionFingerprint(date: string, durationMinutes: number, subject?: str
   return `${toLocalDateKey(date)}|${Math.round(durationMinutes)}|${(subject ?? '').trim().toLowerCase()}`;
 }
 
-/**
- * Inclui entradas do sessionHistory que não têm par em study_sessions (ex.: timer antigo).
- */
 function mergeOrphanSessionHistory(
   sessions: StudySession[],
   history: StudyStatistics['sessionHistory']
@@ -62,9 +55,6 @@ function mergeOrphanSessionHistory(
   return orphans.length > 0 ? [...sessions, ...orphans] : sessions;
 }
 
-/**
- * Resolve lista de sessões: prioriza study_sessions; importa histórico legado sem duplicar.
- */
 export function resolveStudySessions(
   sessions: StudySession[] | undefined | null,
   savedStatistics?: StudyStatistics | null
@@ -80,9 +70,6 @@ export function resolveStudySessions(
   return mergeOrphanSessionHistory(list, history);
 }
 
-/**
- * Calcula estatísticas a partir das sessões; se não houver sessões, preserva snapshot salvo válido.
- */
 export function resolveStudyStatistics(
   sessions: StudySession[],
   savedStatistics?: StudyStatistics | null
@@ -105,7 +92,6 @@ export function resolveStudyStatistics(
   return defaultUserStudy.study_statistics as StudyStatistics;
 }
 
-/** Resolve estatísticas a partir do documento completo user_study_v2. */
 export function resolveUserStudyStatisticsFromData(
   userStudyData: UserStudy | null | undefined
 ): StudyStatistics {

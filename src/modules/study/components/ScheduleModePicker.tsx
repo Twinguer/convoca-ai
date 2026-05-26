@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Clock, Timer } from 'lucide-react';
-import type { ScheduleMode } from '@/utils/scheduleMode';
+import type { ScheduleMode } from '../domain/scheduleMode';
 
 interface ScheduleModePickerProps {
   value: ScheduleMode;

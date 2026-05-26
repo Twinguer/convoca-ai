@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { UserStudyService } from '@/services/userStudyService';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
-import { toUiDayOfWeek } from '@/utils/scheduleMode';
+import { getScheduleSessions } from '../domain/scheduleHelpers';
+import { toUiDayOfWeek } from '../domain/scheduleMode';
 import { devLog } from '@/utils/productionLogger';
 import type { StudyCycleV2, StudySchedule, UserStudy } from '@/types/userStudy';
 
@@ -19,7 +19,7 @@ export interface CronogramaStudySession {
   sessionLink?: string;
 }
 
-interface UseCronogramaDataOptions {
+export interface UseCronogramaDataOptions {
   userId?: string;
   coachMode?: boolean;
   targetStudentId?: string;

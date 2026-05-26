@@ -17,28 +17,28 @@ import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { setPendingTimerTask, consumeTimerSuggestedMinutes } from '@/utils/timerTaskContext';
-import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
+import { useStudyCyclesV2 } from '../hooks/useStudyCyclesV2';
 import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
 import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
-import { useSecureStudyCycleUrls } from '@/hooks/useSecureStudyCycleUrls';
+import { useSecureStudyCycleUrls } from '../hooks/useSecureStudyCycleUrls';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
-import { WeeklyScheduleBoard } from '@/components/study/WeeklyScheduleBoard';
-import { WeeklyScheduleTaskCard } from '@/components/study/WeeklyScheduleTaskCard';
-import { ScheduleModePicker } from '@/components/study/ScheduleModePicker';
-import { CycleDocumentsPanel } from '@/components/study/CycleDocumentsPanel';
-import { CronogramaTimerLinkCard } from '@/components/study/CronogramaTimerLinkCard';
-import { ScheduleTaskEditDialog } from '@/components/study/ScheduleTaskEditDialog';
-import { useCycleDocuments } from '@/hooks/useCycleDocuments';
-import { useCronogramaData, type CronogramaStudySession } from '@/hooks/useCronogramaData';
+import { WeeklyScheduleBoard } from '../components/WeeklyScheduleBoard';
+import { WeeklyScheduleTaskCard } from '../components/WeeklyScheduleTaskCard';
+import { ScheduleModePicker } from '../components/ScheduleModePicker';
+import { CycleDocumentsPanel } from '../components/CycleDocumentsPanel';
+import { CronogramaTimerLinkCard } from '../components/CronogramaTimerLinkCard';
+import { ScheduleTaskEditDialog } from '../components/ScheduleTaskEditDialog';
+import { useCycleDocuments } from '../hooks/useCycleDocuments';
+import { useCronogramaData, type CronogramaStudySession } from '../hooks/useCronogramaData';
 import {
   getCycleScheduleMode,
   toStorageDayOfWeek,
   type ScheduleMode,
-} from '@/utils/scheduleMode';
+} from '../domain/scheduleMode';
 
 // Interface para props do modo coach
-interface CronogramaProps {
+export interface CronogramaProps {
   coachMode?: boolean;
   targetStudentId?: string;
   targetCycleId?: string;

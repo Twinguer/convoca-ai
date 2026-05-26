@@ -17,13 +17,13 @@ vi.mock('@/lib/utils', () => ({
 }));
 
 const mockMirror = vi.hoisted(() => ({ value: false }));
-vi.mock('@/config/studyWrite', () => ({
+vi.mock('@/modules/study/domain/studyWrite', () => ({
   get MIRROR_WEEKLY_STATS() {
     return mockMirror.value;
   },
 }));
 
-import { recordCompletedSessionForUser } from '@/services/studySessionService';
+import { recordCompletedSessionForUser } from '@/modules/study';
 
 function baseUserStudy(overrides: Partial<UserStudy> = {}): UserStudy {
   return {

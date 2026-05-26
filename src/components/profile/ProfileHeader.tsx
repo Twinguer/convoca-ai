@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { User, Upload, Loader2, Pen, Clock } from 'lucide-react';
-import { useStudyStatistics } from '@/hooks/useStudyStatistics';
+import { useStudyStatistics } from '@/modules/study';
 import { getAvatarUrl } from '@/utils/avatarUtils';
 import { formatPublicNicknameHandle } from '@/utils/nicknameUtils';
 

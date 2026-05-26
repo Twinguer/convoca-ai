@@ -25,8 +25,8 @@ import {
   parseSessionSortId,
   sessionSortId,
   type WeeklyTaskDragItem,
-} from '@/components/study/weeklyScheduleDnd';
-import { canReorderSession, getCycleScheduleMode } from '@/utils/scheduleMode';
+} from './weeklyScheduleDnd';
+import { canReorderSession, getCycleScheduleMode } from '../domain/scheduleMode';
 
 export type WeeklyBoardSession = WeeklyTaskDragItem & {
   startTime?: string;

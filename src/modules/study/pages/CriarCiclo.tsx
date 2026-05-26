@@ -12,12 +12,12 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X, Edit, BookOpen, Calendar, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
+import { useStudyCyclesV2 } from '../hooks/useStudyCyclesV2';
 import { toast } from 'sonner';
-import { useStudyProAccess } from '@/hooks/useStudyProAccess';
+import { useStudyProAccess } from '../hooks/useStudyProAccess';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
-import { SortableBlocksList } from '@/components/study/SortableBlocksList';
+import { SortableBlocksList } from '../components/SortableBlocksList';
 interface Discipline {
   id: string;
   name: string;

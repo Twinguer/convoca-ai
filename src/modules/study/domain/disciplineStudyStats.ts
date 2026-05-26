@@ -24,13 +24,11 @@ export function resolveDisciplineStats(
   return stats ?? EMPTY_DISCIPLINE_STATS;
 }
 
-/** Rótulo de tempo; `0` minutos → `0min`. */
 export function formatStudyDurationDisplay(totalMinutes: number): string {
   if (totalMinutes <= 0) return '0min';
   return formatStudyDuration(totalMinutes) ?? '0min';
 }
 
-/** Data formatada ou `-` quando ausente. */
 export function formatLastStudyDateDisplay(isoDate: string | null): string {
   return formatLastStudyDate(isoDate) ?? '-';
 }
@@ -47,7 +45,6 @@ export function isDisciplineCompletedForProgress(discipline: {
 }): boolean {
   if (discipline.isCompleted) return true;
   if (discipline.status === 'em_revisao' || discipline.status === 'em-revisao') return true;
-  // Legado: registros antigos com "finalizada"
   if (discipline.status === 'finalizada') return true;
   return false;
 }
@@ -117,7 +114,6 @@ export function getAccuracyPercent(
   return Math.round((correctAnswers / totalQuestions) * 100);
 }
 
-/** &lt;70% vermelho · 70–80% dourado · &gt;80% verde */
 export function getAccuracyColorClass(pct: number): string {
   if (pct < 70) return 'text-red-600 dark:text-red-400 font-semibold';
   if (pct <= 80) return 'text-amber-600 dark:text-amber-400 font-semibold';

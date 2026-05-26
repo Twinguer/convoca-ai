@@ -20,7 +20,7 @@ import {
   getPeriodDayCount,
   toLocalDateKey,
   type StudyTimeFilter,
-} from '@/utils/studyStatisticsFilters';
+} from '@/modules/study';
 
 interface PerformanceChartProps {
   statistics: StudyStatistics;

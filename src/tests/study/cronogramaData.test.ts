@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapScheduleToCronogramaSessions } from '@/hooks/useCronogramaData';
+import { mapScheduleToCronogramaSessions } from '@/modules/study';
 import type { UserStudy } from '@/types/userStudy';
 
 function minimalUserStudy(overrides: Partial<UserStudy> = {}): UserStudy {

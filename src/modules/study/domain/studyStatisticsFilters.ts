@@ -93,9 +93,6 @@ function aggregateSubjectStats(
   return subjectStats;
 }
 
-/**
- * Recalcula totais e subjectStats apenas com sessões do período.
- */
 export function getStatisticsForPeriod(
   statistics: StudyStatistics,
   filter: StudyTimeFilter,

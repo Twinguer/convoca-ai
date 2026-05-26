@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useStudyProAccess } from '@/hooks/useStudyProAccess';
+import { useStudyProAccess } from '@/modules/study';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showProRequiredToast } from '@/utils/planRestrictions';

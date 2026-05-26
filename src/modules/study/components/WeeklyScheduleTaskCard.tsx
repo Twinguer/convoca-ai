@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Timer, Trash2, ExternalLink } from 'lucide-react';
-import type { WeeklyScheduleSession } from '@/components/study/weeklyScheduleTypes';
+import type { WeeklyScheduleSession } from './weeklyScheduleTypes';
 
 type SessionDataEntry = {
   duration_minutes?: number;

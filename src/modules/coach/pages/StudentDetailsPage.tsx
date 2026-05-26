@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { StudentRelationship } from '@/types/coach';
 import { getLastStudyActivityDate } from '@/utils/userStudyHelpers';
-import { resolveUserStudyStatisticsFromData, resolveStudySessions } from '@/utils/studyStatisticsMerge';
+import { resolveUserStudyStatisticsFromData, resolveStudySessions } from '@/modules/study';
 import { formatLocalDatePtBr } from '@/utils/dateFormat';
 import { UserStudyService } from '@/services/userStudyService';
 import type { StudyStatistics } from '@/types/userStudy';

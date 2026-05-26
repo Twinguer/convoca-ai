@@ -1,6 +1,6 @@
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { toUiDayOfWeek } from '@/utils/scheduleMode';
+import { toUiDayOfWeek } from '../domain/scheduleMode';
 
 export const sessionSortId = (id: string) => `session:${id}`;
 export const dayDropId = (day: number) => `day:${day}`;

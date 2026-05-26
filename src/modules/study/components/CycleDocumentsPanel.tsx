@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, Download, FileText, Loader2, Pencil, Upload, X } from 'lucide-react';
 import type { StudyCycleV2 } from '@/types/userStudy';
-import type { CycleDocumentType } from '@/hooks/useCycleDocuments';
+import type { CycleDocumentType } from '../hooks/useCycleDocuments';
 
 interface CycleDocumentsPanelProps {
   selectedCycle: string;

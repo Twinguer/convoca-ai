@@ -8,6 +8,9 @@ Tags Git criadas após cada fase validada (build + testes).
 | `restore/refactor-estudos-complete` → `cd89bb06` | 0–3 | Higiene, testes, backfill, `studySessionService` |
 | `restore/refactor-estudos-phase-4-5` → `586fc711` | 4–5 | Fatia Cronograma, redirect `/session`, botão voltar no timer |
 | `restore/refactor-estudos-phase-6` → `f75b9066` | 6 | Testes `studySessionService`, espelhamento off por padrão |
+| `restore/refactor-study-modular-s1` | S1 | Domínio study em `modules/study/domain/` |
+| `restore/refactor-study-modular-s2` | S2 | `studySessionService` no módulo |
+| `restore/refactor-study-modular-complete` | S9 | Módulo study fechado; legado removido |
 
 ## Restaurar código
 

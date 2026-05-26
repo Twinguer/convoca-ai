@@ -12,14 +12,14 @@ import { UserStudyService } from '@/services/userStudyService';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
-import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
-import type { EditalBlock } from '@/components/study/editalTypes';
-import { buildAvailableDisciplinesFromBlocks } from '@/utils/studyCycleSchedule';
+import { EditalVerticalizado } from '../components/EditalVerticalizado';
+import type { EditalBlock } from '../components/editalTypes';
+import { buildAvailableDisciplinesFromBlocks } from '../domain/studyCycleSchedule';
 import {
   aggregateDisciplineStatsForCycle,
   DisciplineProgressStatus,
   type DisciplineStudyStats,
-} from '@/utils/disciplineStudyStats';
+} from '../domain/disciplineStudyStats';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 
 interface CicloDetalhesProps {

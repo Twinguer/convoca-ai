@@ -11,11 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Edit, BookOpen, CheckCircle, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
+import { getScheduleSessions } from '../domain/scheduleHelpers';
 import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
-import { SortableBlocksList } from '@/components/study/SortableBlocksList';
+import { SortableBlocksList } from '../components/SortableBlocksList';
 
 interface Discipline {
   id: string;

@@ -17,7 +17,9 @@ export function toStorageDayOfWeek(uiDay: number): number {
   return uiDay;
 }
 
-export function isTimeBasedSession(session: Pick<StudySchedule, 'start_time' | 'end_time' | 'duration_minutes'>): boolean {
+export function isTimeBasedSession(
+  session: Pick<StudySchedule, 'start_time' | 'end_time' | 'duration_minutes'>
+): boolean {
   return Boolean(session.start_time && session.end_time);
 }
 
@@ -34,7 +36,11 @@ export function getCycleScheduleMode(
   return hasTime ? 'time' : 'duration';
 }
 
-export function canReorderSession(cycleMode: ScheduleMode | null, cycleId: string, sessionCycleId: string): boolean {
+export function canReorderSession(
+  cycleMode: ScheduleMode | null,
+  cycleId: string,
+  sessionCycleId: string
+): boolean {
   return cycleMode === 'duration' && cycleId === sessionCycleId;
 }
 

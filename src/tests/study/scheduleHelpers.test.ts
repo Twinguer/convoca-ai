@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getScheduleSessions } from '@/utils/scheduleHelpers';
+import { getScheduleSessions } from '@/modules/study';
 import type { UserStudy } from '@/types/userStudy';
 
 function minimalUserStudy(overrides: Partial<UserStudy> = {}): UserStudy {
