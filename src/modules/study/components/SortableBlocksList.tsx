@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, Edit, CheckCircle, GripVertical } from 'lucide-react';
+import { CYCLE_FORM_LIMITS } from '../domain/cycleFormLimits';
 
 export interface SortableDiscipline {
   id: string;
@@ -154,7 +155,7 @@ function SortableBlockCard({
                   value={nameValue}
                   onChange={(e) => setNameValue(e.target.value)}
                   className="w-full max-w-xs"
-                  maxLength={50}
+                  maxLength={CYCLE_FORM_LIMITS.blockName}
                 />
                 <Button size="sm" onClick={() => { onUpdateName(nameValue); setIsEditing(false); }} type="button">
                   <CheckCircle className="h-4 w-4" />

@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { coachSubscriptionService, isActiveCoachSubscription } from '@/modules/coach';
+import { hasLaunchPromoProAccess } from '@/modules/payments';
 import { studyGroupMembersService } from '../services/studyGroupMembersService';
 
 export function useGroupMembers(groupId: string | undefined) {
@@ -51,16 +52,8 @@ export function useRequestToJoin() {
     mutationFn: async (groupId: string) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      const { data: subscription } = await supabase
-        .from('user_subscriptions')
-        .select('plan, is_active, expires_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const userIsPro =
-        subscription?.plan === 'pro' &&
-        subscription?.is_active === true &&
-        (!subscription?.expires_at || new Date(subscription.expires_at) > new Date());
+      const { data: userIsProRpc } = await supabase.rpc('is_user_pro', { p_user_id: user.id });
+      const userIsPro = userIsProRpc === true || hasLaunchPromoProAccess(user.id);
 
       let userIsCoach = false;
       try {

@@ -18,6 +18,7 @@ import { useStudyProAccess } from '../hooks/useStudyProAccess';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { SortableBlocksList } from '../components/SortableBlocksList';
+import { CYCLE_FORM_LIMITS, clampCycleText } from '../domain/cycleFormLimits';
 interface Discipline {
   id: string;
   name: string;
@@ -119,7 +120,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
     if (!editingDiscipline || !disciplineForm.name) return;
     const discipline: Discipline = {
       id: editingDiscipline.discipline?.id || generateId(),
-      name: disciplineForm.name!,
+      name: clampCycleText(disciplineForm.name!, CYCLE_FORM_LIMITS.disciplineName),
       status: disciplineForm.status || 'em-andamento',
       studyTime: 0,
       questionsResolved: 0,
@@ -168,34 +169,35 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
   };
   const handleSubmit = async () => {
     const userId = coachMode ? targetStudentId : user?.id;
-    
-    if (!userId || !cycleName || !organ || !position || !examDate) {
+
+    const trimmedCycleName = clampCycleText(cycleName, CYCLE_FORM_LIMITS.cycleName);
+    const trimmedOrgan = clampCycleText(organ, CYCLE_FORM_LIMITS.organ);
+    const trimmedPosition = clampCycleText(position, CYCLE_FORM_LIMITS.position);
+
+    if (!userId || !trimmedCycleName || !trimmedOrgan || !trimmedPosition || !examDate) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     // Em modo aluno, plano Pro é validado no render; em modo coach, o gate coach já validou acesso
-    
-    // Debug: Verificar blocos antes de enviar
-    
+
     // Converter blocos para formato simplificado compatível com createStudyCycleV2
     const simplifiedBlocks = blocks.map(block => ({
       id: block.id,
-      name: block.name,
+      name: clampCycleText(block.name, CYCLE_FORM_LIMITS.blockName),
       disciplines: block.disciplines.map(discipline => ({
         id: discipline.id,
-        name: discipline.name
-      }))
+        name: clampCycleText(discipline.name, CYCLE_FORM_LIMITS.disciplineName),
+      })),
     }));
-    
-    
+
     setLoading(true);
     try {
       const newCycle = await createCycle({
-        cycle_name: cycleName,
+        cycle_name: trimmedCycleName,
         exam_date: examDate,
-        organ,
-        position,
+        organ: trimmedOrgan,
+        position: trimmedPosition,
         edital_link: '',
         curso_link: '',
         video_link: '',
@@ -306,15 +308,15 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="cycleName">Nome do Ciclo *</Label>
-                <Input id="cycleName" value={cycleName} onChange={e => setCycleName(e.target.value)} placeholder="Ex: Concurso TJDFT 2024" maxLength={30} />
+                <Input id="cycleName" value={cycleName} onChange={e => setCycleName(e.target.value)} placeholder="Ex: Concurso TJDFT 2024" maxLength={CYCLE_FORM_LIMITS.cycleName} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="organ">Nome do Órgão *</Label>
-                <Input id="organ" value={organ} onChange={e => setOrgan(e.target.value)} placeholder="Ex: Tribunal de Justiça do DF" maxLength={30} />
+                <Input id="organ" value={organ} onChange={e => setOrgan(e.target.value)} placeholder="Ex: Tribunal de Justiça do DF" maxLength={CYCLE_FORM_LIMITS.organ} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="position">Nome do Cargo *</Label>
-                <Input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="Ex: Analista Judiciário" maxLength={30} />
+                <Input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="Ex: Analista Judiciário" maxLength={CYCLE_FORM_LIMITS.position} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="examDate">Data da Prova *</Label>
@@ -391,7 +393,7 @@ const CriarCiclo = ({ coachMode, targetStudentId, onSuccess }: CriarCicloProps =
                   name: e.target.value
                 })} 
                 placeholder="Ex: Art. 5º" 
-                maxLength={30}
+                maxLength={CYCLE_FORM_LIMITS.disciplineName}
               />
             </div>
 

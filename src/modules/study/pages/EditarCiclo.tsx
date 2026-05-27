@@ -16,6 +16,7 @@ import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { SortableBlocksList } from '../components/SortableBlocksList';
+import { CYCLE_FORM_LIMITS, clampCycleText } from '../domain/cycleFormLimits';
 
 interface Discipline {
   id: string;
@@ -205,7 +206,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
     
     const discipline: Discipline = {
       id: editingDiscipline.discipline?.id || generateId(),
-      name: disciplineForm.name!,
+      name: clampCycleText(disciplineForm.name!, CYCLE_FORM_LIMITS.disciplineName),
       status: disciplineForm.status || 'em-andamento',
       studyTime: editingDiscipline.discipline?.studyTime || 0,
       questionsResolved: editingDiscipline.discipline?.questionsResolved || 0,
@@ -258,7 +259,11 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
   };
 
   const handleSubmit = async () => {
-    if (!user || !cycleName || !organ || !position || !examDate) {
+    const trimmedCycleName = clampCycleText(cycleName, CYCLE_FORM_LIMITS.cycleName);
+    const trimmedOrgan = clampCycleText(organ, CYCLE_FORM_LIMITS.organ);
+    const trimmedPosition = clampCycleText(position, CYCLE_FORM_LIMITS.position);
+
+    if (!user || !trimmedCycleName || !trimmedOrgan || !trimmedPosition || !examDate) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -278,19 +283,19 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
       // Converter blocos para o formato available_blocks
       const availableBlocks = blocks.map(block => ({
         id: block.id,
-        name: block.name,
+        name: clampCycleText(block.name, CYCLE_FORM_LIMITS.blockName),
         disciplines: block.disciplines.map(disc => ({
           id: disc.id,
-          name: disc.name
-        }))
+          name: clampCycleText(disc.name, CYCLE_FORM_LIMITS.disciplineName),
+        })),
       }));
 
       // Criar available_disciplines a partir dos blocos
       const availableDisciplines = blocks.flatMap(block =>
         block.disciplines.map(disc => ({
           id: disc.id,
-          name: disc.name,
-          block_name: block.name
+          name: clampCycleText(disc.name, CYCLE_FORM_LIMITS.disciplineName),
+          block_name: clampCycleText(block.name, CYCLE_FORM_LIMITS.blockName),
         }))
       );
 
@@ -302,9 +307,9 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
       };
 
       const success = await UserStudyService.updateCycle(user.id, id, {
-        cycle_name: cycleName,
-        organ,
-        position,
+        cycle_name: trimmedCycleName,
+        organ: trimmedOrgan,
+        position: trimmedPosition,
         exam_date: examDate,
         edital_link: currentCycle.edital_link || '',
         curso_link: currentCycle.curso_link || '',
@@ -374,6 +379,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
                   value={cycleName} 
                   onChange={e => setCycleName(e.target.value)} 
                   placeholder="Ex: Concurso TJDFT 2024" 
+                  maxLength={CYCLE_FORM_LIMITS.cycleName}
                 />
               </div>
               <div className="space-y-2">
@@ -383,6 +389,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
                   value={organ} 
                   onChange={e => setOrgan(e.target.value)} 
                   placeholder="Ex: Tribunal de Justiça do DF" 
+                  maxLength={CYCLE_FORM_LIMITS.organ}
                 />
               </div>
               <div className="space-y-2">
@@ -392,6 +399,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
                   value={position} 
                   onChange={e => setPosition(e.target.value)} 
                   placeholder="Ex: Analista Judiciário" 
+                  maxLength={CYCLE_FORM_LIMITS.position}
                 />
               </div>
               <div className="space-y-2">
@@ -483,6 +491,7 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
                   name: e.target.value
                 })} 
                 placeholder="Ex: Direito Constitucional" 
+                maxLength={CYCLE_FORM_LIMITS.disciplineName}
               />
             </div>
 
