@@ -91,18 +91,18 @@ function EditalDisciplineRow({
     <div
       ref={canReorder ? setNodeRef : undefined}
       style={style}
-      className={`py-2 px-2 sm:px-4 pl-6 sm:pl-8 ${
+      className={`py-2 px-2 sm:px-4 pl-4 sm:pl-8 ${
         disciplineIndex % 2 === 0 ? 'bg-muted/10' : 'bg-background'
       } hover:bg-muted/30 transition-colors`}
     >
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
         <div className="flex flex-col sm:flex-row sm:items-center flex-1 min-w-0">
-          <div className="flex items-center min-w-0">
+          <div className="flex items-start sm:items-center min-w-0">
             {canReorder && <DragHandle {...attributes} {...listeners} />}
             <Checkbox
               checked={discipline.isCompleted || false}
               onCheckedChange={() => onToggleDiscipline(blockId, discipline.id)}
-              className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
+              className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-4 w-4"
             />
             <span
               className={`font-medium text-foreground text-xs truncate ${
@@ -121,7 +121,7 @@ function EditalDisciplineRow({
               {discipline.name}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-1 mt-1 sm:mt-0 sm:ml-2">
+          <div className="flex flex-wrap items-center gap-1 mt-1 sm:mt-0 sm:ml-2 pl-6 sm:pl-0">
             <StatChip>⏱ {durationLabel}</StatChip>
             <StatChip>
               📝 {stats.totalQuestions}Q (
@@ -133,7 +133,7 @@ function EditalDisciplineRow({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap">
+        <div className="flex items-center gap-x-3 gap-y-1 sm:ml-auto sm:flex-shrink-0 text-xs flex-wrap pl-6 sm:pl-0">
           {allowEdit && onRemoveDiscipline && (
             <Button
               size="sm"
@@ -150,18 +150,18 @@ function EditalDisciplineRow({
               <Trash2 className="h-3 w-3" />
             </Button>
           )}
-          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+          <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap">
             <Checkbox
               checked={discipline.status === 'em_andamento'}
               onCheckedChange={(checked) => {
                 if (checked) onStatusChange(blockId, discipline.id, 'em_andamento');
                 else if (discipline.status === 'em_andamento') onStatusChange(blockId, discipline.id, null);
               }}
-              className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
+              className="h-3.5 w-3.5 flex-shrink-0"
             />
             <span className="text-muted-foreground text-[10px] sm:text-xs">Em andamento</span>
           </label>
-          <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+          <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap">
             <Checkbox
               checked={discipline.status === 'em_revisao' || discipline.status === 'em-revisao'}
               onCheckedChange={(checked) => {
@@ -170,7 +170,7 @@ function EditalDisciplineRow({
                   onStatusChange(blockId, discipline.id, null);
                 }
               }}
-              className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 [&>svg]:h-2 [&>svg]:w-2 sm:[&>svg]:h-2.5 sm:[&>svg]:w-2.5"
+              className="h-3.5 w-3.5 flex-shrink-0"
             />
             <span className="text-muted-foreground text-[10px] sm:text-xs">Em revisão</span>
           </label>
@@ -262,7 +262,7 @@ export function EditalBlockRow({
           onCheckedChange={() => {
             block.disciplines.forEach((d) => onToggleDiscipline(block.id, d.id));
           }}
-          className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-3.5 w-3.5 sm:h-4 sm:w-4 [&>svg]:h-2.5 [&>svg]:w-2.5 sm:[&>svg]:h-3 sm:[&>svg]:w-3"
+          className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-4 w-4"
           onClick={(e) => e.stopPropagation()}
         />
         <div className="flex-1 flex flex-col sm:flex-row sm:items-center min-w-0 gap-0 sm:gap-2">

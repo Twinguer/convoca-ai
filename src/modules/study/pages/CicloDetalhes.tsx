@@ -233,7 +233,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-3 sm:p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -244,7 +244,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
 
   if (!cycle) {
     return (
-      <div className="min-h-screen p-6 text-center">
+      <div className="min-h-screen p-3 sm:p-6 text-center">
         <h1 className="text-3xl font-bold text-foreground mb-4">Ciclo não encontrado</h1>
         <Link to="/estudos/cronograma">
           <Button>
@@ -258,20 +258,20 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
 
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-3 sm:p-6">
       {/* Header - só mostrar se não estiver em modo coach (coach já tem header próprio) */}
       {!coachMode && (
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
           <Link to="/estudos/cronograma">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">{cycle.cycle_name}</h1>
-              <p className="text-muted-foreground">{cycle.organ} - {cycle.position}</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold text-foreground truncate">{cycle.cycle_name}</h1>
+              <p className="text-sm sm:text-base text-muted-foreground truncate">{cycle.organ} - {cycle.position}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleNavigateToEditCycle}>
@@ -282,7 +282,7 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
       )}
 
       {/* Edital Verticalizado */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <EditalVerticalizado
           blocks={cycle.schedule_data?.available_blocks || []}
           disciplineStats={disciplineStats}

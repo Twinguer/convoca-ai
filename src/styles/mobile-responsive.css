@@ -156,13 +156,20 @@ nav {
 
 /* Ensure proper touch targets on mobile (minimum 44x44px) */
 @media (max-width: 768px) {
-  button, 
+  button:not([role="checkbox"]),
   a[role="button"],
   [role="tab"],
   [role="menuitem"] {
     min-height: 44px;
     min-width: 44px;
     padding: 0.75rem;
+  }
+
+  [role="checkbox"],
+  button.p-0 {
+    min-height: unset;
+    min-width: unset;
+    padding: 0;
   }
 }
 

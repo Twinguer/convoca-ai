@@ -630,14 +630,14 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
   };
   if (loading) {
-    return <div className="min-h-screen p-6">
+    return <div className="min-h-screen p-3 sm:p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
           <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>;
   }
-  return <div className="min-h-screen p-6 bg-page-background">
+  return <div className="min-h-screen p-3 sm:p-6 bg-page-background">
       <div className="flex items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold text-foreground">Cronograma de Estudos</h1>
       </div>

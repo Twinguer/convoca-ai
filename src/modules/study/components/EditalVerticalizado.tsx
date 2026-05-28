@@ -43,7 +43,7 @@ interface EditalVerticalizadoProps {
 
 function StatsLegend() {
   return (
-    <div className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2 text-[10px] sm:text-xs text-muted-foreground">
+    <div className="mt-3 rounded-md border border-border bg-muted/30 px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs text-muted-foreground">
       <span className="font-medium text-foreground">Legenda: </span>
       <span className="inline-flex flex-wrap gap-x-3 gap-y-1">
         <span>⏱ Tempo de estudo</span>
@@ -179,8 +179,8 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
 
   return (
     <Card className={`w-full ${className}`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg font-bold text-center text-foreground">
+      <CardHeader className="p-3 pb-3 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-bold text-center text-foreground">
           <BookOpen className="h-5 w-5" />
           Ciclo de Estudos
         </CardTitle>
@@ -194,8 +194,8 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
         )}
 
         {showProgress && blocks.length > 0 && (
-          <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
               <div>
                 <div className="text-xl font-bold text-primary">{totalDisciplines}</div>
                 <div className="text-sm text-primary/80 font-medium">Total de Disciplinas</div>
