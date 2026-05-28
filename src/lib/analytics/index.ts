@@ -17,10 +17,10 @@ export {
 } from './googleAnalytics';
 export type { GoogleAdsConversionEvent } from './types';
 
-/** Inicializa GA4 e Google Ads (gtag compartilhado). */
+/** Inicializa GA4 e Google Ads (gtag compartilhado). Ads primeiro: define a URL do script (AW-). */
 export function initAnalytics(): void {
-  initGoogleAnalytics();
   initGoogleAds();
+  initGoogleAnalytics();
 }
 
 /** Envia page_view manual para GA4 e Google Ads (SPA). */

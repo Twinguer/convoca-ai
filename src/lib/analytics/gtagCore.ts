@@ -20,7 +20,8 @@ export function shouldRunAnalyticsInDev(): boolean {
 }
 
 function getPrimaryGtagScriptId(): string | undefined {
-  return GA_MEASUREMENT_ID || GOOGLE_ADS_ID;
+  // Prioriza AW-: tag do Google Ads carrega na CDN; G- inválido (404) quebrava todo o gtag.
+  return GOOGLE_ADS_ID || GA_MEASUREMENT_ID;
 }
 
 function bootstrapGtag(): void {
