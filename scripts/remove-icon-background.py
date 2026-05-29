@@ -1,7 +1,6 @@
-"""Remove external white background from diamond icon (flood fill from edges)."""
+"""Remove external background from icon (flood fill from edges)."""
 from __future__ import annotations
 
-import os
 import sys
 from collections import deque
 from pathlib import Path
@@ -9,13 +8,19 @@ from pathlib import Path
 from PIL import Image
 
 
-def is_background_white(r: int, g: int, b: int, a: int = 255) -> bool:
+def is_external_background(r: int, g: int, b: int, a: int = 255) -> bool:
     if a < 10:
         return True
-    return r > 235 and g > 235 and b > 235
+    # branco externo (export com fundo claro)
+    if r > 235 and g > 235 and b > 235:
+        return True
+    # preto externo (export com fundo escuro / cantos)
+    if r < 30 and g < 30 and b < 30:
+        return True
+    return False
 
 
-def remove_external_white(src: Path) -> Image.Image:
+def remove_external_background(src: Path) -> Image.Image:
     img = Image.open(src).convert("RGBA")
     w, h = img.size
     pixels = img.load()
@@ -24,12 +29,12 @@ def remove_external_white(src: Path) -> Image.Image:
 
     for x in range(w):
         for y in (0, h - 1):
-            if not visited[y][x] and is_background_white(*pixels[x, y]):
+            if not visited[y][x] and is_external_background(*pixels[x, y]):
                 visited[y][x] = True
                 q.append((x, y))
     for y in range(h):
         for x in (0, w - 1):
-            if not visited[y][x] and is_background_white(*pixels[x, y]):
+            if not visited[y][x] and is_external_background(*pixels[x, y]):
                 visited[y][x] = True
                 q.append((x, y))
 
@@ -39,7 +44,7 @@ def remove_external_white(src: Path) -> Image.Image:
         pixels[x, y] = (r, g, b, 0)
         for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
             if 0 <= nx < w and 0 <= ny < h and not visited[ny][nx]:
-                if is_background_white(*pixels[nx, ny]):
+                if is_external_background(*pixels[nx, ny]):
                     visited[ny][nx] = True
                     q.append((nx, ny))
 
@@ -54,7 +59,7 @@ def main() -> None:
         root.parent / "Nomeia-Ai_Rankings-App" / "Nomeia-Ai_Rankings" / "assets" / "images" / "icon.png",
     ]
 
-    img = remove_external_white(src)
+    img = remove_external_background(src)
     for out in outputs:
         out.parent.mkdir(parents=True, exist_ok=True)
         img.save(out, "PNG")
