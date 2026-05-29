@@ -285,7 +285,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           if (Notification.permission === 'granted') {
             new Notification('Timer Finalizado!', {
               body: 'Volte ao cronograma para confirmar e salvar seu registro.',
-              icon: '/favicon.ico'
+              icon: '/favicon-32.png'
             });
           } else {
             alert('Tempo esgotado! Volte ao cronograma para salvar seu registro.');
