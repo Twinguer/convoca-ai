@@ -13,7 +13,6 @@ import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { GeneralCardForm } from '@/components/Admin/CreateRanking/GeneralCardForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/modules/rankings/hooks/useSaveRanking';
-import { fetchAndValidateOfficialAnswerKey } from '@/modules/rankings/domain/answerKeyValidation';
 import { useEditUrls } from '@/hooks/useEditUrls';
 import { usePlanLimits } from '@/modules/payments';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
@@ -590,36 +589,10 @@ const CriarRankingPage = () => {
     }
   };
 
-  // Atualizado para permitir edição antes de salvar o gabarito
-  const handleNextTab = async () => {
-    // Verificar se todos os gabaritos oficiais foram preenchidos antes de ir para resultados
-    if (activeTab === 'answer-key') {
-      // Aqui validamos se todos os cadernos têm gabarito completo
-      const isComplete = await checkAnswerKeyCompleteness();
-      if (!isComplete) {
-        toast.error('Por favor, preencha o gabarito oficial de todos os cadernos antes de prosseguir.');
-        return;
-      }
-    }
+  const handleNextTab = () => {
     setActiveTab('answer-key');
   };
 
-  const checkAnswerKeyCompleteness = async (): Promise<boolean> => {
-    if (!createdConcursoId) return false;
-
-    try {
-      const result = await fetchAndValidateOfficialAnswerKey(createdConcursoId);
-      if (!result.ok) {
-        toast.error(result.message);
-        return false;
-      }
-      return true;
-    } catch (error) {
-      devLog.error('Erro ao verificar gabaritos:', error);
-      toast.error('Erro ao verificar gabaritos oficiais');
-      return false;
-    }
-  };
   const handleGoToResults = () => {
     if (createdConcursoId) {
       openRankingAfterCreate(navigate, createdConcursoId);
@@ -705,7 +678,7 @@ const CriarRankingPage = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
-            {editToken ? 'Editar Ranking' : isPositionCard ? 'Criar Ranking do Cargo' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+            {editToken ? 'Editar Ranking' : isPositionCard ? 'Criar Ranking do Cargo' : createdConcursoId ? 'Ranking Criado' : 'Criar Novo Ranking'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -716,17 +689,17 @@ const CriarRankingPage = () => {
                   <TabsList>
                     <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
                     <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editToken}>
-                      Gabarito Oficial
+                      Gabarito da Banca
                     </TabsTrigger>
                   </TabsList>
-                  {activeTab === 'answer-key' && (
-                    <Button type="button" onClick={handleGoToResults}>
+                  {createdConcursoId && (
+                    <Button type="button" variant="outline" onClick={handleGoToResults}>
                       Ir para Resultados
                     </Button>
                   )}
                 </div>
                 <TabsContent value="general-info">
-                  <GeneralTab form={form} jobTitles={jobTitles} isCustomTitle={isCustomTitle} isCustomBanca={isCustomBanca} handleJobTitleChange={handleJobTitleChange} handleCustomTitleChange={handleCustomTitleChange} handleBancaChange={handleBancaChange} handleOrgaoChange={handleOrgaoChange} handleNextTab={handleNextTab} onSaveRanking={handleSaveRanking} isSubmitting={isSubmitting} selectedStates={selectedStates} setSelectedStates={setSelectedStates} createdConcursoId={createdConcursoId} />
+                  <GeneralTab form={form} jobTitles={jobTitles} isCustomTitle={isCustomTitle} isCustomBanca={isCustomBanca} handleJobTitleChange={handleJobTitleChange} handleCustomTitleChange={handleCustomTitleChange} handleBancaChange={handleBancaChange} handleOrgaoChange={handleOrgaoChange} handleNextTab={handleNextTab} onSaveRanking={handleSaveRanking} onGoToResults={handleGoToResults} isSubmitting={isSubmitting} selectedStates={selectedStates} setSelectedStates={setSelectedStates} createdConcursoId={createdConcursoId} />
                 </TabsContent>
                 <TabsContent value="answer-key">
                   {(createdConcursoId || editToken) && <AnswerKeyTab concursoId={createdConcursoId || ''} onGoToResults={handleGoToResults} />}

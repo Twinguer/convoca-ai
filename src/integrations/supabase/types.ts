@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -245,6 +269,7 @@ export type Database = {
           price: number
           status: string
           updated_at: string | null
+          voucher_code: string | null
         }
         Insert: {
           coach_id: string
@@ -257,6 +282,7 @@ export type Database = {
           price: number
           status?: string
           updated_at?: string | null
+          voucher_code?: string | null
         }
         Update: {
           coach_id?: string
@@ -269,99 +295,7 @@ export type Database = {
           price?: number
           status?: string
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      pci_concurso_feed: {
-        Row: {
-          id: string
-          titulo: string
-          regiao: string
-          uf: string | null
-          vagas: number | null
-          vagas_texto: string | null
-          salario_min: number | null
-          salario_max: number | null
-          salario_texto: string | null
-          cargos: string | null
-          escolaridade: string
-          resumo: string | null
-          inscricao_ate: string | null
-          inscricao_texto: string | null
-          status: string
-          is_active: boolean
-          scraped_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          titulo: string
-          regiao: string
-          uf?: string | null
-          vagas?: number | null
-          vagas_texto?: string | null
-          salario_min?: number | null
-          salario_max?: number | null
-          salario_texto?: string | null
-          cargos?: string | null
-          escolaridade?: string
-          resumo?: string | null
-          inscricao_ate?: string | null
-          inscricao_texto?: string | null
-          status?: string
-          is_active?: boolean
-          scraped_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          titulo?: string
-          regiao?: string
-          uf?: string | null
-          vagas?: number | null
-          vagas_texto?: string | null
-          salario_min?: number | null
-          salario_max?: number | null
-          salario_texto?: string | null
-          cargos?: string | null
-          escolaridade?: string
-          resumo?: string | null
-          inscricao_ate?: string | null
-          inscricao_texto?: string | null
-          status?: string
-          is_active?: boolean
-          scraped_at?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      pci_concurso_feed_sync_runs: {
-        Row: {
-          id: string
-          started_at: string
-          finished_at: string | null
-          status: string
-          items_upserted: number | null
-          items_deactivated: number | null
-          error_message: string | null
-        }
-        Insert: {
-          id?: string
-          started_at?: string
-          finished_at?: string | null
-          status?: string
-          items_upserted?: number | null
-          items_deactivated?: number | null
-          error_message?: string | null
-        }
-        Update: {
-          id?: string
-          started_at?: string
-          finished_at?: string | null
-          status?: string
-          items_upserted?: number | null
-          items_deactivated?: number | null
-          error_message?: string | null
+          voucher_code?: string | null
         }
         Relationships: []
       }
@@ -369,6 +303,7 @@ export type Database = {
         Row: {
           alternatives_count: number | null
           banca: string
+          cargo: string | null
           created_at: string
           created_by_user_id: string | null
           custom_banca: string | null
@@ -379,6 +314,7 @@ export type Database = {
           exam_booklets: Json | null
           exam_type: string | null
           form_config: Json | null
+          gabarito_status: string
           has_cota: Json | null
           has_minimum_score: boolean | null
           has_quota_minimum_score: boolean | null
@@ -386,14 +322,22 @@ export type Database = {
           inscritos: number | null
           is_admin_created: boolean | null
           is_admin_update: boolean | null
+          is_general_card: boolean | null
+          is_showcase: boolean | null
+          is_unified: boolean | null
           knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
           metadata: Json | null
           official_answers: Json | null
           orgao: string
+          parent_concurso_id: string | null
           predefined_job_title: string | null
+          provisional_answers: Json
+          provisional_version: number
           quota_minimum_score: number | null
+          recalc_pending_at: string | null
+          state_uf: string | null
           status: string
           subjects: Json | null
           temp_disciplines_data: Json | null
@@ -407,6 +351,7 @@ export type Database = {
         Insert: {
           alternatives_count?: number | null
           banca?: string
+          cargo?: string | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
@@ -417,6 +362,7 @@ export type Database = {
           exam_booklets?: Json | null
           exam_type?: string | null
           form_config?: Json | null
+          gabarito_status?: string
           has_cota?: Json | null
           has_minimum_score?: boolean | null
           has_quota_minimum_score?: boolean | null
@@ -424,14 +370,22 @@ export type Database = {
           inscritos?: number | null
           is_admin_created?: boolean | null
           is_admin_update?: boolean | null
+          is_general_card?: boolean | null
+          is_showcase?: boolean | null
+          is_unified?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
           metadata?: Json | null
           official_answers?: Json | null
           orgao: string
+          parent_concurso_id?: string | null
           predefined_job_title?: string | null
+          provisional_answers?: Json
+          provisional_version?: number
           quota_minimum_score?: number | null
+          recalc_pending_at?: string | null
+          state_uf?: string | null
           status?: string
           subjects?: Json | null
           temp_disciplines_data?: Json | null
@@ -445,6 +399,7 @@ export type Database = {
         Update: {
           alternatives_count?: number | null
           banca?: string
+          cargo?: string | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
@@ -455,6 +410,7 @@ export type Database = {
           exam_booklets?: Json | null
           exam_type?: string | null
           form_config?: Json | null
+          gabarito_status?: string
           has_cota?: Json | null
           has_minimum_score?: boolean | null
           has_quota_minimum_score?: boolean | null
@@ -462,14 +418,22 @@ export type Database = {
           inscritos?: number | null
           is_admin_created?: boolean | null
           is_admin_update?: boolean | null
+          is_general_card?: boolean | null
+          is_showcase?: boolean | null
+          is_unified?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
           metadata?: Json | null
           official_answers?: Json | null
           orgao?: string
+          parent_concurso_id?: string | null
           predefined_job_title?: string | null
+          provisional_answers?: Json
+          provisional_version?: number
           quota_minimum_score?: number | null
+          recalc_pending_at?: string | null
+          state_uf?: string | null
           status?: string
           subjects?: Json | null
           temp_disciplines_data?: Json | null
@@ -480,7 +444,15 @@ export type Database = {
           vagas?: number | null
           watermark_image_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "concursos_parent_concurso_id_fkey"
+            columns: ["parent_concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       error_logs: {
         Row: {
@@ -611,6 +583,166 @@ export type Database = {
         }
         Relationships: []
       }
+      pci_concurso_feed: {
+        Row: {
+          cargos: string | null
+          escolaridade: string
+          id: string
+          inscricao_ate: string | null
+          inscricao_texto: string | null
+          is_active: boolean
+          regiao: string
+          resumo: string | null
+          salario_max: number | null
+          salario_min: number | null
+          salario_texto: string | null
+          scraped_at: string | null
+          status: string
+          titulo: string
+          uf: string | null
+          updated_at: string
+          vagas: number | null
+          vagas_texto: string | null
+        }
+        Insert: {
+          cargos?: string | null
+          escolaridade?: string
+          id: string
+          inscricao_ate?: string | null
+          inscricao_texto?: string | null
+          is_active?: boolean
+          regiao: string
+          resumo?: string | null
+          salario_max?: number | null
+          salario_min?: number | null
+          salario_texto?: string | null
+          scraped_at?: string | null
+          status?: string
+          titulo: string
+          uf?: string | null
+          updated_at?: string
+          vagas?: number | null
+          vagas_texto?: string | null
+        }
+        Update: {
+          cargos?: string | null
+          escolaridade?: string
+          id?: string
+          inscricao_ate?: string | null
+          inscricao_texto?: string | null
+          is_active?: boolean
+          regiao?: string
+          resumo?: string | null
+          salario_max?: number | null
+          salario_min?: number | null
+          salario_texto?: string | null
+          scraped_at?: string | null
+          status?: string
+          titulo?: string
+          uf?: string | null
+          updated_at?: string
+          vagas?: number | null
+          vagas_texto?: string | null
+        }
+        Relationships: []
+      }
+      pci_concurso_feed_sync_runs: {
+        Row: {
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          items_deactivated: number | null
+          items_upserted: number | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          items_deactivated?: number | null
+          items_upserted?: number | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          items_deactivated?: number | null
+          items_upserted?: number | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      provisional_gabarito_leaders: {
+        Row: {
+          booklet_id: string
+          concurso_id: string
+          leader_answer: string
+          leader_votes: number
+          question_number: number
+          updated_at: string
+        }
+        Insert: {
+          booklet_id: string
+          concurso_id: string
+          leader_answer: string
+          leader_votes?: number
+          question_number: number
+          updated_at?: string
+        }
+        Update: {
+          booklet_id?: string
+          concurso_id?: string
+          leader_answer?: string
+          leader_votes?: number
+          question_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provisional_gabarito_leaders_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ranking_answer_votes: {
+        Row: {
+          answer: string
+          booklet_id: string
+          concurso_id: string
+          question_number: number
+          vote_count: number
+        }
+        Insert: {
+          answer: string
+          booklet_id: string
+          concurso_id: string
+          question_number: number
+          vote_count?: number
+        }
+        Update: {
+          answer?: string
+          booklet_id?: string
+          concurso_id?: string
+          question_number?: number
+          vote_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_answer_votes_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       score_calculation_logs: {
         Row: {
           calculation_details: Json | null
@@ -638,6 +770,75 @@ export type Database = {
           new_score?: number | null
           previous_score?: number | null
           user_ranking_id?: string | null
+        }
+        Relationships: []
+      }
+      secure_tokens: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          expires_at: string
+          metadata: Json
+          token: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          expires_at?: string
+          metadata?: Json
+          token: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          expires_at?: string
+          metadata?: Json
+          token?: string
+        }
+        Relationships: []
+      }
+      secure_url_tokens: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          expires_at: string
+          id: string
+          metadata: Json | null
+          revoked_at: string | null
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          expires_at: string
+          id?: string
+          metadata?: Json | null
+          revoked_at?: string | null
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          expires_at?: string
+          id?: string
+          metadata?: Json | null
+          revoked_at?: string | null
+          token_hash?: string
+          used_at?: string | null
         }
         Relationships: []
       }
@@ -866,6 +1067,33 @@ export type Database = {
           study_sessions?: Json | null
           study_statistics?: Json | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_study_v2_migration_backup: {
+        Row: {
+          created_at: string
+          id: string
+          migration_name: string
+          study_cycles: Json | null
+          study_schedule: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          migration_name: string
+          study_cycles?: Json | null
+          study_schedule?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          migration_name?: string
+          study_cycles?: Json | null
+          study_schedule?: Json
           user_id?: string
         }
         Relationships: []
@@ -1236,6 +1464,10 @@ export type Database = {
         Row: {
           applied_at: string | null
           auth_email: string | null
+          coach_max_students: number | null
+          coach_plan_type: string | null
+          coach_price: number | null
+          coach_status: string | null
           duration_months: number | null
           subscription_active: boolean | null
           subscription_expires_at: string | null
@@ -1254,6 +1486,14 @@ export type Database = {
       }
     }
     Functions: {
+      _cancel_stripe_subscription_if_pro: {
+        Args: { user_id_param: string }
+        Returns: undefined
+      }
+      _delete_user_data_complete: {
+        Args: { user_id_param: string }
+        Returns: undefined
+      }
       accept_coach_invitation: {
         Args: { p_consent_data?: Json; p_invitation_id: string }
         Returns: Json
@@ -1323,6 +1563,11 @@ export type Database = {
         Returns: Json
       }
       apply_voucher: { Args: { voucher_code_param: string }; Returns: Json }
+      base64_decode: { Args: { p_encoded: string }; Returns: string }
+      calculate_general_card_participants: {
+        Args: { p_general_card_id: string }
+        Returns: number
+      }
       calculate_post_expires_at: {
         Args: { p_group_id: string }
         Returns: string
@@ -1375,8 +1620,22 @@ export type Database = {
         Args: { p_concurso_id: string; p_scores: Json; p_user_id?: string }
         Returns: Json
       }
+      can_update_study_group: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
       cancel_coach_invitation: {
         Args: { p_coach_id: string; p_invitation_id: string }
+        Returns: Json
+      }
+      check_can_access_study_groups: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      check_can_be_coach_student: { Args: { p_user_id: string }; Returns: Json }
+      check_can_create_cycle: { Args: { p_user_id: string }; Returns: Json }
+      check_can_create_study_group: {
+        Args: { p_user_id: string }
         Returns: Json
       }
       check_can_edit_answers:
@@ -1396,6 +1655,10 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
+      check_coach_has_student_access: {
+        Args: { p_coach_id: string; p_student_id: string }
+        Returns: Json
+      }
       check_free_user_edit_limits: {
         Args: {
           p_current_edit_count: number
@@ -1412,17 +1675,12 @@ export type Database = {
         Args: { p_coach_id: string }
         Returns: Json
       }
-      check_coach_has_student_access: {
-        Args: { p_coach_id: string; p_student_id: string }
-        Returns: Json
-      }
-      get_coach_student_display: {
-        Args: { p_student_id: string }
-        Returns: Json
-      }
-      generate_coach_study_cycle_token: {
-        Args: { p_student_id: string; p_cycle_id: string }
-        Returns: string
+      check_nickname_availability: {
+        Args: { p_nickname: string }
+        Returns: {
+          available: boolean
+          normalized: string
+        }[]
       }
       check_rate_limit: {
         Args: {
@@ -1446,13 +1704,40 @@ export type Database = {
         Args: { p_concurso_id: string; p_user_id: string }
         Returns: boolean
       }
+      cleanup_all_logs: {
+        Args: {
+          p_audit_retention_days?: number
+          p_score_retention_days?: number
+        }
+        Returns: {
+          deleted_count: number
+          retention_days: number
+          table_name: string
+        }[]
+      }
+      cleanup_audit_logs: {
+        Args: { p_retention_days?: number }
+        Returns: {
+          deleted_count: number
+          retention_days: number
+          table_name: string
+        }[]
+      }
       cleanup_old_audit_logs:
-        | { Args: { p_retention_days?: number }; Returns: number }
         | { Args: never; Returns: number }
+        | { Args: { p_retention_days?: number }; Returns: number }
       cleanup_old_logs:
-        | { Args: { days_to_keep?: number }; Returns: Json }
         | { Args: never; Returns: undefined }
+        | { Args: { days_to_keep?: number }; Returns: Json }
       cleanup_old_score_logs: { Args: never; Returns: number }
+      cleanup_score_calculation_logs: {
+        Args: { p_retention_days?: number }
+        Returns: {
+          deleted_count: number
+          retention_days: number
+          table_name: string
+        }[]
+      }
       count_concurso_participants: {
         Args: { concurso_id: string }
         Returns: number
@@ -1462,6 +1747,8 @@ export type Database = {
         Returns: number
       }
       count_user_posts: { Args: { user_id: string }; Returns: number }
+      current_user_id: { Args: never; Returns: string }
+      deactivate_expired_subscriptions: { Args: never; Returns: Json }
       debug_save_user_answers_v3: {
         Args: {
           p_answers: Json
@@ -1473,12 +1760,22 @@ export type Database = {
         }
         Returns: Json
       }
+      debug_validate_community_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      debug_validate_study_cycle_token: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: Json
+      }
+      debug_validate_user_token: { Args: { p_token: string }; Returns: Json }
       delete_group_post: {
         Args: { p_group_id: string; p_post_id: string }
         Returns: Json
       }
       delete_study_group: { Args: { p_group_id: string }; Returns: Json }
       delete_user_profile: { Args: { user_id_param: string }; Returns: boolean }
+      ensure_launch_pro_for_current_user: { Args: never; Returns: undefined }
       ensure_user_profile: { Args: { p_user_id: string }; Returns: undefined }
       extract_sessions_to_schedule: {
         Args: never
@@ -1488,7 +1785,29 @@ export type Database = {
           users_migrated: number
         }[]
       }
+      flatten_user_booklet_answers: {
+        Args: { p_answers: Json; p_booklet_id: string }
+        Returns: Json
+      }
+      generate_coach_study_cycle_token: {
+        Args: { p_cycle_id: string; p_student_id: string }
+        Returns: string
+      }
+      generate_secure_token: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_expires_in_minutes?: number
+          p_metadata?: Json
+        }
+        Returns: string
+      }
+      generate_token_hash: { Args: never; Returns: string }
       generate_unique_nickname: { Args: { base_name: string }; Returns: string }
+      get_active_gabarito_answers: {
+        Args: { p_booklet_id: string; p_concurso_id: string }
+        Returns: Json
+      }
       get_alert_statistics: {
         Args: never
         Returns: {
@@ -1517,6 +1836,10 @@ export type Database = {
         Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
+      get_coach_student_display: {
+        Args: { p_student_id: string }
+        Returns: Json
+      }
       get_complete_dashboard: {
         Args: never
         Returns: {
@@ -1536,6 +1859,11 @@ export type Database = {
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_cutoff_projection: { Args: { p_concurso_id: string }; Returns: Json }
+      get_general_card_participant_count: {
+        Args: { p_general_card_id: string }
+        Returns: number
       }
       get_group_feed: {
         Args: { p_group_id: string; p_limit?: number; p_offset?: number }
@@ -1575,17 +1903,19 @@ export type Database = {
           total_size_mb: number
         }[]
       }
+      get_launch_pro_promo_end_at: { Args: never; Returns: string }
       get_log_statistics: {
         Args: never
         Returns: {
-          avg_execution_time_ms: number
-          error_rate: number
-          log_type: string
-          logs_last_24h: number
-          logs_last_7d: number
-          total_logs: number
+          newest_record: string
+          oldest_record: string
+          size_mb: number
+          table_name: string
+          total_count: number
         }[]
       }
+      get_obfuscation_key: { Args: never; Returns: string }
+      get_obfuscation_key_status: { Args: never; Returns: Json }
       get_performance_dashboard: {
         Args: never
         Returns: {
@@ -1608,6 +1938,29 @@ export type Database = {
           unit: string
         }[]
       }
+      get_public_community_profiles: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+        Returns: {
+          active_student_count: number
+          approval_count: number
+          avatar_url: string
+          bio: string
+          created_at: string
+          has_active_coach: boolean
+          id: string
+          is_coach: boolean
+          is_pro: boolean
+          is_studying: boolean
+          name: string
+          nickname: string
+          ranking_count: number
+          status_concurseiro: string
+        }[]
+      }
+      get_public_concursos_list: {
+        Args: { p_limit?: number; p_offset?: number; p_search_text?: string }
+        Returns: Json
+      }
       get_public_profiles: {
         Args: never
         Returns: {
@@ -1615,6 +1968,10 @@ export type Database = {
           id: string
           name: string
         }[]
+      }
+      get_public_user_profile_secure: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       get_ranking_classification: {
         Args: {
@@ -1761,14 +2118,20 @@ export type Database = {
           role: string
         }[]
       }
+      get_user_plan_limits: { Args: { p_user_id: string }; Returns: Json }
       get_user_ranking_by_concurso: {
         Args: { p_concurso_id: string; p_user_id: string }
         Returns: Json
       }
+      get_user_rankings_secure: { Args: { p_user_id: string }; Returns: Json }
       get_user_study_data: { Args: { user_uuid: string }; Returns: Json }
       get_user_subscription_plan: {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["subscription_plan"]
+      }
+      grant_launch_pro_subscription: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
@@ -1782,6 +2145,10 @@ export type Database = {
         Args: { p_group_id: string; p_inviter_id: string; p_user_id: string }
         Returns: Json
       }
+      is_active_study_group_member: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_candidate_classified: {
         Args: { p_concurso_id: string; p_ranking_id: string }
         Returns: boolean
@@ -1790,8 +2157,21 @@ export type Database = {
         Args: { p_group_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_launch_pro_promo_active: { Args: never; Returns: boolean }
+      is_study_group_admin: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_study_group_creator: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_user_coach: { Args: { p_user_id: string }; Returns: boolean }
       is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
+      leave_study_group: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: Json
+      }
       log_admin_operation: {
         Args: { operation_details?: Json; operation_type: string }
         Returns: undefined
@@ -1900,9 +2280,38 @@ export type Database = {
           total_records: number
         }[]
       }
+      normalize_nickname: { Args: { p_input: string }; Returns: string }
+      normalize_reservation_type: {
+        Args: { p_reservation_type: string }
+        Returns: string
+      }
+      participate_in_ranking: {
+        Args: {
+          p_concurso_id: string
+          p_ranking_data?: Json
+          p_reservation_type?: string
+          p_selected_booklet_id?: string
+        }
+        Returns: Json
+      }
+      process_consensus_recalc_pending: {
+        Args: { p_debounce_seconds?: number }
+        Returns: Json
+      }
+      rebuild_provisional_gabarito: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       recalc_concurso_scores_public: {
         Args: { p_concurso_id: string }
         Returns: Json
+      }
+      recalculate_all_participant_counts: {
+        Args: never
+        Returns: {
+          concurso_id: string
+          participant_count: number
+        }[]
       }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
@@ -1938,6 +2347,16 @@ export type Database = {
         Returns: Json
       }
       refresh_public_rankings_cache: { Args: never; Returns: undefined }
+      register_answer_vote: {
+        Args: {
+          p_booklet_id: string
+          p_concurso_id: string
+          p_new_answer: string
+          p_old_answer: string
+          p_question_number: number
+        }
+        Returns: Json
+      }
       remove_group_member: {
         Args: { p_admin_id: string; p_group_id: string; p_member_id: string }
         Returns: Json
@@ -1962,6 +2381,20 @@ export type Database = {
         Args: { alert_uuid: string }
         Returns: boolean
       }
+      resolve_secure_token:
+        | {
+            Args: {
+              p_consume?: boolean
+              p_entity_type: string
+              p_token: string
+            }
+            Returns: {
+              entity_id: string
+              entity_type: string
+              metadata: Json
+            }[]
+          }
+        | { Args: { p_token_hash: string }; Returns: Json }
       respond_to_join_request: {
         Args: {
           p_accept: boolean
@@ -1978,7 +2411,12 @@ export type Database = {
         Returns: Json
       }
       save_consolidated_answer_key: {
-        Args: { p_answers: Json; p_booklet_id: string; p_concurso_id: string }
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_concurso_id: string
+          p_gabarito_status?: string
+        }
         Returns: Json
       }
       save_scores_transaction: {
@@ -2083,9 +2521,19 @@ export type Database = {
         }
         Returns: Json
       }
+      set_obfuscation_key: { Args: { p_key: string }; Returns: boolean }
       start_continuous_monitoring: { Args: never; Returns: undefined }
       switch_user_booklet: {
         Args: { p_booklet_id: string; p_ranking_id: string }
+        Returns: Json
+      }
+      sync_consensus_votes_for_booklet: {
+        Args: {
+          p_booklet_id: string
+          p_concurso_id: string
+          p_new_answers: Json
+          p_old_answers: Json
+        }
         Returns: Json
       }
       sync_user_study_v2_data: {
@@ -2103,6 +2551,10 @@ export type Database = {
         Args: { p_ranking_id: string; p_user_id: string }
         Returns: number
       }
+      test_community_token_validation: {
+        Args: { p_action: string; p_user_id: string }
+        Returns: Json
+      }
       test_disciplines_mapping: {
         Args: { p_concurso_id: string }
         Returns: Json
@@ -2118,6 +2570,11 @@ export type Database = {
         }
         Returns: Json
       }
+      unaccent: { Args: { "": string }; Returns: string }
+      update_concurso_participant_count: {
+        Args: { p_concurso_id: string }
+        Returns: undefined
+      }
       update_consolidated_data_and_recalculate: {
         Args: {
           p_concurso_id: string
@@ -2131,10 +2588,29 @@ export type Database = {
         Args: { p_ranking_id: string }
         Returns: Json
       }
+      update_obfuscation_key: { Args: { p_new_key: string }; Returns: Json }
+      update_ranking_reservation_type: {
+        Args: {
+          p_new_reservation_type: string
+          p_ranking_key: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       update_study_statistics: {
         Args: { stats_data: Json; user_uuid: string }
         Returns: undefined
       }
+      update_user_nickname:
+        | {
+            Args: { p_new_nickname: string }
+            Returns: {
+              message: string
+              new_nickname: string
+              success: boolean
+            }[]
+          }
+        | { Args: { p_nickname?: string; p_user_id: string }; Returns: Json }
       update_user_ranking: {
         Args: { p_ranking_data: Json; p_ranking_id: string; p_user_id: string }
         Returns: boolean
@@ -2155,6 +2631,13 @@ export type Database = {
         Args: { p_concurso_id: string; p_user_id: string }
         Returns: boolean
       }
+      validate_admin_token: { Args: { p_token: string }; Returns: Json }
+      validate_community_token: { Args: { p_token: string }; Returns: Json }
+      validate_community_token_secure: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      validate_concurso_token: { Args: { p_token: string }; Returns: string }
       validate_discount_voucher: {
         Args: { voucher_code_param: string }
         Returns: Json
@@ -2163,6 +2646,16 @@ export type Database = {
         Args: { p_input: string; p_max_length?: number }
         Returns: Json
       }
+      validate_nickname_availability:
+        | {
+            Args: { p_nickname: string }
+            Returns: {
+              is_valid: boolean
+              message: string
+              suggestion: string
+            }[]
+          }
+        | { Args: { p_nickname: string; p_user_id?: string }; Returns: Json }
       validate_ranking_data: {
         Args: { p_answers: Json; p_concurso_id: string; p_user_id: string }
         Returns: Json
@@ -2183,6 +2676,16 @@ export type Database = {
         }
         Returns: Json
       }
+      validate_study_cycle_token: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: string
+      }
+      validate_study_cycle_token_secure: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: string
+      }
+      validate_user_token: { Args: { p_token: string }; Returns: string }
+      validate_user_token_secure: { Args: { p_token: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

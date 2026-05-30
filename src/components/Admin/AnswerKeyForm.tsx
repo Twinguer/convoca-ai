@@ -11,6 +11,10 @@ import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 import { saveBookletAnswerKeyLegacy, getAnswerKeyForBooklet } from '@/services/answerKeyService';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import {
+  GabaritoStatusSelector,
+  type GabaritoBancaStatus,
+} from './CreateRanking/GabaritoStatusSelector';
 interface AnswerKeyFormProps {
   concursoId: string;
   bookletId: string;
@@ -27,6 +31,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     [key: number]: string;
   }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
+  const [gabaritoStatus, setGabaritoStatus] = useState<GabaritoBancaStatus>('preliminary');
   const {
     toast
   } = useToast();
@@ -79,6 +84,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       setNullifiedQuestions(nullifiedSet);
     }
   }, [existingAnswers]);
+
+  useEffect(() => {
+    if (concurso?.gabarito_status === 'final') {
+      setGabaritoStatus('final');
+    } else if (concurso?.gabarito_status === 'preliminary') {
+      setGabaritoStatus('preliminary');
+    }
+  }, [concurso?.gabarito_status]);
 
   // Atualizar os nomes de exibição com conhecimentos customizados
   const sectionNames = concurso ? updateSectionDisplayNames(concurso) : {};
@@ -309,7 +322,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       // Log removido por segurança
 
       // Usar o serviço para salvar o caderno
-      const result = await saveBookletAnswerKeyLegacy(concursoId, bookletId, answerKeyData);
+      const result = await saveBookletAnswerKeyLegacy(
+        concursoId,
+        bookletId,
+        answerKeyData,
+        gabaritoStatus
+      );
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -321,7 +339,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       
       toast({
         title: "Gabarito salvo com sucesso",
-        description: `O gabarito oficial foi salvo para o caderno ${bookletId}. Para atualizar as pontuações dos participantes, vá até a página de Resultados e clique em "Atualizar Classificação".`
+        description: `Gabarito ${gabaritoStatus === 'final' ? 'definitivo' : 'provisório'} salvo para o caderno ${bookletId}. As pontuações serão recalculadas automaticamente.`
       });
 
       // ℹ️ Recálculo automático está desativado (função SQL comentada)
@@ -335,6 +353,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['user-participation-v2'] });
+        queryClient.invalidateQueries({ queryKey: ['concurso-details', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['concurso', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
         // Debug logs removed for security
@@ -669,6 +688,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
             </Tabs>
           </div>}
         
+        {/* Status do gabarito da banca (transparência) */}
+        <GabaritoStatusSelector
+          value={gabaritoStatus}
+          onChange={setGabaritoStatus}
+          disabled={isSaving}
+        />
+
         {/* Action button - Save only current booklet */}
         <div className="flex justify-center mt-4">
           <Button onClick={handleSaveCurrentBooklet} className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving}>

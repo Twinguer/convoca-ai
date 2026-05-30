@@ -23,6 +23,7 @@ import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolid
 import { useSubscription } from '@/modules/payments';
 import { useEditLimits } from '@/hooks/useEditLimits';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { isConsensusMode } from '@/components/Admin/CreateRanking/GabaritoStatusSelector';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -41,6 +42,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
   const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
+  const [isConsensusRanking, setIsConsensusRanking] = useState<boolean>(() => isConsensusMode(concurso));
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
   const [subjectScores, setSubjectScores] = useState<Record<string, number>>({});
@@ -299,32 +301,28 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
       setCheckingOfficialAnswers(true);
       try {
-        // Debug logs removed for security
-        
-        // AGUARDAR examBooklets estarem carregados antes de verificar
-        if (!examBooklets || examBooklets.length === 0) {
-          // Debug logs removed for security
+        if (isConsensusMode(concurso)) {
+          setIsConsensusRanking(true);
+          setMissingOfficialAnswers(false);
           return;
         }
-        
-        // Usar selectedBookletIdFromData se disponível, senão usar o primeiro caderno
+
+        setIsConsensusRanking(false);
+
+        if (!examBooklets || examBooklets.length === 0) {
+          return;
+        }
+
         const bookletToCheck = selectedBookletIdFromData || examBooklets[0].id;
-        // Debug logs removed for security
-        
         const result = await checkMissingOfficialAnswers(concurso.id, bookletToCheck);
 
         if (result) {
-          // Debug logs removed for security
           setMissingOfficialAnswers(true);
-
-          // Show toast only once
           toast.warning(
-            "O gabarito oficial deste concurso parece estar incompleto ou não foi configurado. " +
-            "Entre em contato com o administrador.",
+            'O gabarito da banca ainda não está completo neste caderno. A pontuação pode ser recalculada quando o gabarito for cadastrado.',
             { duration: 8000 }
           );
         } else {
-          // Debug logs removed for security
           setMissingOfficialAnswers(false);
         }
       } catch (err) {
@@ -335,7 +333,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     };
 
     checkOfficialAnswerKey();
-  }, [concurso?.id, examBooklets, selectedBookletIdFromData]);
+  }, [concurso?.id, concurso?.gabarito_status, examBooklets, selectedBookletIdFromData]);
 
   // Update section display names with custom disciplines
   useEffect(() => {
@@ -772,18 +770,30 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           </div>
         )}
 
-        {missingOfficialAnswers && (
+        {isConsensusRanking && (
+          <div className="bg-primary/5 border border-primary/20 rounded-md p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <h4 className="font-medium text-foreground">Ranking por consenso</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Ainda não há gabarito da banca. Sua pontuação será calculada com base no consenso entre
+                  os participantes até o gabarito oficial ser cadastrado.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isConsensusRanking && missingOfficialAnswers && (
           <div className="bg-amber-100 border border-amber-300 rounded-md p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-amber-800">Gabarito Oficial Incompleto</h4>
+                <h4 className="font-medium text-amber-800">Gabarito da banca incompleto</h4>
                 <p className="text-sm text-amber-700 mt-1">
-                  O gabarito oficial deste concurso parece estar incompleto ou não foi configurado.
-                  Você ainda pode preencher suas respostas, mas a pontuação pode não ser calculada corretamente.
-                </p>
-                <p className="text-xs text-amber-600 mt-2">
-                  Entre em contato com o administrador para resolver este problema.
+                  O gabarito cadastrado para este caderno parece incompleto. Você ainda pode preencher suas
+                  respostas; a pontuação será atualizada quando o gabarito estiver completo.
                 </p>
               </div>
             </div>

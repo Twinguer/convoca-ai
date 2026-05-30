@@ -18,6 +18,7 @@ import { BookletSelector } from './BookletSelector';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { RPCValidator } from '@/utils/rpcValidator';
 import { normalizeReservationType } from '@/utils/quotaNormalization';
+import { isConsensusMode } from '@/components/Admin/CreateRanking/GabaritoStatusSelector';
 interface ExamBooklet {
   id: string;
   name: string;
@@ -296,14 +297,14 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       return;
     }
 
-    // Validar se o caderno selecionado tem gabarito oficial
+    // Com gabarito da banca: exige gabarito no caderno. Em consenso, participação é permitida sem gabarito.
     const bookletToValidate = selectedBooklet || (booklets.length === 1 ? booklets[0].id : null);
-    if (bookletToValidate) {
+    if (bookletToValidate && !isConsensusMode(concurso)) {
       const hasOfficialAnswers = await validateBookletHasOfficialAnswers(bookletToValidate);
       if (!hasOfficialAnswers) {
         toast({
           title: "Caderno sem gabarito",
-          description: "O caderno selecionado não possui gabarito oficial configurado. Entre em contato com o administrador.",
+          description: "O caderno selecionado ainda não possui gabarito da banca cadastrado.",
           variant: "destructive"
         });
         return;

@@ -67,7 +67,7 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="booklet-selector" className="text-sm font-medium">
-            Caderno para Preencher Gabarito *
+            Caderno para preencher gabarito
           </Label>
           <Select value={selectedBookletId} onValueChange={onBookletChange} disabled={disabled}>
             <SelectTrigger id="booklet-selector">
@@ -93,8 +93,8 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Você deve preencher o gabarito oficial para cada caderno configurado no concurso.
-            <strong> É obrigatório preencher TODOS os cadernos antes de salvar.</strong>
+            O gabarito é opcional. Enquanto não houver gabarito da banca, o ranking usa consenso entre
+            participantes. Preencha cada caderno quando a banca publicar o gabarito correspondente.
           </p>
         </div>
 
@@ -124,18 +124,19 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
         {completionStatus && !completionStatus.allComplete}
 
         {/* Mensagem de sucesso quando todos estão completos */}
-        {completionStatus && completionStatus.allComplete && <div className="p-4 rounded bg-success/5 border border-success/20">
+        {completionStatus && completionStatus.allComplete && (
+          <div className="p-4 rounded bg-success/5 border border-success/20">
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-success mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-success">✅ Todos os Gabaritos Completos!</p>
+                <p className="font-medium text-success">Gabaritos completos</p>
                 <p className="text-success/80 mt-1">
-                  Parabéns! Você preencheu o gabarito oficial de todos os {completionStatus.details.length} cadernos.
-                  Agora você pode salvar o ranking e ativá-lo para os participantes.
+                  Todos os {completionStatus.details.length} cadernos possuem gabarito cadastrado.
                 </p>
               </div>
             </div>
-          </div>}
+          </div>
+        )}
       </CardContent>
     </Card>;
 };

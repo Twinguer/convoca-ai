@@ -43,7 +43,11 @@ const FAQ = () => {
                 Como criar um ranking?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Para criar um ranking, faça login na plataforma, acesse a seção "Criar Ranking" e preencha as informações do concurso, incluindo nome, banca, cargo, estrutura de provas e gabarito oficial. Você pode criar rankings públicos ou privados.
+                Para criar um ranking, faça login na plataforma, acesse &quot;Criar Ranking&quot; e preencha as
+                informações do concurso (banca, cargo, cadernos, vagas, mínimos do edital etc.). O gabarito da
+                banca é opcional: se ainda não houver gabarito oficial, o ranking funciona por consenso entre os
+                participantes. Quando a banca publicar o gabarito, você pode cadastrá-lo e indicar se é provisório
+                ou definitivo.
               </AccordionContent>
             </AccordionItem>
 
@@ -52,7 +56,10 @@ const FAQ = () => {
                 Como participar de um ranking?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Navegue pelos rankings disponíveis em "Pré-Classificação", escolha o ranking desejado e clique em "Ver Ranking". Preencha suas respostas de acordo com o gabarito que você marcou na prova e o sistema calculará automaticamente sua pontuação e posição no ranking.
+                Navegue pelos rankings em &quot;Pré-Classificação&quot;, escolha o desejado e clique em &quot;Ver
+                Ranking&quot;. Informe seu caderno e preencha as respostas que você marcou na prova. Mesmo sem
+                gabarito da banca, você pode participar: nesse período a pontuação é calculada por consenso (a
+                alternativa mais marcada pelos participantes vale como gabarito provisório).
               </AccordionContent>
             </AccordionItem>
 
@@ -61,7 +68,12 @@ const FAQ = () => {
                 Como funciona o cálculo de pontuação?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                A pontuação é calculada com base no gabarito oficial definido pelo criador do ranking. O sistema considera questões objetivas, pesos das disciplinas e, quando aplicável, notas de provas discursivas. Rankings com sistema Cebraspe também consideram as regras específicas da banca.
+                Antes do gabarito da banca, a pontuação usa o consenso entre os participantes. Depois que o
+                criador cadastra o gabarito oficial (provisório ou definitivo), o cálculo passa a usar esse
+                gabarito. O sistema considera questões objetivas, pesos das disciplinas, mínimos do edital e,
+                quando aplicável, notas discursivas. Em rankings com provas Cebraspe (certo ou errado), também
+                aplicamos as regras específicas da banca. Quando o edital informa vagas, exibimos uma projeção
+                de nota de corte na ampla concorrência (estimativa, não resultado oficial).
               </AccordionContent>
             </AccordionItem>
 

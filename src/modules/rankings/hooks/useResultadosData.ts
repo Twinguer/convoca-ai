@@ -195,6 +195,35 @@ export function useResultadosData(concursoId?: string, options: ResultadosDataOp
     };
   }, [id, refetchRankings, refetchCount]);
 
+  useEffect(() => {
+    if (!id || concurso?.gabarito_status !== 'consensus') {
+      return;
+    }
+
+    let cancelled = false;
+
+    const runConsensusRecalc = async () => {
+      const { data, error } = await supabase.rpc('process_consensus_recalc_pending', {
+        p_debounce_seconds: 45,
+      });
+
+      if (cancelled || error) {
+        return;
+      }
+
+      if ((data as { processed?: number })?.processed > 0) {
+        refetchRankings();
+        refetchCount();
+      }
+    };
+
+    void runConsensusRecalc();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, concurso?.gabarito_status, concurso?.recalc_pending_at, concurso?.provisional_version, refetchRankings, refetchCount]);
+
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
 
   const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator || isCheckingParticipation;

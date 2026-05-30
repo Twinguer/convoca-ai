@@ -65,7 +65,12 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
 };
 
 // Função para salvar gabarito usando nova estrutura consolidada
-export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: string, answersArray: any[]) => {
+export const saveBookletAnswerKeyLegacy = async (
+  concursoId: string,
+  bookletId: string,
+  answersArray: any[],
+  gabaritoStatus: 'preliminary' | 'final' = 'preliminary'
+) => {
   try {
     // Debug logs removed for security
     // Debug logs removed for security
@@ -84,7 +89,7 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
     });
 
     // Usar o novo serviço consolidado diretamente
-    const result = await saveBookletAnswerKey(concursoId, bookletId, formattedAnswers);
+    const result = await saveBookletAnswerKey(concursoId, bookletId, formattedAnswers, gabaritoStatus);
     
     if (!result.success) {
       devLog.error('[saveBookletAnswerKeyLegacy] Error using consolidated service:', result.error);

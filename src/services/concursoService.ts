@@ -226,6 +226,10 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       has_minimum_score: rankingData.has_minimum_score,
       minimum_score_unit_type: null,
       total_minimum_score: rankingData.total_minimum_score,
+      // Gabarito e ranking provisório
+      gabarito_status: rankingData.gabarito_status as Concurso['gabarito_status'],
+      recalc_pending_at: rankingData.recalc_pending_at ?? null,
+      provisional_version: rankingData.provisional_version ?? 0,
       // has_quota_minimum_score: removida - dados agora em JSONB
       // quota_minimum_score: removida - dados agora em JSONB
       // quota_minimum_score_unit_type: removida - dados agora em JSONB

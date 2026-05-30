@@ -127,6 +127,11 @@ export interface Concurso {
   // Modo vitrine (showcase) - permite visualização pública mas bloqueia novos cadastros
   is_showcase?: boolean;
 
+  // Gabarito e ranking provisório
+  gabarito_status?: 'consensus' | 'preliminary' | 'final';
+  provisional_version?: number;
+  recalc_pending_at?: string | null;
+
   // Estrutura JSONB de disciplinas (suporte a nova e antiga estrutura)
   disciplines?: DisciplinesStructure | (DisciplineBlock | NestedDiscipline)[]; // Nova estrutura ou compatibilidade
   

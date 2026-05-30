@@ -22,6 +22,7 @@ interface GeneralTabProps {
   handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleNextTab: () => void;
   onSaveRanking?: () => Promise<string | null>;
+  onGoToResults?: () => void;
   isSubmitting?: boolean;
   selectedStates: string[];
   setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
@@ -39,6 +40,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleOrgaoChange,
   handleNextTab,
   onSaveRanking,
+  onGoToResults,
   isSubmitting,
   selectedStates,
   setSelectedStates,
@@ -308,7 +310,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
       toast({
         title: "Sucesso!",
-        description: "Ranking e cadernos salvos. Preencha agora o gabarito oficial."
+        description: "Ranking salvo. Você pode ir aos resultados (modo consenso) ou cadastrar o gabarito da banca quando disponível."
       });
 
       // Mudar para a aba de gabarito
@@ -357,14 +359,19 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         onBookletsSaved={() => {}}
       />
 
-      <div className="flex justify-end">
-        <Button 
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
+        {createdConcursoId && onGoToResults && (
+          <Button type="button" variant="outline" onClick={onGoToResults}>
+            Ir para Resultados
+          </Button>
+        )}
+        <Button
           type="button"
           onClick={handleFillAnswerKey}
           disabled={isSubmitting || isSavingAll}
           size="lg"
         >
-          {isSavingAll ? "Salvando..." : "Salvar"}
+          {isSavingAll ? 'Salvando...' : createdConcursoId ? 'Salvar alterações' : 'Salvar ranking'}
         </Button>
       </div>
     </div>

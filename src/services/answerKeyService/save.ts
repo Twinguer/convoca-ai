@@ -6,7 +6,8 @@ import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 export const saveBookletAnswerKey = async (
   concursoId: string, 
   bookletId: string, 
-  answers: Record<string, AnswerKeyData>
+  answers: Record<string, AnswerKeyData>,
+  gabaritoStatus: 'preliminary' | 'final' = 'preliminary'
 ) => {
   try {
     // Debug logs removed for security
@@ -56,7 +57,8 @@ export const saveBookletAnswerKey = async (
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
       p_booklet_id: bookletIdString,
-      p_answers: formattedAnswers
+      p_answers: formattedAnswers,
+      p_gabarito_status: gabaritoStatus,
     });
 
     if (error) {
@@ -87,7 +89,8 @@ export const saveBookletAnswerKey = async (
 export const updateSingleAnswer = async (
   concursoId: string, 
   questionNumber: number, 
-  answerData: AnswerKeyData
+  answerData: AnswerKeyData,
+  gabaritoStatus: 'preliminary' | 'final' = 'preliminary'
 ) => {
   try {
     devLog.log('[answerKeyService] Updating single answer');
@@ -122,8 +125,9 @@ export const updateSingleAnswer = async (
 
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
-      p_booklet_id: 'default', // Usar um booklet padrão para atualizações individuais
-      p_answers: singleAnswerData
+      p_booklet_id: 'default',
+      p_answers: singleAnswerData,
+      p_gabarito_status: gabaritoStatus,
     });
 
     if (error) {
