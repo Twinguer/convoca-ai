@@ -233,20 +233,32 @@ export class RPCValidator {
       throw new Error('Dados de ranking devem ser um objeto');
     }
 
-    // Validar estrutura básica
-    const validated: any = {};
+    const validated: any = { ...data };
 
-    // Validar edit_count se presente
     if (data.edit_count !== undefined) {
       validated.edit_count = this.validateEditCount(data.edit_count);
     }
 
-    // Validar selected_booklet_id se presente
     if (data.selected_booklet_id !== undefined) {
       validated.selected_booklet_id = this.validateBookletId(data.selected_booklet_id);
     }
 
-    // Outros campos podem ser adicionados conforme necessário
+    if (data.user_data !== undefined) {
+      if (!data.user_data || typeof data.user_data !== 'object' || Array.isArray(data.user_data)) {
+        throw new Error('user_data deve ser um objeto');
+      }
+      validated.user_data = { ...data.user_data };
+      if (data.user_data.reservation_type !== undefined && data.user_data.reservation_type !== null) {
+        if (typeof data.user_data.reservation_type !== 'string') {
+          throw new Error('reservation_type deve ser uma string');
+        }
+        const trimmed = data.user_data.reservation_type.trim();
+        if (!trimmed) {
+          throw new Error('reservation_type não pode ser vazio');
+        }
+        validated.user_data.reservation_type = trimmed;
+      }
+    }
 
     return validated;
   }

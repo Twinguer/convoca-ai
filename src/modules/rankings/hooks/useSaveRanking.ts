@@ -1,18 +1,18 @@
 
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
 import { mapFormDataToDisciplinesStructure } from '@/utils/disciplinesStructure';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
 import { inheritParentData } from '@/services/concursoService';
 import { devLog } from '@/utils/productionLogger';
 import {
-  createHasCotaStructure,
   createSubjectsStructure,
   ensureNumeric,
   normalizeRankingIdentity,
+  resolveHasCotaStructure,
 } from '@/modules/rankings/domain/rankingFormMappers';
+import type { SaveRankingResult } from '@/modules/rankings/domain/saveRankingResult';
 
 interface SaveRankingOptions {
   formValues: any;
@@ -24,22 +24,25 @@ interface SaveRankingOptions {
 export const useSaveRanking = () => {
   const queryClient = useQueryClient();
   
-  const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
+  const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions): Promise<SaveRankingResult> => {
     try {
       // Se estivermos editando, buscar dados existentes primeiro para preservar estrutura
       let existingDisciplines: any[] = [];
+      let existingHasCota: Record<string, unknown> | null = null;
       let examType: string = 'Alternativas';
       
       if (editId) {
-        // Buscar as disciplinas existentes para preservar IDs
         const { data: existingRanking, error: fetchError } = await supabase
           .from('concursos')
-          .select('disciplines, exam_type')
+          .select('disciplines, exam_type, has_cota')
           .eq('id', editId)
           .single();
         
-        if (!fetchError && existingRanking?.disciplines) {
-          existingDisciplines = existingRanking.disciplines;
+        if (!fetchError && existingRanking) {
+          if (existingRanking.disciplines) {
+            existingDisciplines = existingRanking.disciplines;
+          }
+          existingHasCota = existingRanking.has_cota || null;
           examType = existingRanking.exam_type || 'Alternativas';
         }
       } else {
@@ -158,16 +161,9 @@ export const useSaveRanking = () => {
         formValues.disciplines = [];
       }
 
-      // Process disciplines for valid numeric fields and check if any are enabled
-      let hasEnabledDiscipline = false;
-      
       if (formValues.flattenedDisciplines && formValues.flattenedDisciplines.length > 0) {
-        // Process the flattened disciplines array (compatibility with the backend)
         formValues.flattenedDisciplines = formValues.flattenedDisciplines.map((discipline: any) => {
           const enabled = discipline.isEnabled === true;
-          if (enabled) {
-            hasEnabledDiscipline = true;
-          }
           return {
             ...discipline,
             questionCount: ensureNumeric(discipline.questionCount),
@@ -176,20 +172,6 @@ export const useSaveRanking = () => {
             minimum_score: ensureNumeric(discipline.minimum_score)
           };
         });
-      } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
-        // Check for enabled disciplines in the block structure
-        // Verificar se existem disciplinas habilitadas
-        for (const block of formValues.disciplines) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled === true) {
-                hasEnabledDiscipline = true;
-                break;
-              }
-            }
-          }
-          if (hasEnabledDiscipline) break;
-        }
       }
       
       // Determinar tipo de ranking e campos de hierarquia (disponível para create e update)
@@ -197,12 +179,6 @@ export const useSaveRanking = () => {
       const hasParent = !!formValues.parent_concurso_id;
       const rankingType = hasParent ? 'position' : (formValues.ranking_type || 'general');
       const isGeneralCard = !hasParent && (rankingType === 'general' || formValues.is_general_card === true);
-      
-      // Validate that at least one discipline is enabled (apenas para cards de cargo, não para card geral)
-      if (!isGeneralCard && !hasEnabledDiscipline) {
-        toast.error("Por favor, selecione ao menos uma disciplina.");
-        return { duplicated: false, error: true };
-      }
 
       // Fetch rankings and do the comparison in JS for robust uniqueness
       // ✅ Incluir campos de hierarquia para comparação correta
@@ -249,12 +225,12 @@ export const useSaveRanking = () => {
       });
 
       if (isDuplicate) {
-        if (hasParent) {
-          toast.error("Já existe um ranking de cargo com mesmo título, órgão, banca e cargo.");
-        } else {
-          toast.error("Já existe um ranking com mesmo título, órgão e banca.");
-        }
-        return { duplicated: true };
+        return {
+          duplicated: true,
+          message: hasParent
+            ? 'Já existe um ranking de cargo com mesmo título, órgão, banca e cargo.'
+            : 'Já existe um ranking com mesmo título, órgão e banca.',
+        };
       }
       // ✅ Usar hasParent diretamente para garantir que parent_concurso_id seja preservado
       const parentConcursoId = hasParent ? formValues.parent_concurso_id : null;
@@ -282,12 +258,14 @@ export const useSaveRanking = () => {
             inscritos: formValues.inscritos
           };
       
-      // Herdar título, órgão e banca do parent (apenas para cards de cargo)
+      let parentHasCota: Record<string, unknown> | null = null;
+
+      // Herdar título, órgão, banca e cotas do parent (apenas para cards de cargo)
       if (!isGeneralCard && parentConcursoId) {
         try {
           const { data: parentData, error: parentError } = await supabase
             .from('concursos')
-            .select('titulo, orgao, banca')
+            .select('titulo, orgao, banca, has_cota')
             .eq('id', parentConcursoId)
             .single();
           
@@ -295,12 +273,18 @@ export const useSaveRanking = () => {
             finalTitle = parentData.titulo || title;
             finalOrgao = parentData.orgao || orgao;
             finalBanca = parentData.banca || finalBanca;
+            parentHasCota = parentData.has_cota || null;
           }
         } catch (error) {
           devLog.error('Erro ao buscar dados do parent:', error);
-          // Continuar com os valores do formulário em caso de erro
         }
       }
+
+      const hasCotaStructure = resolveHasCotaStructure({
+        formValues,
+        existingHasCota,
+        parentHasCota,
+      });
 
       // Create a clean object with the data for submission (only essential fields)
       const dataToSubmit: Record<string, any> = {
@@ -346,7 +330,6 @@ export const useSaveRanking = () => {
       if (editId) {
         // Para edição, incluir todos os campos necessários
         const subjectsStructure = createSubjectsStructure(formValues);
-        const hasCotaStructure = createHasCotaStructure(formValues);
         
         // Processar estrutura de disciplinas para edição usando helper
         const disciplinesStructure = mapFormDataToDisciplinesStructure({
@@ -413,85 +396,8 @@ export const useSaveRanking = () => {
         concursoIdToUse = result?.[0]?.id;
       }
 
-      // Segunda etapa: atualizar com campos adicionais (sempre executar)
-      if (concursoIdToUse) {
-        // ✅ NOVA ESTRUTURA: Mapear dados do formulário para estrutura hierárquica correta
-        // Normalizar campos de mínimo global (snake_case) para garantir persistência correta
-        const disciplinesStructure = mapFormDataToDisciplinesStructure({
-          ...formValues,
-          minimum_total_score: formValues.minimumTotalScore || 0,
-          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0,
-          wrong_answer_penalty: formValues.wrong_answer_penalty || 0
-        });
-        
-    // Debug logs removed for security
-    // Debug logs removed for security
-    // Debug logs removed for security
-    // Debug logs removed for security
-    // Debug logs removed for security
-    // Debug logs removed for security
-    // Debug logs removed for security
-        
-        // ✅ VALIDAÇÃO: Verificar se há disciplinas antes de salvar
-        if (!disciplinesStructure.blocks || disciplinesStructure.blocks.length === 0) {
-          // Debug logs removed for security
-          // toast.error('Por favor, adicione pelo menos uma disciplina na estrutura da prova');
-          // return;
-        }
-        
-        // Determinar se há disciplinas customizadas baseado na nova estrutura
-        const hasCustomDisciplines = disciplinesStructure.blocks && disciplinesStructure.blocks.length > 0;
-        
-        // Debug logs removed for security
-        // Debug logs removed for security
-        
-        const { error: updateError } = await supabase
-          .from('concursos')
-          .update({ 
-            exam_type: formValues.exam_type || 'Alternativas',
-            // has_custom_knowledge removido - usando disciplines JSONB
-            created_by_user_id: formValues.created_by_user_id || userId,
-            // Campos básicos do concurso (usar dados herdados se disponíveis)
-            vagas: ensureNumeric(inheritedData.vagas || formValues.vagas),
-            inscritos: ensureNumeric(inheritedData.inscritos || formValues.inscritos),
-            etapa_atual: formValues.etapa_atual,
-            link: formValues.link,
-            watermark_image_url: formValues.watermark_image_url || null,
-            // Campos de hierarquia
-            is_general_card: isGeneralCard,
-            parent_concurso_id: parentConcursoId,
-            cargo: cargo,
-            is_unified: isUnified,
-            state_uf: stateUf,
-            // Campos de localidade e cotas (usar dados herdados)
-            localidades: inheritedData.localidades,
-            // Campos JSONB sincronizados com convoca-ai
-            disciplines: disciplinesStructure,
-            subjects: createSubjectsStructure(formValues),
-            has_cota: createHasCotaStructure(formValues),
-            form_config: formValues.form_config || {},
-            official_answers: formValues.official_answers || {},
-            ...(formValues.exam_booklets && formValues.exam_booklets.length > 0 ? { exam_booklets: formValues.exam_booklets } : {}),
-            metadata: formValues.metadata || {},
-            total_participants: 0
-          })
-          .eq('id', concursoIdToUse);
-
-        if (updateError) {
-          devLog.error("Error updating additional fields:", updateError);
-          devLog.error("Update error details:", {
-            code: updateError.code,
-            message: updateError.message,
-            details: updateError.details,
-            hint: updateError.hint
-          });
-          toast.error(`Erro ao atualizar campos adicionais: ${updateError.message}`);
-          // Não falhar a operação, apenas logar o erro
-        }
-
-        // Disparar recálculo para todos os participantes após editar mínimos/pesos/blocos
+      const recalculateParticipants = async (concursoId: string) => {
         try {
-          // Buscar todos os user_rankings e filtrar em memória os que participam deste concurso
           const { data: allUserRankings } = await supabase
             .from('user_rankings')
             .select('user_id, consolidated_data');
@@ -501,23 +407,66 @@ export const useSaveRanking = () => {
             for (const ur of allUserRankings) {
               const rankingsMap = ur?.consolidated_data?.rankings || {};
               const keys = Object.keys(rankingsMap);
-              const participates = keys.some((k) => rankingsMap[k]?.concurso_id === concursoIdToUse);
+              const participates = keys.some((k) => rankingsMap[k]?.concurso_id === concursoId);
               if (participates) participants.push(ur.user_id);
             }
           }
 
           if (participants.length > 0) {
-            // Rodar em background sem bloquear a UI
-            Promise.allSettled(participants.map((uid) => recalculateUserScore(uid, concursoIdToUse!)))
+            Promise.allSettled(participants.map((uid) => recalculateUserScore(uid, concursoId)))
               .then(() => {
-                // Invalidate para refletir resultados
-                queryClient.invalidateQueries({ queryKey: ['rankings', concursoIdToUse] });
+                queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
                 queryClient.invalidateQueries({ queryKey: ['user-created-rankings'] });
               })
               .catch((e) => devLog.error('[useSaveRanking] Erro ao executar recálculo em lote:', e));
           }
         } catch (batchErr) {
           devLog.error('[useSaveRanking] Erro ao preparar recálculo pós-edição:', batchErr);
+        }
+      };
+
+      if (concursoIdToUse) {
+        if (!editId) {
+          const disciplinesStructure = mapFormDataToDisciplinesStructure({
+            ...formValues,
+            minimum_total_score: formValues.minimumTotalScore || 0,
+            minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0,
+            wrong_answer_penalty: formValues.wrong_answer_penalty || 0
+          });
+
+          const { error: updateError } = await supabase
+            .from('concursos')
+            .update({
+              exam_type: formValues.exam_type || 'Alternativas',
+              created_by_user_id: formValues.created_by_user_id || userId,
+              vagas: ensureNumeric(inheritedData.vagas || formValues.vagas),
+              inscritos: ensureNumeric(inheritedData.inscritos || formValues.inscritos),
+              etapa_atual: formValues.etapa_atual,
+              link: formValues.link,
+              watermark_image_url: formValues.watermark_image_url || null,
+              is_general_card: isGeneralCard,
+              parent_concurso_id: parentConcursoId,
+              cargo: cargo,
+              is_unified: isUnified,
+              state_uf: stateUf,
+              localidades: inheritedData.localidades,
+              disciplines: disciplinesStructure,
+              subjects: createSubjectsStructure(formValues),
+              has_cota: hasCotaStructure,
+              form_config: formValues.form_config || {},
+              official_answers: formValues.official_answers || {},
+              ...(formValues.exam_booklets && formValues.exam_booklets.length > 0 ? { exam_booklets: formValues.exam_booklets } : {}),
+              metadata: formValues.metadata || {},
+              total_participants: 0
+            })
+            .eq('id', concursoIdToUse);
+
+          if (updateError) {
+            devLog.error("Error updating additional fields:", updateError);
+            throw updateError;
+          }
+        } else {
+          await recalculateParticipants(concursoIdToUse);
         }
       }
 
@@ -529,11 +478,13 @@ export const useSaveRanking = () => {
       queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['user-created-rankings', userId] });
       
-      return { id: concursoIdToUse, duplicated: false };
+      return { id: concursoIdToUse!, duplicated: false };
     } catch (error: any) {
       devLog.error("Erro ao salvar ranking:", error);
-      toast.error("Erro ao salvar ranking: " + (error?.message || 'Erro desconhecido'));
-      return { duplicated: false, error: true };
+      return {
+        error: true,
+        message: `Erro ao salvar ranking: ${error?.message || 'Erro desconhecido'}`,
+      };
     }
   }, [queryClient]);
 

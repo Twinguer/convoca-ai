@@ -663,6 +663,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         
         devLog.log('[ParticipationForm] Validando rankingData...');
         validatedRankingData = RPCValidator.validateRankingData(newRankingData);
+        validatedRankingData = {
+          ...validatedRankingData,
+          user_data: {
+            ...(validatedRankingData.user_data || newRankingData.user_data || {}),
+            reservation_type: validatedReservationType,
+          },
+        };
         devLog.log('[ParticipationForm] rankingData validado');
         
         devLog.log('[ParticipationForm] ✅ Todas as validações passaram');

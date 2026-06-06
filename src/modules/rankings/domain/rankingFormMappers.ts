@@ -43,7 +43,33 @@ export function createSubjectsStructure(formValues: Record<string, unknown>) {
   };
 }
 
-export function createHasCotaStructure(formValues: Record<string, unknown>) {
+export type HasCotaStructure = {
+  ppp: boolean;
+  pcd: boolean;
+  ind: boolean;
+  hip: boolean;
+  tra: boolean;
+  min_cota: number;
+};
+
+export function normalizeHasCotaStructure(
+  hasCota: Record<string, unknown> | null | undefined
+): HasCotaStructure {
+  return {
+    ppp: hasCota?.ppp === true,
+    pcd: hasCota?.pcd === true,
+    ind: hasCota?.ind === true,
+    hip: hasCota?.hip === true,
+    tra: hasCota?.tra === true,
+    min_cota: ensureNumeric(hasCota?.min_cota),
+  };
+}
+
+export function hasAnyQuotaEnabled(hasCota: HasCotaStructure): boolean {
+  return hasCota.ppp || hasCota.pcd || hasCota.ind || hasCota.hip || hasCota.tra;
+}
+
+export function createHasCotaStructure(formValues: Record<string, unknown>): HasCotaStructure {
   return {
     ppp: formValues.has_ppp === true,
     pcd: formValues.has_pcd === true,
@@ -52,6 +78,24 @@ export function createHasCotaStructure(formValues: Record<string, unknown>) {
     tra: formValues.has_transsexuais === true,
     min_cota: 0,
   };
+}
+
+export function resolveHasCotaStructure(options: {
+  formValues: Record<string, unknown>;
+  existingHasCota?: Record<string, unknown> | null;
+  parentHasCota?: Record<string, unknown> | null;
+}): HasCotaStructure {
+  const fromForm = createHasCotaStructure(options.formValues);
+  if (hasAnyQuotaEnabled(fromForm)) {
+    return fromForm;
+  }
+
+  const existing = normalizeHasCotaStructure(options.existingHasCota);
+  if (hasAnyQuotaEnabled(existing)) {
+    return existing;
+  }
+
+  return normalizeHasCotaStructure(options.parentHasCota);
 }
 
 export function normalizeRankingIdentity(str: string): string {

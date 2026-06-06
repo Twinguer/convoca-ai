@@ -291,13 +291,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         concursoIdToUse = id || concursoIdToUse;
       }
 
-      // Garantir que temos um ID de concurso
       if (!concursoIdToUse) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível obter o ID do ranking",
-          variant: "destructive"
-        });
         return;
       }
 

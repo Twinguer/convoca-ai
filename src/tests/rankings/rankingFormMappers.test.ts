@@ -4,6 +4,7 @@ import {
   createSubjectsStructure,
   ensureNumeric,
   normalizeRankingIdentity,
+  resolveHasCotaStructure,
 } from '@/modules/rankings/domain/rankingFormMappers';
 
 describe('rankingFormMappers', () => {
@@ -32,5 +33,23 @@ describe('rankingFormMappers', () => {
     const cota = createHasCotaStructure({ has_ppp: true, has_pcd: false });
     expect(cota.ppp).toBe(true);
     expect(cota.pcd).toBe(false);
+  });
+
+  it('resolveHasCotaStructure preserva cotas existentes quando form está vazio', () => {
+    const resolved = resolveHasCotaStructure({
+      formValues: { has_ppp: false, has_pcd: false },
+      existingHasCota: { ppp: true, pcd: false, ind: false, hip: false, tra: false },
+    });
+    expect(resolved.ppp).toBe(true);
+    expect(resolved.pcd).toBe(false);
+  });
+
+  it('resolveHasCotaStructure herda cotas do parent quando form e registro estão vazios', () => {
+    const resolved = resolveHasCotaStructure({
+      formValues: {},
+      existingHasCota: { ppp: false, pcd: false },
+      parentHasCota: { pcd: true, ppp: false, ind: false, hip: false, tra: false },
+    });
+    expect(resolved.pcd).toBe(true);
   });
 });

@@ -3,6 +3,10 @@ import { Concurso, ConcursoFilter } from "@/types/concursos";
 // ✅ CONSOLIDADO: Usar serviço único de rankings
 import { fetchUserRankings as fetchRankingsFromService } from '@/modules/rankings';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import {
+  hasAnyQuotaEnabled,
+  normalizeHasCotaStructure,
+} from '@/modules/rankings/domain/rankingFormMappers';
 
 /**
  * Helper function para herdar dados do card geral (parent) para cards de cargo
@@ -120,19 +124,25 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
     // ✅ Verificar se o parent é unificado (para exibir state_uf corretamente)
     let parentIsUnified = false;
     let parentIsShowcase = false;
+    let parentHasCota = null;
     if (rankingData.parent_concurso_id) {
       try {
         const { data: parentData } = await supabase
           .from('concursos')
-          .select('is_unified, is_showcase')
+          .select('is_unified, is_showcase, has_cota')
           .eq('id', rankingData.parent_concurso_id)
           .single();
         parentIsUnified = parentData?.is_unified || false;
         parentIsShowcase = parentData?.is_showcase || false;
+        parentHasCota = parentData?.has_cota || null;
       } catch (error) {
         devLog.error('[fetchConcursoById] Erro ao verificar dados do parent:', error);
       }
     }
+
+    const ownHasCota = normalizeHasCotaStructure(rankingData.has_cota);
+    const inheritedHasCota = normalizeHasCotaStructure(parentHasCota);
+    const resolvedHasCota = hasAnyQuotaEnabled(ownHasCota) ? ownHasCota : inheritedHasCota;
 
     // Converter ranking para formato de concurso
     // devLog.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
@@ -169,15 +179,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       // ✅ Se for card de cargo, usar is_unified do parent; caso contrário, usar do próprio card
       is_unified: rankingData.parent_concurso_id ? parentIsUnified : (rankingData.is_unified || false),
       state_uf: rankingData.state_uf || null,
-      // Estrutura JSONB para cotas
-      has_cota: rankingData.has_cota || {
-        ppp: false,
-        pcd: false,
-        ind: false,
-        hip: false,
-        tra: false,
-        min_cota: 0
-      },
+      has_cota: resolvedHasCota,
       is_admin_update: false,
       // ✅ Herdar is_showcase do parent se for cargo, senão usar do próprio ranking
       is_showcase: rankingData.parent_concurso_id ? parentIsShowcase : (rankingData.is_showcase || false),

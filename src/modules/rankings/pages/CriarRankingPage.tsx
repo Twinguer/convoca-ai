@@ -13,6 +13,7 @@ import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { GeneralCardForm } from '@/components/Admin/CreateRanking/GeneralCardForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/modules/rankings/hooks/useSaveRanking';
+import { resolveSaveRankingOutcome } from '@/modules/rankings/domain/saveRankingResult';
 import { useEditUrls } from '@/hooks/useEditUrls';
 import { usePlanLimits } from '@/modules/payments';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
@@ -473,29 +474,25 @@ const CriarRankingPage = () => {
         jobTitles
       });
 
-      if (saveResult?.duplicated) {
-        setIsSubmitting(false);
+      const outcome = resolveSaveRankingOutcome(saveResult);
+      if (!outcome.ok) {
+        toast.error(outcome.message);
         return;
       }
 
-      if (saveResult?.id) {
-        toast.success(editToken ? 'Card geral atualizado com sucesso!' : 'Card geral criado com sucesso!');
-        queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        if (!editToken) {
-          // Redirecionar para página de cargos apenas se for criação
-          // Usar URL ofuscada para segurança
-          try {
-            const { UrlObfuscationService } = await import('@/services/urlObfuscation');
-            const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(saveResult.id);
-            navigate(secureUrl);
-          } catch (error) {
-            devLog.error('Erro ao gerar URL segura:', error);
-            // Fallback apenas em caso de erro crítico
-            navigate(`/pre-classificacao/${saveResult.id}/cargos`);
-          }
+      toast.success(editToken ? 'Card geral atualizado com sucesso!' : 'Card geral criado com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      if (!editToken) {
+        try {
+          const { UrlObfuscationService } = await import('@/services/urlObfuscation');
+          const secureUrl = await UrlObfuscationService.generateSecureCargosUrl(outcome.id);
+          navigate(secureUrl);
+        } catch (error) {
+          devLog.error('Erro ao gerar URL segura:', error);
+          navigate(`/pre-classificacao/${outcome.id}/cargos`);
         }
-        return;
       }
+      return;
     } catch (error) {
       devLog.error("Erro ao salvar card geral:", error);
       toast.error("Erro ao salvar card geral: " + (error as Error).message);
@@ -530,22 +527,14 @@ const CriarRankingPage = () => {
           editId: createdConcursoId,
           jobTitles
         });
-        if (saveResult?.duplicated) {
-          setIsSubmitting(false);
+        const outcome = resolveSaveRankingOutcome(saveResult);
+        if (!outcome.ok) {
+          toast.error(outcome.message);
           return null;
         }
-        if (saveResult?.id) {
-          setCreatedConcursoId(saveResult.id);
-          // Invalidar queries para recarregar os cadernos
-          queryClient.invalidateQueries({
-            queryKey: ['exam-booklets']
-          });
-          return saveResult.id;
-        }
-        queryClient.invalidateQueries({
-          queryKey: ['rankings']
-        });
-        return createdConcursoId; // quando editando, retorna o id já existente
+        setCreatedConcursoId(outcome.id);
+        queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
+        return outcome.id;
       } catch (error) {
         devLog.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
@@ -554,7 +543,6 @@ const CriarRankingPage = () => {
         setIsSubmitting(false);
       }
     } else {
-      // Para usuários não-admin, manter o fluxo original
       setIsSubmitting(true);
       try {
         const saveResult = await saveRanking({
@@ -563,22 +551,14 @@ const CriarRankingPage = () => {
           editId: createdConcursoId,
           jobTitles
         });
-        if (saveResult?.duplicated) {
-          setIsSubmitting(false);
+        const outcome = resolveSaveRankingOutcome(saveResult);
+        if (!outcome.ok) {
+          toast.error(outcome.message);
           return null;
         }
-        if (saveResult?.id) {
-          setCreatedConcursoId(saveResult.id);
-          // Invalidar queries para recarregar os cadernos
-          queryClient.invalidateQueries({
-            queryKey: ['exam-booklets']
-          });
-          return saveResult.id;
-        }
-        queryClient.invalidateQueries({
-          queryKey: ['rankings']
-        });
-        return createdConcursoId; // quando editando sem novo id
+        setCreatedConcursoId(outcome.id);
+        queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
+        return outcome.id;
       } catch (error) {
         devLog.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);

@@ -232,7 +232,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     // ✅ CORREÇÃO: Filtrar por cota com normalização para garantir consistência
     const fullQuotaName = quotaMapping[quota];
     return rankingsWithQuotaPositions.filter(ranking => {
-      const normalizedRankingQuota = (ranking.reservationType || 'Ampla Concorrência').trim();
+      const normalizedRankingQuota = normalizeReservationType(ranking.reservationType);
       return normalizedRankingQuota === fullQuotaName;
     });
   };
