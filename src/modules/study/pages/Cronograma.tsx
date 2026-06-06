@@ -36,6 +36,7 @@ import {
   toStorageDayOfWeek,
   type ScheduleMode,
 } from '../domain/scheduleMode';
+import { formatTaskDurationHours } from '../domain/disciplineStudyStats';
 
 // Interface para props do modo coach
 export interface CronogramaProps {
@@ -1157,7 +1158,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                       {sessionData.session.duration ? (
                         <span className="flex items-center gap-1">
                           <Timer className="h-3 w-3" />
-                          {sessionData.session.duration}min
+                          {formatTaskDurationHours(sessionData.session.duration)}
                         </span>
                       ) : (
                         sessionData.session.startTime && sessionData.session.endTime ? (
@@ -1194,7 +1195,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
                   {/* Estatísticas */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                     <div className="bg-muted rounded-lg p-3 text-center">
-                      <div className="text-lg font-semibold text-foreground">{sessionData.session.duration}min</div>
+                      <div className="text-lg font-semibold text-foreground">{formatTaskDurationHours(sessionData.session.duration)}</div>
                       <div className="text-xs text-muted-foreground">Tempo</div>
                     </div>
                     <div className="bg-muted rounded-lg p-3 text-center">

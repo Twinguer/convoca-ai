@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Timer, Trash2, ExternalLink } from 'lucide-react';
 import type { WeeklyScheduleSession } from './weeklyScheduleTypes';
+import { formatTaskDurationHours } from '../domain/disciplineStudyStats';
 
 type SessionDataEntry = {
   duration_minutes?: number;
@@ -89,7 +90,7 @@ export function WeeklyScheduleTaskCard({
               <div className="flex justify-between items-center p-2 bg-background/50 rounded">
                 <span className="text-muted-foreground">Tempo total:</span>
                 <span className="font-medium text-foreground">
-                  {cumulativeSession!.duration_minutes}min
+                  {formatTaskDurationHours(cumulativeSession!.duration_minutes ?? 0)}
                 </span>
               </div>
               <div className="flex justify-between items-center p-2 bg-background/50 rounded">

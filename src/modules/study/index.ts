@@ -50,6 +50,7 @@ export {
   EMPTY_DISCIPLINE_STATS,
   resolveDisciplineStats,
   formatStudyDurationDisplay,
+  formatTaskDurationHours,
   formatLastStudyDateDisplay,
   normalizeDisciplineKey,
   isDisciplineCompletedForProgress,

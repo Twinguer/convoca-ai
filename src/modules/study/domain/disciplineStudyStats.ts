@@ -29,6 +29,14 @@ export function formatStudyDurationDisplay(totalMinutes: number): string {
   return formatStudyDuration(totalMinutes) ?? '0min';
 }
 
+/** Horas decimais compactas para cards e estatísticas de tarefa (ex.: 90 → 1.5h, 60 → 1h). */
+export function formatTaskDurationHours(totalMinutes: number): string {
+  if (!totalMinutes || totalMinutes <= 0) return '0h';
+  const hours = totalMinutes / 60;
+  const rounded = Math.round(hours * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}h` : `${rounded.toFixed(1)}h`;
+}
+
 export function formatLastStudyDateDisplay(isoDate: string | null): string {
   return formatLastStudyDate(isoDate) ?? '-';
 }
