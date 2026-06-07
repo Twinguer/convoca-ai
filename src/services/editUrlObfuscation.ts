@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { logError } from '@/utils/secureLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 
 export class EditUrlObfuscationService {
   /**
@@ -24,8 +25,10 @@ export class EditUrlObfuscationService {
         throw new Error('Concurso não encontrado');
       }
 
-      // Verificar se o usuário é o criador do concurso
-      if (!concurso.created_by_user_id || concurso.created_by_user_id !== userId) {
+      const isCreator = concurso.created_by_user_id === userId;
+      const isAdmin = await checkIsPlatformAdmin(userId);
+
+      if (!isCreator && !isAdmin) {
         throw new Error('Usuário não tem permissão para editar este concurso');
       }
 
@@ -88,7 +91,16 @@ export class EditUrlObfuscationService {
           .eq('id', tokenData.entity_id)
           .single();
 
-        if (concursoError || !concurso || !concurso.created_by_user_id || concurso.created_by_user_id !== userId) {
+        if (concursoError || !concurso) {
+          if (import.meta.env.DEV) {
+            devLog.warn('[validateEditToken] Concurso não encontrado ou sem permissão');
+          }
+          return null;
+        }
+
+        const isCreator = concurso.created_by_user_id === userId;
+        const isAdmin = await checkIsPlatformAdmin(userId);
+        if (!isCreator && !isAdmin) {
           if (import.meta.env.DEV) {
             devLog.warn('[validateEditToken] Concurso não encontrado ou sem permissão');
           }
@@ -134,7 +146,13 @@ export class EditUrlObfuscationService {
             .eq('id', oldTokenData.concursoId)
             .single();
 
-          if (concursoError || !concurso || !concurso.created_by_user_id || concurso.created_by_user_id !== userId) {
+          if (concursoError || !concurso) {
+            return null;
+          }
+
+          const isCreator = concurso.created_by_user_id === userId;
+          const isAdmin = await checkIsPlatformAdmin(userId);
+          if (!isCreator && !isAdmin) {
             return null;
           }
 

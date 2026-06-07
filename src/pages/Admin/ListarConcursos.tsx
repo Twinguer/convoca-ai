@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building, Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
+import { useEditUrls } from '@/hooks/useEditUrls';
 import { useParticipantCount } from '@/hooks/useParticipantCount';
 import { useRankingCreatorInfo } from '@/hooks/useRankingCreatorInfo';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
@@ -21,6 +22,7 @@ const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { generateEditUrl } = useEditUrls();
   const [filter, setFilter] = useState<ConcursoFilter>({});
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -91,7 +93,7 @@ const ListarConcursos: React.FC = () => {
   };
 
   const handleCreateRanking = () => {
-    navigate('/criar-ranking?admin=true');
+    navigate('/criar-ranking');
   };
   
   const handleViewRanking = (id: string) => {
@@ -99,10 +101,18 @@ const ListarConcursos: React.FC = () => {
     window.open('/pre-classificacao', '_blank');
   };
   
-  const handleEditRanking = (id: string) => {
-    // Redirecionar para o formulário de edição com flag de admin
-    // Usar query parameter seguro em vez de ID na URL
-    navigate(`/criar-ranking?edit=${encodeURIComponent(id)}&admin=true`);
+  const handleEditRanking = async (id: string) => {
+    try {
+      const editUrl = await generateEditUrl(id);
+      navigate(editUrl);
+    } catch (error: any) {
+      devLog.error('Erro ao gerar link de edição:', error);
+      toast({
+        title: 'Erro ao abrir edição',
+        description: error.message || 'Não foi possível gerar o link de edição do ranking.',
+        variant: 'destructive',
+      });
+    }
   };
   
   const filteredConcursos = concursos?.filter(concurso =>

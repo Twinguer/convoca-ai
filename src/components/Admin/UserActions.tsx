@@ -18,7 +18,7 @@ import {
 
 interface UserActionsProps {
   userId: string;
-  rankingId?: string;
+  concursoId?: string;
   userName: string;
   onSuccess?: () => void;
   showOnlyRankingActions?: boolean;
@@ -26,7 +26,7 @@ interface UserActionsProps {
 
 export const UserActions: React.FC<UserActionsProps> = ({ 
   userId, 
-  rankingId, 
+  concursoId, 
   userName,
   onSuccess,
   showOnlyRankingActions = false
@@ -37,21 +37,29 @@ export const UserActions: React.FC<UserActionsProps> = ({
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleDeleteFromRanking = async () => {
+    if (!concursoId) {
+      toast({
+        title: 'Erro ao remover usuário',
+        description: 'Concurso não identificado para esta ação.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { data, error } = await (supabase as any)
-        .rpc('delete_user_from_ranking', {
-          ranking_id_param: rankingId
-        });
+      const { data, error } = await supabase.rpc('admin_remove_user_from_concurso', {
+        p_user_id: userId,
+        p_concurso_id: concursoId,
+      });
 
       if (error) {
-        logError('Error calling delete_user_from_ranking RPC', error, 'ADMIN');
+        logError('Error calling admin_remove_user_from_concurso RPC', error, 'ADMIN');
         throw error;
       }
 
-      // Verificar se a função retornou sucesso (se retornar boolean)
       if (data === false) {
-        logError('delete_user_from_ranking returned false', { rankingId }, 'ADMIN');
+        logError('admin_remove_user_from_concurso returned false', { userId, concursoId }, 'ADMIN');
         toast({
           title: "Erro ao remover usuário",
           description: "Não foi possível remover o usuário do ranking.",
@@ -210,7 +218,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
 
   return (
     <div className="flex gap-2">
-      {rankingId && (
+      {concursoId && (
         <>
           <Button
             variant="outline"

@@ -1545,6 +1545,10 @@ export type Database = {
         Args: { ranking_id_param: string }
         Returns: boolean
       }
+      admin_remove_user_from_concurso: {
+        Args: { p_concurso_id: string; p_user_id: string }
+        Returns: boolean
+      }
       admin_delete_user_profile: {
         Args: { user_id_param: string }
         Returns: boolean

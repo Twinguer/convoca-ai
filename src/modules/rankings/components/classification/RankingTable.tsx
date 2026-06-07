@@ -569,7 +569,7 @@ const RankingTableContent: React.FC<{
               </TableCell>
               <TableCell className="text-right font-medium">{formatScore(ranking.score)}</TableCell>
               {isAdminMode && isAuthenticated && <TableCell>
-                  <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
+                  <UserActions userId={ranking.userId} userName={ranking.name} concursoId={concurso?.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
                 </TableCell>}
             </TableRow>) : <TableRow>
               <TableCell colSpan={isAdminMode && isAuthenticated ? isAmpla ? 5 : 4 : isAmpla ? 4 : 3} className="text-center py-4">
@@ -811,7 +811,7 @@ const RankingTableContent: React.FC<{
             })()}
             
             {isAdminMode && isAuthenticated && <TableCell>
-                <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
+                <UserActions userId={ranking.userId} userName={ranking.name} concursoId={concurso?.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
               </TableCell>}
           </TableRow>;
     }) : <TableRow>
