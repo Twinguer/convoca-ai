@@ -1,14 +1,46 @@
-import { Link, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Timer } from 'lucide-react';
+import { Loader2, Timer } from 'lucide-react';
+import { useSecureStudyCycleUrls } from '../hooks/useSecureStudyCycleUrls';
 
 const cardShadow =
   '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)';
 
-export function CronogramaTimerLinkCard() {
+interface CronogramaTimerLinkCardProps {
+  selectedCycleId?: string;
+  ownerUserId?: string;
+}
+
+export function CronogramaTimerLinkCard({
+  selectedCycleId,
+  ownerUserId,
+}: CronogramaTimerLinkCardProps) {
+  const navigate = useNavigate();
   const { token } = useParams();
-  const timerPath = token ? `/estudos/timer/${token}` : '/estudos/timer';
+  const { generateTimerUrl } = useSecureStudyCycleUrls();
+  const [opening, setOpening] = useState(false);
+
+  const handleOpenTimer = async () => {
+    setOpening(true);
+    try {
+      if (selectedCycleId && ownerUserId) {
+        const timerUrl = await generateTimerUrl(selectedCycleId, ownerUserId);
+        navigate(timerUrl);
+        return;
+      }
+
+      if (token) {
+        navigate(`/estudos/timer/${token}`);
+        return;
+      }
+
+      navigate('/estudos/timer');
+    } finally {
+      setOpening(false);
+    }
+  };
 
   return (
     <Card
@@ -26,8 +58,15 @@ export function CronogramaTimerLinkCard() {
           <p className="text-sm text-muted-foreground">
             Use o timer para manter o foco. Ao terminar, registre tempo e questões no modal da tarefa.
           </p>
-          <Button asChild className="w-full">
-            <Link to={timerPath}>Abrir timer</Link>
+          <Button className="w-full" onClick={handleOpenTimer} disabled={opening}>
+            {opening ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Abrindo...
+              </>
+            ) : (
+              'Abrir timer'
+            )}
           </Button>
         </div>
       </CardContent>

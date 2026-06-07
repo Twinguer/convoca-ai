@@ -13,7 +13,11 @@ import {
   formatStudyDurationDisplay,
   getAccuracyColorClass,
   getAccuracyPercent,
+  hasDisciplineStudyStats,
   isDisciplineCompletedForProgress,
+  isDisciplineEmAndamentoEffective,
+  isDisciplineInReview,
+  isDisciplineNotStarted,
   normalizeDisciplineKey,
   resolveDisciplineStats,
 } from '../domain/disciplineStudyStats';
@@ -64,7 +68,12 @@ function EditalDisciplineRow({
   onEditDiscipline?: (blockId: string, disciplineId: string) => void;
   onRemoveDiscipline?: (blockId: string, disciplineId: string) => void;
 }) {
-  const completedForProgress = isDisciplineCompletedForProgress(discipline);
+  const isCompleted = discipline.isCompleted === true;
+  const inReview = isDisciplineInReview(discipline);
+  const rawStats = disciplineStats[normalizeDisciplineKey(discipline.name)];
+  const hasStats = hasDisciplineStudyStats(rawStats);
+  const notStarted = isDisciplineNotStarted(discipline, rawStats);
+  const emAndamentoChecked = isDisciplineEmAndamentoEffective(discipline, rawStats);
   const {
     attributes,
     listeners,
@@ -82,7 +91,7 @@ function EditalDisciplineRow({
     ? { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
     : undefined;
 
-  const stats = resolveDisciplineStats(disciplineStats[normalizeDisciplineKey(discipline.name)]);
+  const stats = resolveDisciplineStats(rawStats);
   const durationLabel = formatStudyDurationDisplay(stats.totalMinutes);
   const accuracyPct = getAccuracyPercent(stats.totalQuestions, stats.correctAnswers) ?? 0;
   const dateLabel = formatLastStudyDateDisplay(stats.lastDate);
@@ -105,8 +114,14 @@ function EditalDisciplineRow({
               className="mt-0.5 mr-2 sm:mr-3 flex-shrink-0 h-4 w-4"
             />
             <span
-              className={`font-medium text-foreground text-xs truncate ${
-                completedForProgress ? 'line-through opacity-60' : ''
+              className={`font-medium text-xs truncate ${
+                isCompleted
+                  ? 'line-through opacity-60 text-foreground'
+                  : inReview
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : notStarted
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-foreground'
               } ${allowEdit && onEditDiscipline ? 'cursor-pointer hover:text-primary' : ''}`}
               onClick={
                 allowEdit && onEditDiscipline
@@ -150,10 +165,16 @@ function EditalDisciplineRow({
               <Trash2 className="h-3 w-3" />
             </Button>
           )}
-          <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap">
+          <label
+            className={`flex items-center gap-1 whitespace-nowrap ${
+              hasStats ? 'cursor-default' : 'cursor-pointer'
+            }`}
+          >
             <Checkbox
-              checked={discipline.status === 'em_andamento'}
+              checked={emAndamentoChecked}
+              disabled={hasStats}
               onCheckedChange={(checked) => {
+                if (hasStats) return;
                 if (checked) onStatusChange(blockId, discipline.id, 'em_andamento');
                 else if (discipline.status === 'em_andamento') onStatusChange(blockId, discipline.id, null);
               }}

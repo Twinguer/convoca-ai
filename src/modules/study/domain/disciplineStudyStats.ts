@@ -47,12 +47,113 @@ export function normalizeDisciplineKey(name: string): string {
   return name.trim().toLowerCase();
 }
 
+export function isDisciplineInReview(discipline: {
+  status?: string | null;
+}): boolean {
+  return discipline.status === 'em_revisao' || discipline.status === 'em-revisao';
+}
+
+export function isDisciplineEmAndamento(discipline: {
+  status?: string | null;
+}): boolean {
+  return discipline.status === 'em_andamento';
+}
+
+export function hasDisciplineStudyStats(
+  stats: DisciplineStudyStats | null | undefined
+): boolean {
+  const resolved = stats ? resolveDisciplineStats(stats) : EMPTY_DISCIPLINE_STATS;
+  return (
+    resolved.sessionCount > 0 ||
+    resolved.totalMinutes > 0 ||
+    resolved.totalQuestions > 0 ||
+    Boolean(resolved.lastDate)
+  );
+}
+
+export function isDisciplineNotStarted(
+  discipline: {
+    isCompleted?: boolean;
+    status?: string | null;
+  },
+  stats?: DisciplineStudyStats | null
+): boolean {
+  if (isDisciplineCompletedForProgress(discipline)) return false;
+  if (isDisciplineInReview(discipline)) return false;
+  if (isDisciplineEmAndamento(discipline)) return false;
+  if (hasDisciplineStudyStats(stats)) return false;
+  return true;
+}
+
+export function shouldAutoSetEmAndamento(
+  discipline: {
+    isCompleted?: boolean;
+    status?: string | null;
+  },
+  stats?: DisciplineStudyStats | null
+): boolean {
+  if (isDisciplineCompletedForProgress(discipline)) return false;
+  if (isDisciplineInReview(discipline)) return false;
+  if (!hasDisciplineStudyStats(stats)) return false;
+  return !isDisciplineEmAndamento(discipline);
+}
+
+export function isDisciplineEmAndamentoEffective(
+  discipline: {
+    isCompleted?: boolean;
+    status?: string | null;
+  },
+  stats?: DisciplineStudyStats | null
+): boolean {
+  if (isDisciplineCompletedForProgress(discipline)) return false;
+  if (isDisciplineInReview(discipline)) return false;
+  if (isDisciplineEmAndamento(discipline)) return true;
+  return hasDisciplineStudyStats(stats);
+}
+
+type DisciplineWithProgress = {
+  id: string;
+  name: string;
+  isCompleted?: boolean;
+  status?: DisciplineProgressStatus | string | null;
+};
+
+type BlockWithProgress = {
+  id: string;
+  name: string;
+  disciplines: DisciplineWithProgress[];
+};
+
+export function syncDisciplineProgressFromStats<TBlock extends BlockWithProgress>(
+  blocks: TBlock[],
+  disciplineStats: Record<string, DisciplineStudyStats>
+): { blocks: TBlock[]; changed: boolean } {
+  let changed = false;
+
+  const nextBlocks = blocks.map((block) => ({
+    ...block,
+    disciplines: block.disciplines.map((discipline) => {
+      const stats = disciplineStats[normalizeDisciplineKey(discipline.name)];
+      if (!shouldAutoSetEmAndamento(discipline, stats)) {
+        return discipline;
+      }
+
+      changed = true;
+      return {
+        ...discipline,
+        status: 'em_andamento' as DisciplineProgressStatus,
+      };
+    }),
+  }));
+
+  return { blocks: nextBlocks, changed };
+}
+
 export function isDisciplineCompletedForProgress(discipline: {
   isCompleted?: boolean;
   status?: string | null;
 }): boolean {
   if (discipline.isCompleted) return true;
-  if (discipline.status === 'em_revisao' || discipline.status === 'em-revisao') return true;
   if (discipline.status === 'finalizada') return true;
   return false;
 }

@@ -18,6 +18,7 @@ import { buildAvailableDisciplinesFromBlocks } from '../domain/studyCycleSchedul
 import {
   aggregateDisciplineStatsForCycle,
   DisciplineProgressStatus,
+  syncDisciplineProgressFromStats,
   type DisciplineStudyStats,
 } from '../domain/disciplineStudyStats';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
@@ -62,10 +63,28 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken, coa
       if (userStudyData) {
         const cycleData = userStudyData.study_cycles.find(cycle => cycle.id === id);
         if (cycleData) {
-          setCycle(cycleData);
-          setDisciplineStats(
-            aggregateDisciplineStatsForCycle(userStudyData.study_sessions, id!)
+          const stats = aggregateDisciplineStatsForCycle(userStudyData.study_sessions, id!);
+          const { blocks, changed } = syncDisciplineProgressFromStats(
+            cycleData.schedule_data?.available_blocks ?? [],
+            stats
           );
+
+          const syncedCycle = changed
+            ? {
+                ...cycleData,
+                schedule_data: {
+                  ...cycleData.schedule_data,
+                  available_blocks: blocks,
+                },
+              }
+            : cycleData;
+
+          setCycle(syncedCycle);
+          setDisciplineStats(stats);
+
+          if (changed) {
+            await updateCycle(syncedCycle, { silent: true });
+          }
         } else {
           toast.error('Ciclo não encontrado');
         }

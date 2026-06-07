@@ -1,20 +1,105 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus, ArrowLeft, BookOpen } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Play, Pause, Square, Plus, Minus, ArrowLeft, BookOpen } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
 import { getPendingTimerTask } from '@/utils/timerTaskContext';
+import {
+  getStoredTimerCycleId,
+  resolveInitialTimerCycleId,
+  setStoredTimerCycleId,
+} from '@/utils/timerCycleSelection';
+import { useAuth } from '@/hooks/useAuth';
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyCycleV2, StudySession } from '@/types/userStudy';
+import { TimerDisciplineList } from '../components/TimerDisciplineList';
+import type { EditalBlock } from '../components/editalTypes';
+import { aggregateDisciplineStatsForCycle } from '../domain/disciplineStudyStats';
+import { devLog } from '@/utils/productionLogger';
 
 interface TimerProps {
   cycleId?: string;
   secureToken?: string;
 }
 
-const Timer = ({ secureToken }: TimerProps = {}) => {
+const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { token: urlToken } = useParams();
   const pendingTask = useMemo(() => getPendingTimerTask(), []);
+  const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
+  const [studySessions, setStudySessions] = useState<StudySession[]>([]);
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
+  const [loadingDisciplines, setLoadingDisciplines] = useState(true);
+
+  const ownerUserId = pendingTask?.ownerUserId ?? user?.id;
+  const lockCycleSelection = Boolean(pendingTask?.cycleId);
+  const activeCycle = cycles.find((item) => item.id === activeCycleId) ?? null;
+  const disciplineBlocks = (activeCycle?.schedule_data?.available_blocks as EditalBlock[]) ?? [];
+  const disciplineStats = useMemo(
+    () =>
+      activeCycleId
+        ? aggregateDisciplineStatsForCycle(studySessions, activeCycleId)
+        : {},
+    [studySessions, activeCycleId]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCycles = async () => {
+      if (!ownerUserId) {
+        setCycles([]);
+        setStudySessions([]);
+        setActiveCycleId(null);
+        setLoadingDisciplines(false);
+        return;
+      }
+
+      setLoadingDisciplines(true);
+
+      try {
+        const userStudyData = await UserStudyService.getUserStudyData(ownerUserId);
+        if (cancelled) return;
+
+        const availableCycles = userStudyData?.study_cycles ?? [];
+        setCycles(availableCycles);
+        setStudySessions(userStudyData?.study_sessions ?? []);
+
+        const initialCycleId = resolveInitialTimerCycleId({
+          secureCycleId,
+          pendingTaskCycleId: pendingTask?.cycleId,
+          storedCycleId: getStoredTimerCycleId(),
+          availableCycleIds: availableCycles.map((item) => item.id),
+        });
+
+        setActiveCycleId(initialCycleId);
+        if (initialCycleId) setStoredTimerCycleId(initialCycleId);
+      } catch (error) {
+        devLog.error('Erro ao carregar disciplinas do timer:', error);
+        if (!cancelled) {
+          setCycles([]);
+          setStudySessions([]);
+          setActiveCycleId(null);
+        }
+      } finally {
+        if (!cancelled) setLoadingDisciplines(false);
+      }
+    };
+
+    loadCycles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerUserId, secureCycleId, pendingTask?.cycleId]);
+
+  const handleCycleChange = (cycleId: string) => {
+    setActiveCycleId(cycleId);
+    setStoredTimerCycleId(cycleId);
+  };
   const cronogramaPath =
     pendingTask?.returnPath ??
     (secureToken ?? urlToken ? `/estudos/cronograma/${secureToken ?? urlToken}` : '/estudos/cronograma');
@@ -62,7 +147,7 @@ const Timer = ({ secureToken }: TimerProps = {}) => {
   return (
     <>
       <div className="container mx-auto p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Button
             type="button"
             variant="ghost"
@@ -75,11 +160,11 @@ const Timer = ({ secureToken }: TimerProps = {}) => {
 
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
-            <p className="text-muted-foreground">
-              {pendingTask
-                ? 'Ferramenta de foco: salve tempo e questões no cronograma ao terminar.'
-                : 'Mantenha o foco com sessões cronometradas'}
-            </p>
+            {pendingTask && (
+              <p className="text-muted-foreground">
+                Ferramenta de foco: salve tempo e questões no cronograma ao terminar.
+              </p>
+            )}
           </div>
 
           {pendingTask && (
@@ -103,16 +188,8 @@ const Timer = ({ secureToken }: TimerProps = {}) => {
             </Card>
           )}
 
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 justify-center">
-              <TimerIcon className="h-5 w-5" />
-              Cronômetro Pomodoro
-            </CardTitle>
-            <CardDescription className="text-center">
-              Técnica de produtividade com intervalos de foco e descanso
-            </CardDescription>
-          </CardHeader>
           <CardContent>
             <div className="text-center p-8">
               {/* Time Display */}
@@ -170,6 +247,49 @@ const Timer = ({ secureToken }: TimerProps = {}) => {
             </div>
           </CardContent>
           </Card>
+
+          <div className="space-y-3">
+            {cycles.length > 1 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Ciclo de estudos</label>
+                <Select
+                  value={activeCycleId ?? undefined}
+                  onValueChange={handleCycleChange}
+                  disabled={lockCycleSelection || loadingDisciplines}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um ciclo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cycles.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.cycle_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {lockCycleSelection && (
+                  <p className="text-xs text-muted-foreground">
+                    Ciclo fixado pela tarefa aberta no cronograma.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <TimerDisciplineList
+              blocks={disciplineBlocks}
+              disciplineStats={disciplineStats}
+              cycleName={activeCycle?.cycle_name}
+              highlightDisciplineName={
+                pendingTask?.cycleId === activeCycleId ? pendingTask.disciplineName : undefined
+              }
+              highlightBlockName={
+                pendingTask?.cycleId === activeCycleId ? pendingTask.blockName : undefined
+              }
+              loading={loadingDisciplines}
+            />
+          </div>
+          </div>
         </div>
       </div>
 

@@ -47,9 +47,16 @@ export interface CronogramaProps {
 }
 
 // Usar StudyCycleV2 do types
-const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: CronogramaProps = {}) => {
+const Cronograma = ({
+  coachMode,
+  targetStudentId,
+  targetCycleId,
+  cycleId: secureCycleId,
+  onSuccess,
+}: CronogramaProps & { cycleId?: string } = {}) => {
   const navigate = useNavigate();
-  const { generateSecureUrl } = useSecureStudyCycleUrls();
+  const { generateSecureUrl, generateTimerUrl } = useSecureStudyCycleUrls();
+  const resolvedTargetCycleId = targetCycleId ?? secureCycleId;
   const {
     user
   } = useAuth();
@@ -153,17 +160,17 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
   // Inicializar selectedCycle automaticamente
   useEffect(() => {
     // Se targetCycleId foi fornecido, usar ele
-    if (targetCycleId && cycles.length > 0) {
-      const cycleExists = cycles.find(c => c.id === targetCycleId);
-      if (cycleExists && selectedCycle !== targetCycleId) {
-        setSelectedCycle(targetCycleId);
+    if (resolvedTargetCycleId && cycles.length > 0) {
+      const cycleExists = cycles.find(c => c.id === resolvedTargetCycleId);
+      if (cycleExists && selectedCycle !== resolvedTargetCycleId) {
+        setSelectedCycle(resolvedTargetCycleId);
       }
     }
     // Se não há ciclo selecionado e há ciclos disponíveis, selecionar o primeiro
     else if (!selectedCycle && cycles.length > 0) {
       setSelectedCycle(cycles[0].id);
     }
-  }, [cycles, targetCycleId, selectedCycle]);
+  }, [cycles, resolvedTargetCycleId, selectedCycle]);
 
   // Update clock every 5 seconds - otimizado para melhor performance
   useEffect(() => {
@@ -559,7 +566,7 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     setShowEditModal(true);
   };
 
-  const startTimerForTask = () => {
+  const startTimerForTask = async () => {
     if (!editingSession) return;
 
     const ownerUserId = coachMode ? targetStudentId : user?.id;
@@ -584,8 +591,16 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
     }
 
     setShowEditModal(false);
-    navigate('/estudos/timer');
-    toast.message('Use o timer para focar; confirme o registro no cronograma ao terminar.');
+
+    try {
+      const timerUrl = await generateTimerUrl(editingSession.cycleId, ownerUserId);
+      navigate(timerUrl);
+      toast.message('Use o timer para focar; confirme o registro no cronograma ao terminar.');
+    } catch (error) {
+      devLog.error('Erro ao abrir timer da tarefa:', error);
+      navigate('/estudos/timer');
+      toast.message('Use o timer para focar; confirme o registro no cronograma ao terminar.');
+    }
   };
 
   const saveStudySession = async () => {
@@ -669,7 +684,10 @@ const Cronograma = ({ coachMode, targetStudentId, targetCycleId, onSuccess }: Cr
           </CardContent>
         </Card>
 
-        <CronogramaTimerLinkCard />
+        <CronogramaTimerLinkCard
+          selectedCycleId={selectedCycle}
+          ownerUserId={coachMode ? targetStudentId : user?.id}
+        />
 
         {/* Calendar Card */}
         <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
