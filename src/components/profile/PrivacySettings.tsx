@@ -36,6 +36,11 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({
       label: 'Estatísticas de estudo',
       description: 'Horas, questões respondidas e taxa de acerto no perfil público.',
     },
+    {
+      key: 'showPublicAboutInfo',
+      label: 'Sobre mim e rotina',
+      description: 'Estado, formação, cargo, área de estudos, curso preparatório e rotina.',
+    },
   ];
 
   return (
@@ -46,8 +51,8 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({
           Privacidade do perfil público
         </CardTitle>
         <CardDescription>
-          Por padrão, rankings e estatísticas ficam ocultos para quem visita seu perfil. Ative apenas
-          o que quiser compartilhar.
+          Por padrão, tudo fica oculto no perfil público. As alterações são salvas automaticamente ao
+          alternar cada opção.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

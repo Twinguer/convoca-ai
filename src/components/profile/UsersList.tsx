@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Button } from '@/components/ui/button';
 import { UserCard } from './UserCard';
 import { UserActions } from '../Admin/UserActions';
@@ -29,11 +30,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   onViewProfile,
   onViewAll
 }) => {
-  // Check if admin mode is enabled
-  const isAdminMode = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('admin') === 'true';
-  }, []);
+  const { isAdmin: isAdminMode } = useAdminAuth();
   
   return (
     <>

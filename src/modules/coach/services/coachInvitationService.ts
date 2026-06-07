@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logWarn } from '@/utils/secureLogger';
+import { normalizeNicknameInput } from '@/utils/nicknameUtils';
 
 export type CoachPendingInvitation = {
   id: string;
@@ -134,10 +135,8 @@ export const coachInvitationService = {
     return (data || []).map((profile) => {
       if (!profile.nickname || profile.nickname.trim() === '') {
         const generatedNickname =
-          (profile.name || 'user')
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '')
-            .substring(0, 20) || `user${profile.id.substring(0, 8)}`;
+          normalizeNicknameInput(profile.name || 'user') ||
+          `user${profile.id.substring(0, 8)}`;
 
         return { ...profile, nickname: generatedNickname };
       }

@@ -279,11 +279,24 @@ export class UserStudyService {
       const data = await this.getUserStudyData(userId);
       if (!data) return false;
 
-      const updatedSchedule = data.study_schedule.map(session => 
-        session.id === sessionId 
-          ? { ...session, ...updates, updated_at: new Date().toISOString() }
-          : session
-      );
+      const updatedSchedule = data.study_schedule.map((session) => {
+        if (session.id !== sessionId) return session;
+
+        const merged: StudySchedule = {
+          ...session,
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (updates.duration_minutes !== undefined) {
+          delete merged.start_time;
+          delete merged.end_time;
+        } else if (updates.start_time !== undefined || updates.end_time !== undefined) {
+          delete merged.duration_minutes;
+        }
+
+        return merged;
+      });
 
       return await this.upsertUserStudyData(userId, {
         study_schedule: updatedSchedule

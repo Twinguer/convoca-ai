@@ -314,6 +314,34 @@ export const useStudyCyclesV2 = () => {
     return false;
   };
 
+  const updateScheduleSession = async (
+    sessionId: string,
+    updates: Partial<StudySchedule>,
+    targetUserId?: string
+  ) => {
+    const userId = targetUserId || user?.id;
+    if (!userId) return false;
+
+    try {
+      const success = await UserStudyService.updateScheduleSession(userId, sessionId, updates);
+
+      if (success) {
+        if (!targetUserId) {
+          await fetchCycles();
+        }
+        toast.success('Tarefa atualizada!');
+        return true;
+      }
+
+      toast.error('Erro ao atualizar tarefa');
+      return false;
+    } catch (error) {
+      devLog.error('Error updating session:', error);
+      toast.error('Erro ao atualizar tarefa');
+      return false;
+    }
+  };
+
   // Remover sessão do cronograma (delega ao service — fonte única study_schedule)
   const removeScheduleSession = async (
     _cycleId: string,
@@ -441,6 +469,7 @@ export const useStudyCyclesV2 = () => {
     fetchCycles,
     createCycle,
     addScheduleSession,
+    updateScheduleSession,
     recordCompletedSession,
     removeScheduleSession,
     updateCycle,

@@ -29,6 +29,7 @@ import { ScheduleModePicker } from '../components/ScheduleModePicker';
 import { CycleDocumentsPanel } from '../components/CycleDocumentsPanel';
 import { CronogramaTimerLinkCard } from '../components/CronogramaTimerLinkCard';
 import { ScheduleTaskEditDialog } from '../components/ScheduleTaskEditDialog';
+import { ScheduleTaskPlanEditDialog } from '../components/ScheduleTaskPlanEditDialog';
 import { useCycleDocuments } from '../hooks/useCycleDocuments';
 import { useCronogramaData, type CronogramaStudySession } from '../hooks/useCronogramaData';
 import {
@@ -63,6 +64,7 @@ const Cronograma = ({
   const { setInitialTime } = useTimer();
   const {
     addScheduleSession,
+    updateScheduleSession,
     recordCompletedSession,
     fetchCycles: refetchCycles
   } = useStudyCyclesV2();
@@ -98,9 +100,22 @@ const Cronograma = ({
   const [startTime, setStartTime] = useState<string>('08:00');
   const [endTime, setEndTime] = useState<string>('09:00');
   const [sessionTimeMode, setSessionTimeMode] = useState<ScheduleMode>('duration');
-  const [durationMinutes, setDurationMinutes] = useState<number>(90);
+  const [durationMinutes, setDurationMinutes] = useState<number>(60);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPlanEditModal, setShowPlanEditModal] = useState(false);
+  const [editingPlanSession, setEditingPlanSession] = useState<CronogramaStudySession | null>(null);
+  const [planEditBlock, setPlanEditBlock] = useState('');
+  const [planEditDiscipline, setPlanEditDiscipline] = useState('');
+  const [planEditCustomBlock, setPlanEditCustomBlock] = useState('');
+  const [planEditCustomDiscipline, setPlanEditCustomDiscipline] = useState('');
+  const [planEditDay, setPlanEditDay] = useState(0);
+  const [planEditStartTime, setPlanEditStartTime] = useState('08:00');
+  const [planEditEndTime, setPlanEditEndTime] = useState('09:00');
+  const [planEditDuration, setPlanEditDuration] = useState(90);
+  const [planEditTimeMode, setPlanEditTimeMode] = useState<ScheduleMode>('duration');
+  const [planEditSessionLink, setPlanEditSessionLink] = useState('');
+  const [planEditSaving, setPlanEditSaving] = useState(false);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
@@ -181,8 +196,9 @@ const Cronograma = ({
   }, []);
 
   // Função para extrair blocos únicos do available_blocks do schedule_data
-  const getAvailableBlocks = () => {
-    const selectedCycleData = cycles.find(c => c.id === selectedCycle);
+  const getAvailableBlocks = (cycleId?: string) => {
+    const resolvedCycleId = cycleId ?? selectedCycle;
+    const selectedCycleData = cycles.find(c => c.id === resolvedCycleId);
     if (!selectedCycleData) return [];
 
     // Buscar blocos salvos no ciclo (available_blocks)
@@ -202,13 +218,15 @@ const Cronograma = ({
   };
 
   // Função para extrair disciplinas únicas do available_disciplines do schedule_data
-  const getAvailableDisciplines = () => {
-    const selectedCycleData = cycles.find(c => c.id === selectedCycle);
-    if (!selectedCycleData || !selectedBlock) return [];
+  const getAvailableDisciplines = (cycleId?: string, blockName?: string) => {
+    const resolvedCycleId = cycleId ?? selectedCycle;
+    const resolvedBlock = blockName ?? selectedBlock;
+    const selectedCycleData = cycles.find(c => c.id === resolvedCycleId);
+    if (!selectedCycleData || !resolvedBlock) return [];
 
     // Buscar disciplinas salvas no ciclo (available_disciplines) para o bloco selecionado
     const savedDisciplines = selectedCycleData.schedule_data.available_disciplines || [];
-    const blockDisciplines = savedDisciplines.filter(d => d.block_name === selectedBlock);
+    const blockDisciplines = savedDisciplines.filter(d => d.block_name === resolvedBlock);
 
     // Se não há disciplinas salvas para este bloco, mostrar opção customizada
     if (blockDisciplines.length === 0) {
@@ -328,7 +346,7 @@ const Cronograma = ({
         setEndTime('09:00');
         setSessionLink('');
         setSessionTimeMode('time');
-        setDurationMinutes(90);
+        setDurationMinutes(60);
         setShowAddModal(false);
         toast.success('Tarefa adicionada ao cronograma!');
       } else {
@@ -541,7 +559,94 @@ const Cronograma = ({
       toast.error('Erro ao registrar tarefa');
     }
   };
-  const openEditModal = (session: StudySession) => {
+  const openPlanEditModal = (session: CronogramaStudySession, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingPlanSession(session);
+    setPlanEditBlock(session.blockName);
+    setPlanEditDiscipline(session.disciplineName);
+    setPlanEditCustomBlock('');
+    setPlanEditCustomDiscipline('');
+    setPlanEditDay(session.day);
+    setPlanEditSessionLink(session.sessionLink || '');
+
+    const lockedMode = getLockedModeForCycle(session.cycleId);
+    const isDurationTask = Boolean(session.durationMinutes);
+    const effectiveMode = lockedMode ?? (isDurationTask ? 'duration' : 'time');
+    setPlanEditTimeMode(effectiveMode);
+
+    if (effectiveMode === 'duration') {
+      setPlanEditDuration(session.durationMinutes && session.durationMinutes >= 5 ? session.durationMinutes : 90);
+    } else {
+      setPlanEditStartTime(session.startTime?.substring(0, 5) || '08:00');
+      setPlanEditEndTime(session.endTime?.substring(0, 5) || '09:00');
+    }
+
+    setShowPlanEditModal(true);
+  };
+
+  const savePlanEdit = async () => {
+    if (!editingPlanSession) return;
+
+    const finalBlock = planEditBlock === '__custom__' ? planEditCustomBlock.trim() : planEditBlock;
+    const finalDiscipline =
+      planEditDiscipline === '__custom__' ? planEditCustomDiscipline.trim() : planEditDiscipline;
+    const targetUserId = coachMode ? targetStudentId : user?.id;
+
+    if (!finalBlock || !finalDiscipline) {
+      toast.error('Preencha bloco e disciplina');
+      return;
+    }
+
+    const lockedMode = getLockedModeForCycle(editingPlanSession.cycleId);
+    const effectiveMode = lockedMode ?? planEditTimeMode;
+
+    if (effectiveMode === 'duration') {
+      if (planEditDuration < 5 || planEditDuration > 480) {
+        toast.error('A duração deve estar entre 5 e 480 minutos');
+        return;
+      }
+    } else if (planEditEndTime <= planEditStartTime) {
+      toast.error('O horário de fim deve ser posterior ao horário de início');
+      return;
+    }
+
+    setPlanEditSaving(true);
+    try {
+      const updates =
+        effectiveMode === 'duration'
+          ? {
+              discipline_name: finalDiscipline,
+              block_name: finalBlock,
+              session_link: planEditSessionLink || undefined,
+              day_of_week: toStorageDayOfWeek(planEditDay),
+              duration_minutes: planEditDuration,
+            }
+          : {
+              discipline_name: finalDiscipline,
+              block_name: finalBlock,
+              session_link: planEditSessionLink || undefined,
+              day_of_week: toStorageDayOfWeek(planEditDay),
+              start_time: planEditStartTime,
+              end_time: planEditEndTime,
+            };
+
+      const success = await updateScheduleSession(
+        editingPlanSession.id,
+        updates,
+        targetUserId
+      );
+
+      if (success) {
+        await refreshCronogramaData({ force: true });
+        setShowPlanEditModal(false);
+        setEditingPlanSession(null);
+      }
+    } finally {
+      setPlanEditSaving(false);
+    }
+  };
+
+  const openEditModal = (session: CronogramaStudySession) => {
     setEditingSession(session);
 
     // Carregar dados existentes de sessões acumulativas do sessionData
@@ -899,7 +1004,7 @@ const Cronograma = ({
                           setDurationMinutes(value);
                         }
                       }} 
-                      placeholder="90"
+                      placeholder="60"
                       className="w-full" 
                     />
                     <p className="text-xs text-muted-foreground mt-1">
@@ -924,6 +1029,39 @@ const Cronograma = ({
       </div>
 
       {/* Calendário simplificado - sem funcionalidades de estatísticas */}
+
+      <ScheduleTaskPlanEditDialog
+        open={showPlanEditModal}
+        onOpenChange={setShowPlanEditModal}
+        session={editingPlanSession}
+        cycles={cycles}
+        weekDays={weekDays}
+        sessionTimeMode={planEditTimeMode}
+        onSessionTimeModeChange={setPlanEditTimeMode}
+        lockedMode={editingPlanSession ? getLockedModeForCycle(editingPlanSession.cycleId) : null}
+        selectedBlock={planEditBlock}
+        onSelectedBlockChange={setPlanEditBlock}
+        selectedDiscipline={planEditDiscipline}
+        onSelectedDisciplineChange={setPlanEditDiscipline}
+        customBlock={planEditCustomBlock}
+        onCustomBlockChange={setPlanEditCustomBlock}
+        customDiscipline={planEditCustomDiscipline}
+        onCustomDisciplineChange={setPlanEditCustomDiscipline}
+        selectedDay={planEditDay}
+        onSelectedDayChange={setPlanEditDay}
+        startTime={planEditStartTime}
+        onStartTimeChange={setPlanEditStartTime}
+        endTime={planEditEndTime}
+        onEndTimeChange={setPlanEditEndTime}
+        durationMinutes={planEditDuration}
+        onDurationMinutesChange={setPlanEditDuration}
+        sessionLink={planEditSessionLink}
+        onSessionLinkChange={setPlanEditSessionLink}
+        availableBlocks={getAvailableBlocks(editingPlanSession?.cycleId)}
+        availableDisciplines={getAvailableDisciplines(editingPlanSession?.cycleId, planEditBlock)}
+        onSave={savePlanEdit}
+        saving={planEditSaving}
+      />
 
       <ScheduleTaskEditDialog
         open={showEditModal}
@@ -1087,7 +1225,7 @@ const Cronograma = ({
                             setDurationMinutes(value);
                           }
                         }} 
-                        placeholder="90"
+                        placeholder="60"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Duração entre 5 e 480 minutos (8 horas). Você pode iniciar quando quiser.
@@ -1130,6 +1268,7 @@ const Cronograma = ({
                   sessionData={sessionData[session.id]}
                   dragHandle={dragHandle}
                   onEdit={onCardClick}
+                  onEditPlan={(e) => openPlanEditModal(session, e)}
                   onDelete={(e) => {
                     e.stopPropagation();
                     handleDeleteClick(session.id);

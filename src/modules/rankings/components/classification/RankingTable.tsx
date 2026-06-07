@@ -17,6 +17,7 @@ import { formatScore } from '@/lib/utils';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
 import { getReservationAbbreviation, normalizeReservationType } from '@/utils/quotaNormalization';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -346,10 +347,7 @@ const RankingTableContent: React.FC<{
   isLoadingMore = false,
   totalLoaded = 0
 }) => {
-  const isAdminMode = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('admin') === 'true';
-  }, []);
+  const { isAdmin: isAdminMode } = useAdminAuth();
 
   // State to store scores when table is loaded
   const [initialScores, setInitialScores] = useState<{

@@ -28,6 +28,12 @@ export {
 } from './domain/rankingProfilePosition';
 
 export {
+  fetchUserRankingSummaries,
+  fetchPublicProfileRankingSummaries,
+  type UserRankingSummary,
+} from './domain/userRankingSummaries';
+
+export {
   refreshClassificationData,
   type RefreshClassificationResult,
 } from './domain/rankingRefresh';

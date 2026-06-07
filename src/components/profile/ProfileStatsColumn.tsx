@@ -21,20 +21,26 @@ interface ProfileStatsColumnProps {
   rankings?: any[];
   /** Perfil público: default false. Perfil próprio: omitir (true). */
   showStudyStats?: boolean;
+  /** Perfil público: lista apenas grupos com privacy_level=public (sempre visíveis). */
+  publicGroupsOnly?: boolean;
 }
 
 export const ProfileStatsColumn: React.FC<ProfileStatsColumnProps> = ({
   userId,
   rankings = [],
   showStudyStats = true,
+  publicGroupsOnly = false,
 }) => {
   const navigate = useNavigate();
   const { isPro } = useSubscription();
 
   // Buscar grupos do usuário
   const { data: userGroups = [], isLoading: groupsLoading } = useQuery({
-    queryKey: ['user-groups', userId],
-    queryFn: () => studyGroupMembersService.getUserGroups(userId),
+    queryKey: ['user-groups', userId, publicGroupsOnly ? 'public' : 'all'],
+    queryFn: () =>
+      publicGroupsOnly
+        ? studyGroupMembersService.getUserPublicGroups(userId)
+        : studyGroupMembersService.getUserGroups(userId),
     enabled: !!userId,
   });
 

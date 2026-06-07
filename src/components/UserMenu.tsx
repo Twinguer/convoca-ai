@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, Users, Clock, Moon, Sun, Bell, Lock } from 'lucide-react';
+import { User, LogOut, Users, Clock, Moon, Sun, Bell, Lock, ShieldAlert, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useOpenAdminPanel } from '@/hooks/useOpenAdminPanel';
 import { useTimer } from '@/contexts/TimerContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ const UserMenu: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { unreadCount } = useNotifications();
+  const { openAdminPanel, isOpening: isOpeningAdminPanel, canOpenAdminPanel } = useOpenAdminPanel();
 
   const toggleDarkMode = () => {
     setDarkTheme(darkTheme === "dark" ? "light" : "dark");
@@ -146,6 +148,21 @@ const UserMenu: React.FC = () => {
               <span>Meu Perfil</span>
             </Link>
           </DropdownMenuItem>
+
+          {canOpenAdminPanel && (
+            <DropdownMenuItem
+              onClick={openAdminPanel}
+              disabled={isOpeningAdminPanel}
+              className="cursor-pointer"
+            >
+              {isOpeningAdminPanel ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldAlert className="mr-2 h-4 w-4" />
+              )}
+              <span>Painel Admin</span>
+            </DropdownMenuItem>
+          )}
           
           <DropdownMenuItem asChild>
             <Link to="/auth/reset-password" className="flex w-full cursor-pointer items-center">

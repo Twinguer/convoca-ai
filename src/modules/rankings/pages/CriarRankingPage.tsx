@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -56,7 +57,7 @@ const CriarRankingPage = () => {
   const [isEditingGeneralCard, setIsEditingGeneralCard] = useState(false);
   const searchParams = new URLSearchParams(location.search);
   const editToken = searchParams.get('edit');
-  const isAdmin = searchParams.get('admin') === 'true';
+  const { isAdmin } = useAdminAuth();
   const parentId = searchParams.get('parent');
   const stateUf = searchParams.get('state'); // Estado para concursos unificados
   const [jobTitles] = useState([{
@@ -389,12 +390,11 @@ const CriarRankingPage = () => {
     loadExistingData();
   }, [createdConcursoId, form, jobTitles, editToken]);
   useEffect(() => {
-    // Se não for admin, verifica login
-    if (!isAdmin && !user) {
-      toast.error("Você precisa estar logado para criar um ranking");
-      navigate("/auth");
+    if (!user) {
+      toast.error('Você precisa estar logado para criar um ranking');
+      navigate('/auth');
     }
-  }, [user, navigate, isAdmin]);
+  }, [user, navigate]);
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
     if (value !== 'OUTRO') {

@@ -66,6 +66,18 @@ export const studyGroupMembersService = {
     }
   },
 
+  /** Grupos públicos do usuário — visíveis no perfil público (qualquer visitante). */
+  async getUserPublicGroups(userId: string) {
+    try {
+      const { data, error } = await supabase.rpc('get_user_public_groups', { p_user_id: userId });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      logError('Error fetching user public groups', error, 'STUDY_GROUPS');
+      return [];
+    }
+  },
+
   async requestToJoinGroup(groupId: string, userId: string): Promise<{ success: boolean; message?: string; error?: string; requires_upgrade?: boolean; requires_invite?: boolean }> {
     try {
       const { data, error } = await supabase.rpc('request_to_join_group', {

@@ -2,6 +2,7 @@
 import { supabase } from '../client';
 import { recalculateAllUserScores } from './userAnswers';
 import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 
 // Function to create a new ranking
 export const createRanking = async (rankingData: any) => {
@@ -110,10 +111,10 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
       throw new Error('Ranking não encontrado');
     }
     
-    // Only the creator or an admin can update the ranking
-    const isAdmin = rankingData.is_admin_update === true;
     const isCreator = rankingCheck.created_by_user_id === userId;
-    
+    const isAdmin =
+      rankingData.is_admin_update === true && (await checkIsPlatformAdmin(userId));
+
     if (!isAdmin && !isCreator) {
       throw new Error('Você não tem permissão para editar este ranking');
     }

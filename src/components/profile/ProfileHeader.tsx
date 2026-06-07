@@ -113,8 +113,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
         
         {profileText && (
-          <div className="mt-3 text-sm text-center py-2 px-3 bg-gray-50 rounded-md italic">
-            "{profileText}"
+          <div className="mt-3 text-sm text-center py-2 px-3 bg-muted text-muted-foreground border border-border rounded-md italic">
+            &ldquo;{profileText}&rdquo;
           </div>
         )}
       </div>

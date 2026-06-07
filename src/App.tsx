@@ -12,7 +12,6 @@ import { useTimer } from "./contexts/TimerContext";
 import Index from "./pages/Index";
 import CargosPage from "./modules/rankings/pages/CargosPage";
 import Resultado from "./pages/Resultado";
-import ConcursoDetails from "./pages/ConcursoDetails";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth/Auth";
 import ConfirmacaoSucesso from "./pages/Auth/ConfirmacaoSucesso";
@@ -60,6 +59,7 @@ import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import EmailPreview from "./pages/EmailPreview";
 import RecalculateScores from "./pages/RecalculateScores";
+import { AdminPlatformRoute } from "./components/Security/AdminPlatformRoute";
 
 const SecureAdminLogin = lazy(() =>
   import("./components/Admin/SecureLogin").then((m) => ({ default: m.SecureAdminLogin }))
@@ -468,10 +468,12 @@ const AppContent = () => {
                         <Menu />
                         <TestSupabaseConnection />
                       </>} /> */}
-                    <Route path="/recalculate" element={<>
+                    <Route path="/recalculate" element={
+                      <AdminPlatformRoute>
                         <Menu />
                         <RecalculateScores />
-                      </>} />
+                      </AdminPlatformRoute>
+                    } />
                     <Route path="*" element={<>
                         <Menu />
                         <NotFound />

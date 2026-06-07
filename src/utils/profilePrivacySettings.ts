@@ -2,12 +2,14 @@ export interface ProfilePrivacySettings {
   showPublicRankings: boolean;
   showPublicStudyStats: boolean;
   showPublicRankingPosition: boolean;
+  showPublicAboutInfo: boolean;
 }
 
 export const DEFAULT_PROFILE_PRIVACY: ProfilePrivacySettings = {
   showPublicRankings: false,
   showPublicStudyStats: false,
   showPublicRankingPosition: false,
+  showPublicAboutInfo: false,
 };
 
 export function parseProfilePrivacySettings(raw: unknown): ProfilePrivacySettings {
@@ -19,5 +21,6 @@ export function parseProfilePrivacySettings(raw: unknown): ProfilePrivacySetting
     showPublicRankings: o.showPublicRankings === true,
     showPublicStudyStats: o.showPublicStudyStats === true,
     showPublicRankingPosition: o.showPublicRankingPosition === true,
+    showPublicAboutInfo: o.showPublicAboutInfo === true,
   };
 }

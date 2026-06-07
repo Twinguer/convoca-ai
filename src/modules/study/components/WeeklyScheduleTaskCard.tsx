@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Timer, Trash2, ExternalLink } from 'lucide-react';
+import { Timer, Trash2, ExternalLink, Pencil } from 'lucide-react';
 import type { WeeklyScheduleSession } from './weeklyScheduleTypes';
 import { formatTaskDurationHours } from '../domain/disciplineStudyStats';
 
@@ -18,6 +18,7 @@ interface WeeklyScheduleTaskCardProps {
   sessionData?: SessionDataEntry;
   dragHandle: React.ReactNode;
   onEdit: () => void;
+  onEditPlan: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
 }
 
@@ -26,6 +27,7 @@ export function WeeklyScheduleTaskCard({
   sessionData: cumulativeSession,
   dragHandle,
   onEdit,
+  onEditPlan,
   onDelete,
 }: WeeklyScheduleTaskCardProps) {
   const hasData =
@@ -67,12 +69,21 @@ export function WeeklyScheduleTaskCard({
               'Horário livre'
             )}
           </div>
-          <div
-            className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10 shrink-0"
-            onClick={onDelete}
-            title="Remover tarefa"
-          >
-            <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive transition-colors" />
+          <div className="flex items-center gap-0.5 shrink-0">
+            <div
+              className="cursor-pointer transition-colors p-1 rounded hover:bg-primary/10"
+              onClick={onEditPlan}
+              title="Editar tarefa"
+            >
+              <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+            </div>
+            <div
+              className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10"
+              onClick={onDelete}
+              title="Remover tarefa"
+            >
+              <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive transition-colors" />
+            </div>
           </div>
         </div>
 

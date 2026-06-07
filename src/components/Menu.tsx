@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
+import { AdminModeAccessButton } from '@/components/Admin/AdminModeAccessButton';
 import { useIsActiveCoach } from '@/modules/coach';
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
+import { Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, BookOpen, CreditCard, TrendingUp, GraduationCap, User, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 const Menu = () => {
@@ -16,15 +17,8 @@ const Menu = () => {
   const {
     user
   } = useAuth();
-  const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPlansSubmenuOpen, setIsPlansSubmenuOpen] = useState(false);
-  useEffect(() => {
-    // Check if admin mode is enabled via URL param
-    const urlParams = new URLSearchParams(window.location.search);
-    const adminParam = urlParams.get('admin');
-    setIsAdminMode(adminParam === 'true');
-  }, [location]);
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
@@ -61,10 +55,7 @@ const Menu = () => {
         {/* User login button - Now on the left */}
         <div className="flex items-center gap-2">
           <UserMenu />
-          {isAdminMode && <div className="hidden sm:flex ml-2 bg-accent text-accent-foreground px-2 py-1 rounded-md items-center">
-              <ShieldAlert className="h-4 w-4 mr-1" />
-              <span className="text-xs font-medium">Modo Admin</span>
-            </div>}
+          <AdminModeAccessButton className="hidden sm:inline-flex" />
         </div>
         
         {/* Navigation - Now on the right */}
