@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { GroupPost, GroupComment } from '../domain/types';
+import { validateGroupContent } from '../domain/groupContentSecurity';
 import { logError, logWarn } from '@/utils/secureLogger';
 
 export const studyGroupPostsService = {
@@ -60,18 +61,35 @@ export const studyGroupPostsService = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
+      const contentValidation = validateGroupContent(content || '', {
+        allowEmpty: Boolean(attachments?.length),
+      });
+      if (!contentValidation.ok) {
+        throw new Error(contentValidation.error);
+      }
+
       const { data, error } = await supabase.rpc('add_group_post', {
         p_group_id: groupId,
         p_author_id: user.id,
-        p_content: content || '',
+        p_content: contentValidation.value,
         p_attachments: attachments ? attachments as unknown : null,
       });
 
       if (error) throw error;
-      return (data as { post?: GroupPost })?.post || null;
+
+      const result = data as { success?: boolean; post?: GroupPost; error?: string };
+      if (result?.success === false) {
+        throw new Error(result.error || 'Erro ao criar post');
+      }
+
+      if (!result?.post) {
+        throw new Error('Resposta inválida ao criar post');
+      }
+
+      return result.post;
     } catch (error) {
       logError('Error creating post', error, 'STUDY_GROUPS');
-      return null;
+      throw error;
     }
   },
 
@@ -85,11 +103,16 @@ export const studyGroupPostsService = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
+      const contentValidation = validateGroupContent(content);
+      if (!contentValidation.ok) {
+        throw new Error(contentValidation.error);
+      }
+
       const { data, error } = await supabase.rpc('add_post_comment', {
         p_group_id: groupId,
         p_post_id: postId,
         p_author_id: user.id,
-        p_content: content,
+        p_content: contentValidation.value,
         p_parent_comment_id: parentCommentId || null,
       });
 

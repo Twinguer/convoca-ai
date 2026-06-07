@@ -19,7 +19,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           ...e,
           target: {
             ...e.target,
-            value: DOMPurify.sanitize(e.target.value)
+            value: DOMPurify.sanitize(e.target.value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
           }
         } as React.ChangeEvent<HTMLTextAreaElement>;
         

@@ -10,7 +10,10 @@ import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { logError } from '@/utils/secureLogger';
+import { useToast } from '@/hooks/use-toast';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import { renderContentWithMentions } from '../../domain/mentionUtils';
+import { validateGroupContent } from '../../domain/groupContentSecurity';
 
 interface CommentSectionProps {
   postId: string;
@@ -26,6 +29,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   onCommentAdded,
 }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const addComment = useAddComment();
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState('');
@@ -41,12 +45,22 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     e.preventDefault();
     if (!commentText.trim() || !user) return;
 
+    const contentValidation = validateGroupContent(commentText);
+    if (!contentValidation.ok) {
+      toast({
+        title: 'Comentário inválido',
+        description: contentValidation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addComment.mutateAsync({
         groupId,
         postId,
-        content: commentText.trim(),
+        content: contentValidation.value,
       });
       
       setCommentText('');
@@ -108,7 +122,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                   setCommentText(newValue);
                 }
               }}
-              placeholder="Escreva um comentário..."
+              placeholder="Escreva um comentário... Use @nickname para mencionar"
               rows={3}
               maxLength={MAX_COMMENT_LENGTH}
               className="resize-none"
@@ -172,7 +186,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <p className="text-xs font-semibold mb-1 text-muted-foreground">
               {comment.author_name || 'Usuário'}
             </p>
-            <p className="text-sm whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{comment.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+              {renderContentWithMentions(comment.content)}
+            </p>
           </div>
           <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
         </div>

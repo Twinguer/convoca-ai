@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, Check, CheckCheck, User, Users, Trophy, Shield } from 'lucide-react';
+import { Bell, Check, CheckCheck, User, Users, Trophy, Shield, AtSign } from 'lucide-react';
 import { useNotifications, useCoachInvitation, Notification } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,6 +19,8 @@ const NotificationIcon = ({ type }: { type: string }) => {
       return <Trophy className="h-5 w-5 text-notification-success" />;
     case 'admin_direct':
       return <Bell className="h-5 w-5 text-notification-warning" />;
+    case 'group_mention':
+      return <AtSign className="h-5 w-5 text-primary" />;
     default:
       return <Bell className="h-5 w-5 text-notification-muted" />;
   }
@@ -37,7 +40,8 @@ const NotificationCard = ({
     locale: ptBR,
   });
 
-  const isClickable = notification.type === 'coach_invitation';
+  const isClickable =
+    notification.type === 'coach_invitation' || notification.type === 'group_mention';
 
   const handleClick = () => {
     if (isClickable && onClick) {
@@ -116,6 +120,7 @@ const NotificationCard = ({
 };
 
 export default function NotificationsPage() {
+  const navigate = useNavigate();
   const { 
     notifications, 
     unreadCount, 
@@ -125,6 +130,23 @@ export default function NotificationsPage() {
   } = useNotifications();
 
   const { activeInvitation, openInvitation, closeInvitation } = useCoachInvitation();
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.type === 'coach_invitation') {
+      openInvitation(notification);
+      return;
+    }
+
+    if (notification.type === 'group_mention') {
+      const groupId = notification.metadata?.group_id;
+      if (groupId) {
+        if (!notification.is_read) {
+          markAsRead(notification.id);
+        }
+        navigate(`/grupos/${groupId}`);
+      }
+    }
+  };
 
   // activeInvitation é gerenciado pelo hook useCoachInvitation
 
@@ -190,11 +212,7 @@ export default function NotificationsPage() {
                   key={notification.id}
                   notification={notification}
                   onMarkAsRead={markAsRead}
-                  onClick={() => {
-                    if (notification.type === 'coach_invitation') {
-                      openInvitation(notification);
-                    }
-                  }}
+                  onClick={() => handleNotificationClick(notification)}
                 />
               ))}
             </div>

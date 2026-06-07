@@ -40,10 +40,10 @@ export function useCreatePost() {
         description: 'Seu post foi publicado no grupo.',
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: 'Erro ao criar post',
-        description: 'Não foi possível criar o post.',
+        description: error instanceof Error ? error.message : 'Não foi possível criar o post.',
         variant: 'destructive',
       });
     },
@@ -70,10 +70,10 @@ export function useAddComment() {
       queryClient.invalidateQueries({ queryKey: ['group-feed', variables.groupId] });
       queryClient.invalidateQueries({ queryKey: ['study-group', variables.groupId] });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: 'Erro ao comentar',
-        description: 'Não foi possível adicionar o comentário.',
+        description: error instanceof Error ? error.message : 'Não foi possível adicionar o comentário.',
         variant: 'destructive',
       });
     },

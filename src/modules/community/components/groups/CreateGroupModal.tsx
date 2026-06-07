@@ -46,7 +46,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     privacy_level: 'public' as PrivacyLevel,
     max_members: 50,
     focus_area: '',
-    post_retention_days: 90,
+    post_retention_days: 365,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,7 +88,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           privacy_level: 'public',
           max_members: 50,
           focus_area: '',
-          post_retention_days: 90,
+          post_retention_days: 365,
         });
 
         if (onSuccess) {

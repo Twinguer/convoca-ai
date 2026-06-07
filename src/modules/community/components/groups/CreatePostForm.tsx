@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/utils/secureLogger';
 import { validateFileUploadSimple, formatFileSize } from '@/utils/fileUploadValidator';
 import { FILE_UPLOAD_LIMITS } from '@/config/fileUploadLimits';
+import { validateGroupContent } from '../../domain/groupContentSecurity';
 
 interface CreatePostFormProps {
   groupId: string;
@@ -86,7 +87,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       return;
     }
 
-    if (!content.trim() && attachments.length === 0) {
+    const contentValidation = validateGroupContent(content, {
+      allowEmpty: attachments.length > 0,
+    });
+    if (!contentValidation.ok) {
+      toast({
+        title: 'Conteúdo inválido',
+        description: contentValidation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!contentValidation.value && attachments.length === 0) {
       toast({
         title: 'Conteúdo vazio',
         description: 'Adicione um texto ou um arquivo para publicar.',
@@ -135,7 +148,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       // Criar post com anexos
       await createPost.mutateAsync({
         groupId,
-        content: content.trim() || undefined,
+        content: contentValidation.value || undefined,
         attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
       });
 
@@ -147,11 +160,13 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       }
     } catch (error: any) {
       logError('Erro ao criar post', error, 'STUDY_GROUPS');
-      toast({
-        title: 'Erro ao criar post',
-        description: error.message || 'Não foi possível criar o post.',
-        variant: 'destructive',
-      });
+      if (error?.message?.includes('upload')) {
+        toast({
+          title: 'Erro ao enviar arquivo',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setUploading(false);
     }

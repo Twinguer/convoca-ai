@@ -25,7 +25,7 @@ export const studyGroupService = {
         created_by: user.id,
         privacy_level: input.privacy_level || 'public',
         max_members: input.max_members || 50,
-        post_retention_days: input.post_retention_days || 90,
+        post_retention_days: input.post_retention_days || 365,
         posts_data: [],
         group_settings: {},
       })
