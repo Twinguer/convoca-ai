@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { GroupPost, GroupComment } from '../domain/types';
-import { validateGroupContent } from '../domain/groupContentSecurity';
+import { validateGroupContent, validateGroupPostAttachments } from '../domain/groupContentSecurity';
 import { logError, logWarn } from '@/utils/secureLogger';
 
 export const studyGroupPostsService = {
@@ -68,11 +68,18 @@ export const studyGroupPostsService = {
         throw new Error(contentValidation.error);
       }
 
+      const attachmentValidation = validateGroupPostAttachments(groupId, attachments);
+      if (!attachmentValidation.ok) {
+        throw new Error(attachmentValidation.error);
+      }
+
       const { data, error } = await supabase.rpc('add_group_post', {
         p_group_id: groupId,
         p_author_id: user.id,
         p_content: contentValidation.value,
-        p_attachments: attachments ? attachments as unknown : null,
+        p_attachments: attachmentValidation.value.length > 0
+          ? attachmentValidation.value as unknown
+          : null,
       });
 
       if (error) throw error;
