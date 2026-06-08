@@ -49,6 +49,42 @@ export function mapScheduleToCronogramaSessions(userStudyData: UserStudy): Crono
   return allSessions;
 }
 
+export const UI_DAY_LABELS = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+] as const;
+
+export function sortDayTasks(tasks: CronogramaStudySession[]): CronogramaStudySession[] {
+  return [...tasks].sort((a, b) => {
+    const orderA = a.displayOrder ?? 0;
+    const orderB = b.displayOrder ?? 0;
+    if (orderA !== orderB) return orderA - orderB;
+    if (a.startTime && b.startTime) return a.startTime.localeCompare(b.startTime);
+    if (a.startTime && !b.startTime) return -1;
+    if (!a.startTime && b.startTime) return 1;
+    return (a.durationMinutes ?? 0) - (b.durationMinutes ?? 0);
+  });
+}
+
+export function getDayTasksForCycle(
+  userStudy: UserStudy | null,
+  cycleId: string | null,
+  uiDay: number
+): CronogramaStudySession[] {
+  if (!userStudy || !cycleId) return [];
+
+  return sortDayTasks(
+    mapScheduleToCronogramaSessions(userStudy).filter(
+      (session) => session.cycleId === cycleId && session.day === uiDay
+    )
+  );
+}
+
 function activeCyclesFrom(userStudyData: UserStudy): StudyCycleV2[] {
   return userStudyData.study_cycles?.filter((cycle) => cycle.is_active) || [];
 }

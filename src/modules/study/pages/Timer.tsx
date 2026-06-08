@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Pause, Square, Plus, Minus, ArrowLeft, BookOpen } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
 import { getPendingTimerTask } from '@/utils/timerTaskContext';
 import {
@@ -13,11 +12,20 @@ import {
 } from '@/utils/timerCycleSelection';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
-import { StudyCycleV2, StudySession } from '@/types/userStudy';
+import { StudyCycleV2, StudySession, UserStudy } from '@/types/userStudy';
 import { TimerDisciplineList } from '../components/TimerDisciplineList';
+import { TimerDayTasksList } from '../components/TimerDayTasksList';
+import { TimerControlsPanel } from '../components/TimerControlsPanel';
+import {
+  getDayTasksForCycle,
+  UI_DAY_LABELS,
+  type CronogramaStudySession,
+} from '../hooks/useCronogramaData';
 import type { EditalBlock } from '../components/editalTypes';
 import { aggregateDisciplineStatsForCycle } from '../domain/disciplineStudyStats';
+import { getTodayStudiedMinutesByTaskId } from '../domain/timerDayTaskProgress';
 import { devLog } from '@/utils/productionLogger';
+import { setPendingTimerTask } from '@/utils/timerTaskContext';
 
 interface TimerProps {
   cycleId?: string;
@@ -30,9 +38,47 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
   const { token: urlToken } = useParams();
   const pendingTask = useMemo(() => getPendingTimerTask(), []);
   const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
+  const [userStudy, setUserStudy] = useState<UserStudy | null>(null);
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(
+    () => pendingTask?.scheduleSessionId ?? null
+  );
+  const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(() => new Set());
   const [loadingDisciplines, setLoadingDisciplines] = useState(true);
+
+  const todayUiDay = useMemo(() => new Date().getDay(), []);
+  const todayDayLabel = UI_DAY_LABELS[todayUiDay];
+  const todayTasks = useMemo(
+    () => getDayTasksForCycle(userStudy, activeCycleId, todayUiDay),
+    [userStudy, activeCycleId, todayUiDay]
+  );
+  const activeTask = useMemo(
+    () => todayTasks.find((task) => task.id === activeTaskId) ?? null,
+    [todayTasks, activeTaskId]
+  );
+  const activeFocusTask = useMemo(() => {
+    if (activeTask) {
+      return {
+        disciplineName: activeTask.disciplineName,
+        blockName: activeTask.blockName,
+      };
+    }
+    if (pendingTask && pendingTask.scheduleSessionId === activeTaskId) {
+      return {
+        disciplineName: pendingTask.disciplineName,
+        blockName: pendingTask.blockName,
+      };
+    }
+    return null;
+  }, [activeTask, pendingTask, activeTaskId]);
+  const studiedMinutesByTaskId = useMemo(
+    () =>
+      getTodayStudiedMinutesByTaskId(studySessions, {
+        cycleId: activeCycleId,
+      }),
+    [studySessions, activeCycleId]
+  );
 
   const ownerUserId = pendingTask?.ownerUserId ?? user?.id;
   const lockCycleSelection = Boolean(pendingTask?.cycleId);
@@ -52,6 +98,7 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
     const loadCycles = async () => {
       if (!ownerUserId) {
         setCycles([]);
+        setUserStudy(null);
         setStudySessions([]);
         setActiveCycleId(null);
         setLoadingDisciplines(false);
@@ -65,6 +112,7 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
         if (cancelled) return;
 
         const availableCycles = userStudyData?.study_cycles ?? [];
+        setUserStudy(userStudyData);
         setCycles(availableCycles);
         setStudySessions(userStudyData?.study_sessions ?? []);
 
@@ -81,6 +129,7 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
         devLog.error('Erro ao carregar disciplinas do timer:', error);
         if (!cancelled) {
           setCycles([]);
+          setUserStudy(null);
           setStudySessions([]);
           setActiveCycleId(null);
         }
@@ -96,10 +145,6 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
     };
   }, [ownerUserId, secureCycleId, pendingTask?.cycleId]);
 
-  const handleCycleChange = (cycleId: string) => {
-    setActiveCycleId(cycleId);
-    setStoredTimerCycleId(cycleId);
-  };
   const cronogramaPath =
     pendingTask?.returnPath ??
     (secureToken ?? urlToken ? `/estudos/cronograma/${secureToken ?? urlToken}` : '/estudos/cronograma');
@@ -115,6 +160,42 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
     stopTimer,
     setInitialTime,
   } = useTimer();
+
+  const handleCycleChange = (cycleId: string) => {
+    setActiveCycleId(cycleId);
+    setStoredTimerCycleId(cycleId);
+    setActiveTaskId(null);
+    setCompletedTaskIds(new Set());
+  };
+
+  const handleToggleTaskDone = (taskId: string, done: boolean) => {
+    setCompletedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (done) next.add(taskId);
+      else next.delete(taskId);
+      return next;
+    });
+  };
+
+  const handleSelectDayTask = (task: CronogramaStudySession) => {
+    if (!ownerUserId || !activeCycleId) return;
+
+    setActiveTaskId(task.id);
+    setPendingTimerTask({
+      scheduleSessionId: task.id,
+      disciplineName: task.disciplineName,
+      blockName: task.blockName,
+      cycleId: task.cycleId,
+      dayOfWeek: task.day,
+      returnPath: cronogramaPath,
+      plannedDurationMinutes: task.durationMinutes,
+      ownerUserId,
+    });
+
+    if (task.durationMinutes && task.durationMinutes >= 5) {
+      setInitialTime(Math.min(task.durationMinutes, 360));
+    }
+  };
 
   const handleStart = () => {
     startTimer(initialMinutes);
@@ -135,15 +216,44 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
       setInitialTime(newTime);
     }
   };
-  const formatTime = (mins: number, secs: number) => {
-    // Exibir apenas minutos durante o timer
-    return `${mins.toString().padStart(2, '0')} min`;
-  };
   const getProgressPercentage = () => {
     const totalSeconds = initialMinutes * 60;
+    if (totalSeconds <= 0) return 0;
     const remainingSeconds = minutes * 60 + seconds;
-    return (totalSeconds - remainingSeconds) / totalSeconds * 100;
+    return ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
   };
+
+  const isFocusMode = isRunning;
+
+  const timerControls = (
+    <TimerControlsPanel
+      minutes={minutes}
+      seconds={seconds}
+      initialMinutes={initialMinutes}
+      isRunning={isRunning}
+      isPaused={isPaused}
+      progressPercent={getProgressPercentage()}
+      focusMode={isFocusMode}
+      activeTask={activeFocusTask}
+      onStart={handleStart}
+      onPause={pauseTimer}
+      onResume={resumeTimer}
+      onStop={stopTimer}
+      onAddTime={addTime}
+      onRemoveTime={removeTime}
+      canRemoveTime={initialMinutes > 5}
+      canAddTime={initialMinutes < 360}
+    />
+  );
+
+  if (isFocusMode) {
+    return (
+      <div className="flex min-h-[calc(100dvh-3.5rem)] w-full items-center justify-center bg-gradient-to-b from-background via-background to-primary/[0.05] px-6 py-8">
+        <div className="w-full max-w-xl">{timerControls}</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="container mx-auto p-6">
@@ -158,137 +268,56 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
             Voltar ao cronograma
           </Button>
 
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
-            {pendingTask && (
-              <p className="text-muted-foreground">
-                Ferramenta de foco: salve tempo e questões no cronograma ao terminar.
-              </p>
-            )}
-          </div>
+          {timerControls}
 
-          {pendingTask && (
-            <Card className="mb-4 border-primary/40 bg-primary/5">
-              <CardContent className="pt-6 space-y-3">
-                <div className="flex items-start gap-2">
-                  <BookOpen className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <div className="text-left">
-                    <p className="font-medium">{pendingTask.disciplineName}</p>
-                    {pendingTask.blockName && (
-                      <p className="text-sm text-muted-foreground">{pendingTask.blockName}</p>
-                    )}
-                    {pendingTask.plannedDurationMinutes != null && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Meta sugerida: {pendingTask.plannedDurationMinutes} min
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {cycles.length > 1 && (
+            <div className="mb-4 space-y-2 max-w-md">
+              <label className="text-sm font-medium text-foreground">Ciclo de estudos</label>
+              <Select
+                value={activeCycleId ?? undefined}
+                onValueChange={handleCycleChange}
+                disabled={lockCycleSelection || loadingDisciplines}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um ciclo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cycles.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.cycle_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {lockCycleSelection && (
+                <p className="text-xs text-muted-foreground">
+                  Ciclo fixado pela tarefa aberta no cronograma.
+                </p>
+              )}
+            </div>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <Card>
-          <CardContent>
-            <div className="text-center p-8">
-              {/* Time Display */}
-              <div className="text-6xl font-bold mb-4">
-                {formatTime(minutes, seconds)}
-              </div>
-
-              {/* Progress Bar */}
-              {isRunning && <div className="w-full bg-secondary rounded-full h-2 mb-6">
-                  <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{
-                width: `${getProgressPercentage()}%`
-              }}></div>
-                </div>}
-
-              {/* Time Controls */}
-              {!isRunning && <div className="flex justify-center items-center gap-4 mb-6">
-                  <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="text-sm text-muted-foreground min-w-[80px]">
-                    {initialMinutes} min
-                  </div>
-                  
-                  <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>}
-
-              {/* Control Buttons */}
-              <div className="flex justify-center gap-4 mb-8">
-                {!isRunning ? <Button size="lg" onClick={handleStart}>
-                    <Play className="h-5 w-5 mr-2" />
-                    Iniciar
-                  </Button> : <>
-                    {!isPaused ? <Button size="lg" variant="outline" onClick={pauseTimer}>
-                        <Pause className="h-5 w-5 mr-2" />
-                        Pausar
-                      </Button> : <Button size="lg" onClick={resumeTimer}>
-                        <Play className="h-5 w-5 mr-2" />
-                        Continuar
-                      </Button>}
-                    <Button size="lg" variant="outline" onClick={stopTimer}>
-                      <Square className="h-5 w-5 mr-2" />
-                      Parar
-                    </Button>
-                  </>}
-              </div>
-
-              {/* Status */}
-              
-
-              {/* Time Range Info */}
-              
-            </div>
-          </CardContent>
-          </Card>
-
-          <div className="space-y-3">
-            {cycles.length > 1 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Ciclo de estudos</label>
-                <Select
-                  value={activeCycleId ?? undefined}
-                  onValueChange={handleCycleChange}
-                  disabled={lockCycleSelection || loadingDisciplines}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um ciclo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cycles.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.cycle_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {lockCycleSelection && (
-                  <p className="text-xs text-muted-foreground">
-                    Ciclo fixado pela tarefa aberta no cronograma.
-                  </p>
-                )}
-              </div>
-            )}
+          <div className="grid gap-4 md:grid-cols-2 md:items-start">
+            <TimerDayTasksList
+              tasks={todayTasks}
+              dayLabel={todayDayLabel}
+              cycleName={activeCycle?.cycle_name}
+              activeTaskId={activeTaskId ?? undefined}
+              completedTaskIds={completedTaskIds}
+              studiedMinutesByTaskId={studiedMinutesByTaskId}
+              onSelectTask={handleSelectDayTask}
+              onToggleTaskDone={handleToggleTaskDone}
+              loading={loadingDisciplines}
+            />
 
             <TimerDisciplineList
               blocks={disciplineBlocks}
               disciplineStats={disciplineStats}
               cycleName={activeCycle?.cycle_name}
-              highlightDisciplineName={
-                pendingTask?.cycleId === activeCycleId ? pendingTask.disciplineName : undefined
-              }
-              highlightBlockName={
-                pendingTask?.cycleId === activeCycleId ? pendingTask.blockName : undefined
-              }
+              highlightDisciplineName={activeTask?.disciplineName}
+              highlightBlockName={activeTask?.blockName}
               loading={loadingDisciplines}
             />
-          </div>
           </div>
         </div>
       </div>
