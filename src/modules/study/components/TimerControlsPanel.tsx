@@ -71,17 +71,24 @@ export function TimerControlsPanel({
   const ringOffset = ring.circumference * (1 - ringProgress / 100);
   const statusLabel = getStatusLabel(isRunning, isPaused);
   const displayTime = isRunning ? formatClockValue(minutes, seconds) : formatClockValue(initialMinutes, 0);
+  const showRingGlow = isRunning && !isPaused;
 
   return (
     <Card
       className={cn(
-        'w-full overflow-hidden',
+        'w-full',
+        focusMode || isRunning ? 'overflow-visible' : 'overflow-hidden',
         focusMode
           ? 'border-0 bg-transparent shadow-none'
           : 'mb-6 border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.07] shadow-sm'
       )}
     >
-      <CardContent className={cn('flex flex-col items-center', focusMode ? 'p-0' : 'p-6')}>
+      <CardContent
+        className={cn(
+          'flex flex-col items-center',
+          focusMode ? 'px-4 pt-0 pb-12' : 'px-6 pt-6 pb-12'
+        )}
+      >
         <div className={cn('flex w-full flex-col items-center', focusMode ? 'gap-8' : 'gap-5')}>
           <span
             className={cn(
@@ -116,7 +123,7 @@ export function TimerControlsPanel({
               height={ring.size}
               className={cn(
                 '-rotate-90 transition-opacity duration-300',
-                isRunning && !isPaused && 'drop-shadow-[0_0_16px_hsl(var(--primary)/0.4)]'
+                showRingGlow && 'drop-shadow-[0_0_16px_hsl(var(--primary)/0.4)]'
               )}
               aria-hidden
             >
