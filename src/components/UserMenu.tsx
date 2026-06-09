@@ -88,7 +88,7 @@ const UserMenu: React.FC = () => {
               ? 'bg-muted text-muted-foreground border-muted-foreground/20' 
               : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
           }`}
-          onClick={() => navigate('/estudos/cronograma')}
+          onClick={() => navigate('/estudos/timer')}
         >
           <Clock className="h-3 w-3" />
           <span className="font-mono text-xs">{formatTime(minutes, seconds)}</span>
