@@ -26,6 +26,16 @@ import { aggregateDisciplineStatsForCycle } from '../domain/disciplineStudyStats
 import { getTodayStudiedMinutesByTaskId } from '../domain/timerDayTaskProgress';
 import { devLog } from '@/utils/productionLogger';
 import { setPendingTimerTask } from '@/utils/timerTaskContext';
+import {
+  pruneTimerDayCompletedTaskIds,
+  readTimerDayCompletedTaskIdsFromUserStudy,
+  resolveTimerDayCompletedTaskIds,
+  setsEqual,
+} from '@/utils/timerDayTaskCompletion';
+import {
+  mergeTimerDayCompletionsIntoUserStudy,
+  persistTimerDayTaskCompletions,
+} from '@/modules/study/services/timerDayTaskCompletionService';
 
 interface TimerProps {
   cycleId?: string;
@@ -49,10 +59,49 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
 
   const todayUiDay = useMemo(() => new Date().getDay(), []);
   const todayDayLabel = UI_DAY_LABELS[todayUiDay];
+  const ownerUserId = pendingTask?.ownerUserId ?? user?.id;
   const todayTasks = useMemo(
     () => getDayTasksForCycle(userStudy, activeCycleId, todayUiDay),
     [userStudy, activeCycleId, todayUiDay]
   );
+  const todayTaskIdsKey = useMemo(
+    () => todayTasks.map((task) => task.id).join('|'),
+    [todayTasks]
+  );
+
+  useEffect(() => {
+    if (!ownerUserId || !activeCycleId) {
+      setCompletedTaskIds(new Set());
+      return;
+    }
+
+    const validTaskIds = todayTaskIdsKey.split('|').filter(Boolean);
+    const fromServer = readTimerDayCompletedTaskIdsFromUserStudy(userStudy, activeCycleId);
+    const resolved = resolveTimerDayCompletedTaskIds({
+      userStudy,
+      ownerUserId,
+      cycleId: activeCycleId,
+      validTaskIds,
+    });
+
+    setCompletedTaskIds(resolved);
+
+    const prunedServer = pruneTimerDayCompletedTaskIds(fromServer, validTaskIds);
+    if (!setsEqual(resolved, prunedServer)) {
+      void persistTimerDayTaskCompletions({
+        ownerUserId,
+        cycleId: activeCycleId,
+        taskIds: resolved,
+      }).then((ok) => {
+        if (ok) {
+          setUserStudy((prev) =>
+            prev ? mergeTimerDayCompletionsIntoUserStudy(prev, activeCycleId, resolved) : prev
+          );
+        }
+      });
+    }
+  }, [ownerUserId, activeCycleId, todayTaskIdsKey, userStudy?.timer_day_task_completions]);
+
   const activeTask = useMemo(
     () => todayTasks.find((task) => task.id === activeTaskId) ?? null,
     [todayTasks, activeTaskId]
@@ -80,7 +129,6 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
     [studySessions, activeCycleId]
   );
 
-  const ownerUserId = pendingTask?.ownerUserId ?? user?.id;
   const lockCycleSelection = Boolean(pendingTask?.cycleId);
   const activeCycle = cycles.find((item) => item.id === activeCycleId) ?? null;
   const disciplineBlocks = (activeCycle?.schedule_data?.available_blocks as EditalBlock[]) ?? [];
@@ -165,7 +213,6 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
     setActiveCycleId(cycleId);
     setStoredTimerCycleId(cycleId);
     setActiveTaskId(null);
-    setCompletedTaskIds(new Set());
   };
 
   const handleToggleTaskDone = (taskId: string, done: boolean) => {
@@ -173,6 +220,23 @@ const Timer = ({ cycleId: secureCycleId, secureToken }: TimerProps = {}) => {
       const next = new Set(prev);
       if (done) next.add(taskId);
       else next.delete(taskId);
+
+      if (ownerUserId && activeCycleId) {
+        void persistTimerDayTaskCompletions({
+          ownerUserId,
+          cycleId: activeCycleId,
+          taskIds: next,
+        }).then((ok) => {
+          if (ok) {
+            setUserStudy((current) =>
+              current
+                ? mergeTimerDayCompletionsIntoUserStudy(current, activeCycleId, next)
+                : current
+            );
+          }
+        });
+      }
+
       return next;
     });
   };

@@ -21,6 +21,7 @@ import {
   StudyDataUpdate,
   defaultUserStudy
 } from '@/types/userStudy';
+import { parseTimerDayTaskCompletions } from '@/utils/timerDayTaskCompletion';
 
 /** Payload mínimo para criar linha sem sobrescrever ciclos/sessões existentes no upsert. */
 function buildInitialStudyDataPatch(
@@ -81,6 +82,7 @@ function mapRowToUserStudy(data: Record<string, unknown>): UserStudy {
     ),
     user_study_days: parseJsonArray<UserStudyDay>(metadata.user_study_days),
     study_contests: parseJsonArray<StudyContest>(metadata.study_contests),
+    timer_day_task_completions: parseTimerDayTaskCompletions(metadata.timer_day_task_completions),
     total_sessions_count: studySessions.length,
     total_schedule_count: studySchedule.length,
   };

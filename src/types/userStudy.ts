@@ -298,6 +298,7 @@ export interface UserStudy {
   spaced_repetition_queue: SpacedRepetitionItem[];
   user_study_days: UserStudyDay[];
   study_contests: StudyContest[];
+  timer_day_task_completions?: Record<string, Record<string, string[]>>;
   last_activity_date?: string;
   total_sessions_count: number;
   total_schedule_count: number;
