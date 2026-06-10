@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { adminResourcePath, type AdminResource } from '@/config/adminRoutes';
 import { logError } from '@/utils/secureLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 
 // Serviço para ofuscar URLs de administração e controlar acesso
 export class AdminUrlObfuscationService {
@@ -10,15 +11,13 @@ export class AdminUrlObfuscationService {
   // ✅ SEGURANÇA: Gerar token via RPC no backend (sem expor chaves no frontend)
   static async generateAdminToken(adminId: string, resource: AdminResource): Promise<string> {
     try {
-      // Mesma checagem do login admin: role em user_roles
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', adminId)
-        .eq('role', 'admin')
-        .maybeSingle();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user || authData.user.id !== adminId) {
+        throw new Error('Usuário não autenticado para gerar token admin');
+      }
 
-      if (roleError || !roleData) {
+      const isPlatformAdmin = await checkIsPlatformAdmin();
+      if (!isPlatformAdmin) {
         throw new Error('Usuário não tem permissões de administrador');
       }
       

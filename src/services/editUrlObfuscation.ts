@@ -26,7 +26,7 @@ export class EditUrlObfuscationService {
       }
 
       const isCreator = concurso.created_by_user_id === userId;
-      const isAdmin = await checkIsPlatformAdmin(userId);
+      const isAdmin = await checkIsPlatformAdmin();
 
       if (!isCreator && !isAdmin) {
         throw new Error('Usuário não tem permissão para editar este concurso');
@@ -99,7 +99,7 @@ export class EditUrlObfuscationService {
         }
 
         const isCreator = concurso.created_by_user_id === userId;
-        const isAdmin = await checkIsPlatformAdmin(userId);
+        const isAdmin = await checkIsPlatformAdmin();
         if (!isCreator && !isAdmin) {
           if (import.meta.env.DEV) {
             devLog.warn('[validateEditToken] Concurso não encontrado ou sem permissão');
@@ -151,7 +151,7 @@ export class EditUrlObfuscationService {
           }
 
           const isCreator = concurso.created_by_user_id === userId;
-          const isAdmin = await checkIsPlatformAdmin(userId);
+          const isAdmin = await checkIsPlatformAdmin();
           if (!isCreator && !isAdmin) {
             return null;
           }

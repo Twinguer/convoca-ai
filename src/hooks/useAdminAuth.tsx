@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 
 export const useAdminAuth = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -16,21 +15,9 @@ export const useAdminAuth = () => {
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
-
-        setIsAdmin(!!data && !error);
-      } catch (error) {
-        devLog.error('Error checking admin role:', error);
-        setIsAdmin(false);
-      } finally {
-        setIsLoading(false);
-      }
+      const isPlatformAdmin = await checkIsPlatformAdmin();
+      setIsAdmin(isPlatformAdmin);
+      setIsLoading(false);
     };
 
     if (!authLoading) {
@@ -41,6 +28,6 @@ export const useAdminAuth = () => {
   return {
     isAdmin,
     isLoading: authLoading || isLoading,
-    user
+    user,
   };
 };

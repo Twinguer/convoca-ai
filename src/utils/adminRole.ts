@@ -1,23 +1,30 @@
 import { supabase } from '@/integrations/supabase/client';
 import { devLog } from '@/utils/productionLogger';
 
-export async function checkIsPlatformAdmin(userId: string): Promise<boolean> {
+type PlatformRole = 'admin' | 'moderator' | 'user';
+
+export async function fetchCurrentUserPlatformRole(): Promise<PlatformRole | null> {
   try {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
+    const { data, error } = await supabase.rpc('get_current_user_role');
 
     if (error) {
-      devLog.error('checkIsPlatformAdmin failed', error);
-      return false;
+      devLog.error('fetchCurrentUserPlatformRole failed', error);
+      return null;
     }
 
-    return !!data;
+    if (!data) {
+      return null;
+    }
+
+    return data as PlatformRole;
   } catch (error) {
-    devLog.error('checkIsPlatformAdmin failed', error);
-    return false;
+    devLog.error('fetchCurrentUserPlatformRole failed', error);
+    return null;
   }
+}
+
+/** Checa admin via RPC server-side (auth.uid), sem consultar user_roles no cliente. */
+export async function checkIsPlatformAdmin(): Promise<boolean> {
+  const role = await fetchCurrentUserPlatformRole();
+  return role === 'admin';
 }

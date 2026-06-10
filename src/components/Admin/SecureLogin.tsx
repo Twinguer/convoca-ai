@@ -10,6 +10,7 @@ import { Shield } from 'lucide-react';
 import { TurnstileCaptcha } from '@/components/Security/TurnstileCaptcha';
 import { AdminUrlObfuscationService } from '@/services/adminUrlObfuscation';
 import { devLog } from '@/utils/productionLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 
 export const SecureAdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -61,14 +62,9 @@ export const SecureAdminLogin: React.FC = () => {
       }
 
       if (data.user) {
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .eq('role', 'admin')
-          .single();
+        const isPlatformAdmin = await checkIsPlatformAdmin();
 
-        if (roleError || !roleData) {
+        if (!isPlatformAdmin) {
           toast.error('Acesso negado. Você não tem permissões de administrador.');
           await supabase.auth.signOut();
           return;

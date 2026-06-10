@@ -5,6 +5,7 @@ import { Trash2, UserX } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { logError } from '@/utils/secureLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -101,15 +102,9 @@ export const UserActions: React.FC<UserActionsProps> = ({
         return;
       }
 
-      // Verificar role de admin
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', currentUser.user.id)
-        .eq('role', 'admin')
-        .single();
+      const isPlatformAdmin = await checkIsPlatformAdmin();
 
-      if (roleError || !roleData) {
+      if (!isPlatformAdmin) {
         logError('User does not have admin role', { userId: currentUser.user.id }, 'ADMIN');
         toast({
           title: "Permissão negada",

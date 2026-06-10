@@ -3,8 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { ADMIN_LOGIN_PATH } from '@/config/adminRoutes';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { devLog, sanitizeForLog } from '@/utils/productionLogger';
+import { checkIsPlatformAdmin } from '@/utils/adminRole';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -29,21 +28,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
-
-        setIsAdmin(!!data && !error);
-      } catch (error) {
-        devLog.error('Error checking admin role:', error);
-        setIsAdmin(false);
-      } finally {
-        setAdminCheckLoading(false);
-      }
+      const isPlatformAdmin = await checkIsPlatformAdmin();
+      setIsAdmin(isPlatformAdmin);
+      setAdminCheckLoading(false);
     };
 
     checkAdminRole();

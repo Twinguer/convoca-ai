@@ -113,7 +113,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     
     const isCreator = rankingCheck.created_by_user_id === userId;
     const isAdmin =
-      rankingData.is_admin_update === true && (await checkIsPlatformAdmin(userId));
+      rankingData.is_admin_update === true && (await checkIsPlatformAdmin());
 
     if (!isAdmin && !isCreator) {
       throw new Error('Você não tem permissão para editar este ranking');
