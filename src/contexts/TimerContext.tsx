@@ -7,6 +7,9 @@ import {
   setTimerSuggestedMinutes,
 } from '@/utils/timerTaskContext';
 
+/** Renova study_started_at no servidor enquanto o timer está ativo (alinha com TTL de 10 min na RPC). */
+const STUDYING_HEARTBEAT_INTERVAL_MS = 3 * 60 * 1000;
+
 function suggestTimerMinutesForTask(sessionStartTime: Date | null): void {
   if (!sessionStartTime) return;
 
@@ -104,6 +107,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const remainingSecondsRef = useRef<number>(initialMinutes * 60);
   const isRunningRef = useRef<boolean>(false);
   const isPausedRef = useRef<boolean>(false);
+  const hasReconciledStudyingRef = useRef<string | null>(null);
 
   // Sync ref with state
   useEffect(() => {
@@ -396,23 +400,74 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   // Update database when studying status changes
   const updateStudyingStatus = async (studying: boolean) => {
     if (!user?.id) return;
-    
+
     try {
-      await supabase
+      const { error } = await supabase
         .from('users_profiles')
         .update({
           is_studying: studying,
-          study_started_at: studying ? new Date().toISOString() : null
+          study_started_at: studying ? new Date().toISOString() : null,
         })
         .eq('id', user.id);
+
+      if (error) {
+        devLog.error('Error updating studying status:', error);
+      }
     } catch (error) {
       devLog.error('Error updating studying status:', error);
     }
   };
 
+  const refreshStudyingHeartbeat = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('users_profiles')
+        .update({ study_started_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .eq('is_studying', true);
+
+      if (error) {
+        devLog.error('Error refreshing studying heartbeat:', error);
+      }
+    } catch (error) {
+      devLog.error('Error refreshing studying heartbeat:', error);
+    }
+  };
+
+  // Sincroniza flag stale no banco após restaurar estado do localStorage no login
+  useEffect(() => {
+    if (!user?.id) {
+      hasReconciledStudyingRef.current = null;
+      return;
+    }
+
+    if (hasReconciledStudyingRef.current === user.id) return;
+
+    const reconcileTimer = window.setTimeout(() => {
+      const shouldBeStudying = isRunningRef.current && !isPausedRef.current;
+      void updateStudyingStatus(shouldBeStudying);
+      hasReconciledStudyingRef.current = user.id;
+    }, 0);
+
+    return () => window.clearTimeout(reconcileTimer);
+  }, [user?.id]);
+
   // Effect to update database when studying status changes
   useEffect(() => {
     updateStudyingStatus(isStudying);
+  }, [isStudying, user?.id]);
+
+  // Mantém study_started_at fresco durante sessões longas de timer
+  useEffect(() => {
+    if (!isStudying || !user?.id) return;
+
+    const heartbeatTimer = window.setInterval(() => {
+      void refreshStudyingHeartbeat();
+    }, STUDYING_HEARTBEAT_INTERVAL_MS);
+
+    return () => window.clearInterval(heartbeatTimer);
   }, [isStudying, user?.id]);
 
   const startTimer = (mins?: number) => {
