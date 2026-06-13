@@ -5,7 +5,6 @@ import App from './App.tsx'
 import './index.css'
 import './styles/mobile-responsive.css'
 import { ThemeProvider } from '@/components/theme-provider'
-import { PresenceProvider } from '@/contexts/PresenceContext'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <ThemeProvider
@@ -14,8 +13,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     enableSystem
     disableTransitionOnChange
   >
-    <PresenceProvider>
-      <App />
-    </PresenceProvider>
+    <App />
   </ThemeProvider>
 )

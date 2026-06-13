@@ -40,6 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Debug logs removed for security
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      if (newSession?.user?.id) {
+        void onlineStatusService.setUserOnline(newSession.user.id);
+      }
     } catch (error) {
       logError('Failed to refresh session', error, 'AUTH');
       setSession(null);
